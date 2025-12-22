@@ -1,0 +1,8 @@
+*.pyc
+cms/source/__pycache__
+__pycache__/
+cms/__pycache__
+build/
+dist/
+*.tmp
+~$mment_regler_les_soucis_du_CMS.docx
