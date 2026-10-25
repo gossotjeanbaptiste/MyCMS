@@ -1,40 +1,42 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-Fichier de spécification PyInstaller pour Rout'Art CMS
-Compile l'application Python en exécutable Windows
+Fichier de spécification PyInstaller pour MyCMS (version web)
+Compile le serveur Flask + l'interface web en un exécutable Windows
 """
 
-import sys
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files
+import os
 
 block_cipher = None
 
 a = Analysis(
-    ['mycms.py'],
-    pathex=['.'],
+    ['../web/server.py'],
+    # Les modules de cms/source sont importés par nom depuis server.py
+    # (pathex est relatif au dossier courant, d'où SPECPATH = dossier de ce fichier)
+    pathex=[SPECPATH, os.path.join(SPECPATH, '..', 'web')],
     binaries=[],
-    datas=[('../icon', 'icon'), ('../../page', 'page'), ('../../style', 'style'), ('../../script', 'script'), ('.', '.')],
+    # Interface web (HTML, JS, CSS Tailwind compilé) et icône
+    datas=[('../web/static', 'static'), ('../icon', 'icon')],
     hiddenimports=[
-        'customtkinter',
-        'tkinter',
-        'git',
-        'bs4',
-        'http.server',
-        'socketserver',
+        'config_manager',
+        'css_weights',
         'git_manager',
         'html_manager',
-        'server_manager',
-        'config_manager',
+        'html_source',
         'logger',
+        'page_finder',
+        'server_manager',
         'sitemap_generator',
-        'xml.dom',
+        'git',
+        'bs4',
+        'flask',
         'xml.dom.minidom',
         'xml.etree.ElementTree',
-    ] + collect_submodules('customtkinter'),
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludedimports=[],
+    # Ancienne interface CTk : pas embarquée dans la version web
+    excludes=['customtkinter', 'tkinter'],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -57,7 +59,8 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,  # Pas de console (application GUI)
+    # Console gardée : c'est la fenêtre du serveur, la fermer quitte MyCMS
+    console=True,
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,

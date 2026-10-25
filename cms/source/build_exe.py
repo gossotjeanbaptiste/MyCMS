@@ -38,10 +38,28 @@ def check_pyinstaller():
         return False
 
 
+def build_css(project_root):
+    """Recompiler le CSS Tailwind de l'interface web (sinon le style.css versionné est utilisé)"""
+    web_dir = project_root / "cms" / "web"
+    npm = shutil.which("npm")
+    if not npm:
+        print("⚠️  npm introuvable : le CSS déjà compilé (cms/web/static/style.css) sera utilisé")
+        return
+    try:
+        if not (web_dir / "node_modules").exists():
+            print("📦 Installation de Tailwind (npm install)...")
+            subprocess.check_call([npm, "install"], cwd=web_dir)
+        print("🎨 Compilation du CSS Tailwind...")
+        subprocess.check_call([npm, "run", "build:css"], cwd=web_dir)
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️  Compilation du CSS impossible ({e}) : le CSS déjà compilé sera utilisé")
+
+
 def compile_to_exe():
     """Compiler l'application en .exe"""
     if not check_pyinstaller():
         return False
+    build_css(Path(__file__).parent.parent.parent)
     print("\n🛑 Vérification de l'application en cours d'exécution...\n")
     kill_exe_process()
     print("\n🔨 Compilation en cours...\n")
@@ -89,5 +107,7 @@ def compile_to_exe():
 
 
 if __name__ == "__main__":
+    # Sortie redirigée ou console non UTF-8 : remplacer les emojis au lieu de planter
+    sys.stdout.reconfigure(errors="replace")
     success = compile_to_exe()
     sys.exit(0 if success else 1)
