@@ -27,7 +27,11 @@ class Logger:
                 f.write(formatted_message + "\n")
         except Exception as e:
             print(f"Erreur lors de l'écriture du log: {e}")
-        print(formatted_message)
+        try:
+            print(formatted_message)
+        except UnicodeEncodeError:
+            # Console non UTF-8 (ex: sortie redirigée sous Windows) : ne pas faire planter l'appelant
+            print(formatted_message.encode('ascii', 'replace').decode('ascii'))
 
     def log_error(self, message):
         """Ajouter un log d'erreur"""

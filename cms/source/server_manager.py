@@ -5,10 +5,8 @@ Gestionnaire de Serveur HTTP - Serveur local pour prévisualisation
 """
 
 import http.server
-import socketserver
-import os
-import threading
-import webbrowser
+from datetime import datetime
+from functools import partial
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -16,8 +14,8 @@ from urllib.parse import unquote
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """Handler HTTP personnalisé"""
 
-    def __init__(self, *args, directory=None, **kwargs):
-        self.base_directory = directory
+    def __init__(self, *args, directory=None, on_log=None, **kwargs):
+        self.on_log = on_log
         super().__init__(*args, directory=directory, **kwargs)
 
     def do_GET(self):
@@ -30,14 +28,11 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         """Logger les messages du serveur"""
-        message = format % args
-        timestamp = self._get_timestamp()
-        print(f"[{timestamp}] {self.client_address[0]} - {message}")
-
-    def _get_timestamp(self):
-        """Obtenir le timestamp formaté"""
-        from datetime import datetime
-        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        message = f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {format % args}"
+        if self.on_log:
+            self.on_log(message)
+        else:
+            print(message)
 
     def end_headers(self):
         """Ajouter les headers personnalisés"""
@@ -48,19 +43,23 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 
+class PreviewHTTPServer(http.server.ThreadingHTTPServer):
+    """Une connexion par thread : une connexion ouverte sans requête (préconnexion
+    des navigateurs) ne bloque plus les autres"""
+    daemon_threads = True
+    allow_reuse_address = True
+
+
 class ServerManager:
     """Gère le serveur HTTP local"""
 
     def __init__(self, logger):
         self.logger = logger
         self.server = None
-        self.thread = None
         self.running = False
-        self.request_handler = None
-        self._stop_requested = False
 
     def start(self, repo_path, port=8000, callback=None):
-        """Démarrer le serveur HTTP"""
+        """Démarrer le serveur HTTP (bloquant jusqu'à stop())"""
         try:
             # Valider et corriger le port
             if not isinstance(port, int) or port < 1 or port > 65535:
@@ -77,64 +76,46 @@ class ServerManager:
                     callback(message)
                 self.logger.log(message)
                 return False
-            os.chdir(repo_path)
 
-            def create_handler(*args, **kwargs):
-                return CustomHTTPRequestHandler(
-                    *args, directory=str(repo_path), **kwargs
-                )
-            socketserver.TCPServer.allow_reuse_address = True
-            self.server = socketserver.TCPServer(
-                ("localhost", port), create_handler)
-
-            # Timeout court pour permettre l'arrêt
-            self.server.timeout = 0.5
+            handler = partial(CustomHTTPRequestHandler, directory=str(repo_path), on_log=callback)
+            self.server = PreviewHTTPServer(("127.0.0.1", port), handler)
             self.running = True
-            self._stop_requested = False
 
-            message = f"✓ Serveur démarré sur http://localhost:{port}"
+            message = f"✓ Serveur démarré sur http://127.0.0.1:{port}"
             if callback:
                 callback(message)
             self.logger.log(message)
-            while self.running and not self._stop_requested:
-                try:
-                    self.server.handle_request()
-                except Exception as e:
-                    if self.running and not self._stop_requested:
-                        self.logger.log(f"Erreur serveur: {e}")
+            self.server.serve_forever(poll_interval=0.5)
         except OSError as e:
-            if "Address already in use" in str(e):
+            if e.errno in (98, 10048) or "Address already in use" in str(e):
                 message = f"❌ Le port {port} est déjà utilisé. Essayez un autre port."
             else:
                 message = f"❌ Erreur OS: {str(e)}"
             if callback:
                 callback(message)
             self.logger.log(message)
-            self.running = False
         except Exception as e:
             message = f"❌ Erreur serveur: {str(e)}"
             if callback:
                 callback(message)
             self.logger.log(message)
-            self.running = False
         finally:
             self.running = False
             if self.server:
                 try:
                     self.server.server_close()
-                except:
+                except Exception:
                     pass
+                self.server = None
 
     def stop(self):
         """Arrêter le serveur HTTP"""
         try:
-            self._stop_requested = True
+            server = self.server
+            if server:
+                # shutdown() attend la fin de serve_forever(), lancé dans un autre thread
+                server.shutdown()
             self.running = False
-            if self.server:
-                try:
-                    self.server.server_close()
-                except:
-                    pass
             self.logger.log("Serveur arrêté")
             return True
         except Exception as e:
