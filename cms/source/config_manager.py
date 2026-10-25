@@ -16,6 +16,7 @@ class ConfigManager:
     # Schéma de validation pour chaque clé
     VALIDATION_SCHEMA = {
         "repo_path": {"type": str, "required": True},
+        "site_url": {"type": str, "required": False},
         "auto_pull": {"type": bool, "required": True},
         "auto_refresh": {"type": bool, "required": True},
         "default_port": {"type": int, "required": True, "min": 1, "max": 65535},
@@ -29,6 +30,7 @@ class ConfigManager:
         self.config_file = self.config_dir / "config.json"
         self.default_config = {
             "repo_path": str(Path.home() / "Rout-Art"),
+            "site_url": "",
             "auto_pull": False,
             "auto_refresh": True,
             "default_port": 8000,
@@ -166,6 +168,14 @@ class ConfigManager:
     def set_repo_path(self, path: str):
         """Définir le chemin du repository"""
         self._set_with_cache("repo_path", str(path))
+
+    def get_site_url(self) -> str:
+        """Récupérer l'URL publique du site (vide = détection automatique)"""
+        return self._get_from_cache("site_url", self.default_config["site_url"])
+
+    def set_site_url(self, url: str):
+        """Définir l'URL publique du site"""
+        self._set_with_cache("site_url", str(url).strip())
 
     def get_auto_pull(self) -> bool:
         """Récupérer le paramètre de pull automatique"""
