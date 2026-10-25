@@ -589,7 +589,7 @@ class MyCMS:
     def _load_file_async(self, file_path, choice):
         """Charger le fichier de manière asynchrone"""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, 'r', encoding='utf-8', newline='') as f:
                 content = f.read()
 
             self.current_file = file_path
@@ -733,26 +733,17 @@ class MyCMS:
     def _save_file_async(self):
         """Sauvegarder le fichier de manière asynchrone"""
         try:
-            content = self.current_file_content
-            soup = BeautifulSoup(content, 'html.parser')
-            editable_elements = soup.find_all(class_='editable')
-            for elem_index, field_info in self.editable_fields.items():
-                text_widget = field_info["widget"]
-                new_content = text_widget.get("1.0", "end-1c")
-                is_iframe = field_info.get("is_iframe", False)
-                if isinstance(elem_index, int) and elem_index < len(editable_elements):
-                    element = editable_elements[elem_index]
-                    if is_iframe:
-                        element['src'] = new_content
-                        self.logger.log(
-                            f"iframe [{elem_index}] src mis à jour: {new_content}")
-                    else:
-                        element.clear()
-                        element.string = new_content
-                        self.logger.log(f"Élément [{elem_index}] mis à jour")
-            updated_content = str(soup.prettify())
-            with open(self.current_file, 'w', encoding='utf-8') as f:
-                f.write(updated_content)
+            values = {
+                elem_index: field_info["widget"].get("1.0", "end-1c")
+                for elem_index, field_info in self.editable_fields.items()
+            }
+            result = self.html_manager.apply_editable_texts(self.current_file_content, values)
+            if not result["success"]:
+                raise RuntimeError(result["error"])
+            self.logger.log(f"{result['changed']} élément(s) mis à jour")
+            with open(self.current_file, 'w', encoding='utf-8', newline='') as f:
+                f.write(result["content"])
+            self.current_file_content = result["content"]
 
             self.logger.log(f"Fichier sauvegardé: {self.current_file.name}")
 

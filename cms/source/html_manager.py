@@ -5,8 +5,12 @@ Gestionnaire HTML - Édition et manipulation des fichiers HTML
 """
 
 from bs4 import BeautifulSoup
+import html
+import re
 from pathlib import Path
 import datetime
+
+from html_source import HybridSaver, editable_sources, set_attribute
 
 
 class HTMLManager:
@@ -18,7 +22,7 @@ class HTMLManager:
     def read_file(self, file_path):
         """Lire un fichier HTML"""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, 'r', encoding='utf-8', newline='') as f:
                 content = f.read()
             self.logger.log(f"Fichier lu: {Path(file_path).name}")
             return {"success": True, "content": content}
@@ -30,7 +34,7 @@ class HTMLManager:
     def write_file(self, file_path, content):
         """Écrire un fichier HTML"""
         try:
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, 'w', encoding='utf-8', newline='') as f:
                 f.write(content)
             self.logger.log(f"Fichier écrit: {Path(file_path).name}")
             return {"success": True, "message": f"Fichier sauvegardé: {Path(file_path).name}"}
@@ -56,20 +60,6 @@ class HTMLManager:
             element = soup.select_one(selector)
             if element:
                 return {"success": True, "element": str(element)}
-            else:
-                return {"success": False, "error": f"Élément non trouvé: {selector}"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    def replace_element(self, content, selector, new_content):
-        """Remplacer un élément"""
-        try:
-            soup = BeautifulSoup(content, 'html.parser')
-            element = soup.select_one(selector)
-
-            if element:
-                element.replace_with(BeautifulSoup(new_content, 'html.parser'))
-                return {"success": True, "content": str(soup.prettify())}
             else:
                 return {"success": False, "error": f"Élément non trouvé: {selector}"}
         except Exception as e:
@@ -136,17 +126,96 @@ class HTMLManager:
         except Exception as e:
             return {"success": False, "error": str(e), "elements": []}
     
-    def update_editable_element(self, content, element_id, new_content):
-        """Mettre à jour un élément éditable spécifique"""
+    def apply_editable_html(self, content, values):
+        """Appliquer le HTML saisi dans l'éditeur web aux éléments éditables (par index).
+        Les nœuds inchangés sont recopiés depuis le fichier, seuls les écarts sont réécrits."""
         try:
-            soup = BeautifulSoup(content, 'html.parser')
-            element = soup.find(id=element_id, class_='editable')
-            if not element:
-                return {"success": False, "error": f"Élément éditable non trouvé: {element_id}"}
-            element.string = new_content
-            return {"success": True, "content": str(soup.prettify())}
+            new_content, changed = HybridSaver(content, values).apply()
+            return {"success": True, "content": new_content, "changed": changed}
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    def extract_editable_sources(self, content):
+        """Contenu source exact de chaque élément éditable et index de ses éléments éditables imbriqués"""
+        return editable_sources(content)
+
+    def apply_editable_texts(self, content, values):
+        """Appliquer du texte brut aux éléments éditables (par index), pour l'ancienne interface CTk.
+        Seuls les éléments dont la valeur a changé sont réécrits, directement dans le texte
+        source : le reste du fichier (indentation, attributs, fins de ligne) reste identique."""
+        try:
+            soup = BeautifulSoup(content, 'html.parser')
+            editable_elements = soup.find_all(class_='editable')
+            line_starts = [0] + [m.end() for m in re.finditer('\n', content)]
+
+            edits = []  # (début, fin, remplacement) dans content
+            for elem_index, new_value in values.items():
+                if not 0 <= elem_index < len(editable_elements):
+                    continue
+                element = editable_elements[elem_index]
+                is_iframe = element.name == 'iframe'
+                current = element.get('src', '') if is_iframe else element.get_text().strip()
+                if new_value == current:
+                    continue
+
+                start = line_starts[element.sourceline - 1] + element.sourcepos
+                if content[start:start + len(element.name) + 1].lower() != f"<{element.name}":
+                    return {"success": False, "error": f"Position introuvable pour l'élément [{elem_index}]"}
+                start_tag_end = self._start_tag_end(content, start)
+
+                if is_iframe:
+                    start_tag = content[start:start_tag_end]
+                    edits.append((start, start_tag_end, set_attribute(start_tag, 'src', new_value)))
+                    continue
+
+                end_tag_start = self._find_end_tag(content, element.name, start_tag_end)
+                if end_tag_start is None:
+                    return {"success": False, "error": f"Balise fermante </{element.name}> introuvable pour l'élément [{elem_index}]"}
+
+                # Garder les espaces / retours à la ligne autour du texte
+                inner = content[start_tag_end:end_tag_start]
+                stripped = inner.strip()
+                leading = inner[:inner.index(stripped)] if stripped else inner
+                trailing = inner[inner.index(stripped) + len(stripped):] if stripped else ""
+                edits.append((start_tag_end, end_tag_start,
+                              leading + html.escape(new_value, quote=False) + trailing))
+
+            edits.sort()
+            for (_, previous_end, _), (next_start, _, _) in zip(edits, edits[1:]):
+                if previous_end > next_start:
+                    return {"success": False, "error": "Deux éléments éditables imbriqués ont été modifiés en même temps"}
+
+            # Appliquer de la fin vers le début pour que les positions restent valides
+            for start, end, replacement in reversed(edits):
+                content = content[:start] + replacement + content[end:]
+            return {"success": True, "content": content, "changed": len(edits)}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    def _start_tag_end(content, start):
+        """Position juste après le '>' de la balise ouvrante qui commence à start"""
+        quote = None
+        for i in range(start + 1, len(content)):
+            char = content[i]
+            if quote:
+                if char == quote:
+                    quote = None
+            elif char in '"\'':
+                quote = char
+            elif char == '>':
+                return i + 1
+        raise ValueError("Balise ouvrante non terminée")
+
+    @staticmethod
+    def _find_end_tag(content, tag, position):
+        """Début de la balise fermante correspondante, en tenant compte des balises de même nom imbriquées"""
+        depth = 1
+        for match in re.finditer(rf'<(/?){re.escape(tag)}(?=[\s/>])', content[position:], re.I):
+            depth += -1 if match.group(1) else 1
+            if depth == 0:
+                return position + match.start()
+        return None
 
     def get_file_info(self, file_path):
         """Obtenir les informations du fichier"""
