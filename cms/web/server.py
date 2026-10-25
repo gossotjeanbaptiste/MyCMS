@@ -1,0 +1,389 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Serveur web de MyCMS - API JSON + interface web
+Réutilise les gestionnaires de cms/source (Git, HTML, config, logs, sitemap)
+"""
+
+import hashlib
+import subprocess
+import sys
+import threading
+import time
+import webbrowser
+from collections import deque
+from pathlib import Path
+
+from flask import Flask, jsonify, request, send_from_directory
+
+if getattr(sys, "frozen", False):
+    # Exécutable PyInstaller : modules intégrés, interface extraite dans sys._MEIPASS
+    STATIC_DIR = Path(sys._MEIPASS) / "static"
+else:
+    SOURCE_DIR = Path(__file__).resolve().parent.parent / "source"
+    STATIC_DIR = Path(__file__).resolve().parent / "static"
+    sys.path.insert(0, str(SOURCE_DIR))
+
+from config_manager import ConfigManager  # noqa: E402
+from css_weights import bold_info  # noqa: E402
+from git_manager import GitManager  # noqa: E402
+from html_manager import HTMLManager  # noqa: E402
+from logger import Logger  # noqa: E402
+from page_finder import find_html_pages  # noqa: E402
+from server_manager import ServerManager  # noqa: E402
+from sitemap_generator import SitemapGenerator  # noqa: E402
+
+app = Flask(__name__, static_folder=None)
+
+config_manager = ConfigManager()
+logger = Logger()
+git_manager = GitManager(logger)
+html_manager = HTMLManager(logger)
+server_manager = ServerManager(logger)
+sitemap_generator = SitemapGenerator(logger)
+
+preview_state = {"port": None, "thread": None}
+preview_logs = deque(maxlen=200)
+
+
+def _repo_path():
+    return Path(config_manager.get_repo_path())
+
+
+def _error(message, status=400):
+    return jsonify({"success": False, "error": message}), status
+
+
+def _get_page_files():
+    """Toutes les pages HTML du repository (chemins relatifs)"""
+    if not _repo_path().is_dir():
+        return []
+    return find_html_pages(_repo_path())
+
+
+def _resolve_page(name):
+    """Chemin d'une page de la liste, ou None si elle n'en fait pas partie"""
+    if name not in _get_page_files():
+        return None
+    return _repo_path() / name
+
+
+def _update_sitemap():
+    """Régénérer le sitemap et décrire ce qui a été fait"""
+    result = sitemap_generator.update_sitemap(str(_repo_path()), config_manager.get_site_url())
+    if not result["success"]:
+        logger.log(f"Attention: {result['error']}")
+        return result
+
+    if result["created"]:
+        summary = "Sitemap créé à la racine"
+    elif result["moved_from"]:
+        summary = f"Sitemap déplacé à la racine (depuis {result['moved_from']})"
+    else:
+        summary = "Sitemap mis à jour"
+    result["message"] = f"{summary} : {len(result['included'])} pages"
+    if result["excluded"]:
+        result["message"] += f", {len(result['excluded'])} exclues ({', '.join(result['excluded'])})"
+    logger.log(result["message"])
+    return result
+
+
+def _read_page(file_path):
+    """Contenu exact du fichier (sans conversion des fins de ligne)"""
+    with open(file_path, encoding="utf-8", newline="") as f:
+        return f.read()
+
+
+def _hash(content):
+    return hashlib.sha1(content.encode("utf-8")).hexdigest()
+
+
+# ======= Interface =======
+
+@app.get("/")
+def index():
+    return send_from_directory(STATIC_DIR, "index.html")
+
+
+@app.get("/static/<path:filename>")
+def static_files(filename):
+    return send_from_directory(STATIC_DIR, filename)
+
+
+# ======= Configuration =======
+
+@app.get("/api/config")
+def get_config():
+    return jsonify(config_manager.get_all_config())
+
+
+@app.post("/api/config")
+def save_config():
+    data = request.get_json(force=True)
+    try:
+        if "repo_path" in data:
+            config_manager.set_repo_path(data["repo_path"])
+        if "site_url" in data:
+            config_manager.set_site_url(data["site_url"])
+        if "auto_pull" in data:
+            config_manager.set_auto_pull(data["auto_pull"])
+        if "auto_refresh" in data:
+            config_manager.set_auto_refresh(data["auto_refresh"])
+        if "default_port" in data:
+            config_manager.set_default_port(int(data["default_port"]))
+    except (ValueError, TypeError) as e:
+        return _error(str(e))
+    return jsonify({"success": True, "config": config_manager.get_all_config()})
+
+
+@app.post("/api/config/reset")
+def reset_config():
+    config_manager.reset_to_defaults()
+    return jsonify({"success": True, "config": config_manager.get_all_config()})
+
+
+# ======= Git =======
+
+@app.post("/api/git/verify")
+def git_verify():
+    result = git_manager.verify_repo(str(_repo_path()))
+    return jsonify({"success": result["valid"], "message": result["message"]})
+
+
+@app.post("/api/git/pull")
+def git_pull():
+    return jsonify(git_manager.pull(str(_repo_path())))
+
+
+@app.post("/api/git/push")
+def git_push():
+    message = (request.get_json(force=True).get("message") or "").strip()
+    if not message:
+        return _error("Veuillez entrer un message de commit")
+    return jsonify(git_manager.push(str(_repo_path()), message))
+
+
+@app.get("/api/git/status")
+def git_status():
+    return jsonify(git_manager.get_status(str(_repo_path())))
+
+
+@app.post("/api/git/add")
+def git_add_untracked():
+    """Ajouter tous les fichiers non suivis"""
+    try:
+        result = subprocess.run(
+            ["git", "add", "."],
+            cwd=str(_repo_path()),
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+    except Exception as e:
+        logger.log(f"Erreur: {e}")
+        return _error(str(e), 500)
+
+    if result.returncode == 0:
+        logger.log("Fichiers non suivis ajoutés avec succès")
+        return jsonify({"success": True, "message": "Tous les fichiers non suivis ont été ajoutés"})
+    logger.log(f"Erreur ajout: {result.stderr}")
+    return _error(f"Erreur lors de l'ajout: {result.stderr}", 500)
+
+
+# ======= Éditeur =======
+
+@app.get("/api/files")
+def list_files():
+    return jsonify({"success": True, "files": _get_page_files()})
+
+
+@app.get("/api/files/<path:name>")
+def load_file(name):
+    file_path = _resolve_page(name)
+    if file_path is None:
+        return _error(f"Fichier introuvable: {name}", 404)
+
+    content = _read_page(file_path)
+    start = time.perf_counter()
+    result = html_manager.extract_editable_elements(content)
+    sources = html_manager.extract_editable_sources(content)
+    bold_flags, bold_selectors = bold_info(_repo_path(), name, content)
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    if not len(sources) == len(bold_flags) == len(result["elements"]):
+        return _error("Structure HTML non reconnue : le nombre d'éléments éditables ne correspond pas", 500)
+
+    # value : texte (ou src d'une iframe) ; html : contenu source exact, édité en texte enrichi
+    elements = [
+        {
+            "index": e["index"],
+            "id": e["id"],
+            "tag": e["tag"],
+            "is_iframe": e["is_iframe"],
+            "value": e["editable_value"],
+            "html": source["html"],
+            "nested": source["nested"],
+            "bold": bold,
+        }
+        for e, source, bold in zip(result["elements"], sources, bold_flags)
+    ]
+    logger.log(f"Fichier ouvert: {name} ({len(elements)} éléments éditables, {elapsed_ms:.0f} ms)")
+    # Une page sans élément éditable n'est pas une erreur : le message est affiché à la place de la liste
+    return jsonify({
+        "success": True,
+        "notice": result.get("error"),
+        "elements": elements,
+        "bold_selectors": bold_selectors,
+        "hash": _hash(content),
+        "parse_ms": round(elapsed_ms),
+    })
+
+
+@app.post("/api/files/<path:name>")
+def save_file(name):
+    file_path = _resolve_page(name)
+    if file_path is None:
+        return _error(f"Fichier introuvable: {name}", 404)
+
+    data = request.get_json(force=True)
+    content = _read_page(file_path)
+
+    # Les éléments sont repérés par leur index : refuser si le fichier a changé depuis le chargement
+    if data.get("hash") != _hash(content):
+        return _error("Le fichier a été modifié depuis son chargement. Rechargez-le avant de sauvegarder.", 409)
+
+    values = {int(k): v for k, v in data.get("values", {}).items()}
+    result = html_manager.apply_editable_html(content, values)
+    if not result["success"]:
+        logger.log(f"Erreur sauvegarde: {result['error']}")
+        return _error(f"Impossible de sauvegarder: {result['error']}", 500)
+
+    html_manager.write_file(file_path, result["content"])
+
+    # Générer automatiquement le sitemap après la sauvegarde
+    sitemap_result = _update_sitemap()
+
+    return jsonify({
+        "success": True,
+        "message": f"Fichier sauvegardé: {name} ({result['changed']} élément(s) modifié(s))",
+        "sitemap": sitemap_result.get("message") or sitemap_result.get("error"),
+        "hash": _hash(result["content"]),
+    })
+
+
+# ======= Sitemap =======
+
+@app.get("/api/sitemap")
+def sitemap_info():
+    repo_path = _repo_path()
+    if not repo_path.is_dir():
+        return jsonify({"success": True, "location": None, "base_url": ""})
+    location = sitemap_generator.find_sitemap(repo_path)
+    relative = location.relative_to(repo_path).as_posix() if location else "sitemap.xml"
+    return jsonify({
+        "success": True,
+        "location": relative if location else None,
+        "base_url": sitemap_generator.detect_base_url(repo_path, config_manager.get_site_url(), relative),
+    })
+
+
+@app.post("/api/sitemap")
+def sitemap_generate():
+    result = _update_sitemap()
+    if not result["success"]:
+        return _error(result["error"], 500)
+    return jsonify({"success": True, "message": result["message"], "base_url": result["base_url"]})
+
+
+# ======= Prévisualisation =======
+
+def _preview_status():
+    return {
+        "running": server_manager.is_running(),
+        "port": preview_state["port"],
+        "logs": list(preview_logs),
+    }
+
+
+@app.get("/api/preview")
+def preview_status():
+    return jsonify(_preview_status())
+
+
+@app.post("/api/preview/start")
+def preview_start():
+    if server_manager.is_running():
+        return jsonify({"success": True, **_preview_status()})
+
+    try:
+        port = int(request.get_json(force=True).get("port"))
+    except (TypeError, ValueError):
+        return _error("Le port doit être un nombre valide")
+    if not 1 <= port <= 65535:
+        return _error(f"Le port doit être entre 1 et 65535 (reçu: {port})")
+    if not _repo_path().exists():
+        return _error("Le chemin du repository n'existe pas")
+
+    thread = threading.Thread(
+        target=server_manager.start,
+        args=(str(_repo_path()), port, preview_logs.append),
+        daemon=True
+    )
+    thread.start()
+    preview_state.update(port=port, thread=thread)
+
+    # Laisser le temps au serveur de démarrer (ou d'échouer, ex: port occupé)
+    for _ in range(20):
+        if server_manager.is_running() or not thread.is_alive():
+            break
+        time.sleep(0.05)
+
+    status = _preview_status()
+    if not status["running"]:
+        return jsonify({"success": False, "error": preview_logs[-1] if preview_logs else "Échec du démarrage", **status})
+    return jsonify({"success": True, **status})
+
+
+@app.post("/api/preview/stop")
+def preview_stop():
+    server_manager.stop()
+    preview_logs.append("Serveur arrêté")
+    return jsonify({"success": True, **_preview_status()})
+
+
+# ======= Logs =======
+
+@app.get("/api/logs")
+def get_logs():
+    return jsonify({"logs": logger.get_logs()})
+
+
+@app.delete("/api/logs")
+def clear_logs():
+    logger.clear_logs()
+    return jsonify({"success": True})
+
+
+# ======= Démarrage =======
+
+def main(host="127.0.0.1", port=5050, open_browser=True):
+    """Point d'entrée principal"""
+    if config_manager.get_auto_pull():
+        logger.log("Pull automatique au démarrage...")
+        threading.Thread(target=git_manager.pull, args=(str(_repo_path()),), daemon=True).start()
+
+    url = f"http://{host}:{port}"
+    logger.log(f"MyCMS disponible sur {url}")
+    logger.log("Fermez cette fenêtre pour quitter MyCMS")
+    if open_browser:
+        threading.Timer(1.0, webbrowser.open, args=(url,)).start()
+    app.run(host=host, port=port, threaded=True)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="MyCMS - interface web")
+    parser.add_argument("--port", type=int, default=5050, help="port de l'interface (défaut : 5050)")
+    parser.add_argument("--no-browser", action="store_true", help="ne pas ouvrir le navigateur au démarrage")
+    args = parser.parse_args()
+    main(port=args.port, open_browser=not args.no_browser)

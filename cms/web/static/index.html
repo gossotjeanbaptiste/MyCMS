@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MyCMS</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="flex h-screen flex-col bg-bg text-sm text-fg">
+    <header class="flex items-center gap-6 border-b border-line bg-surface px-5 max-sm:flex-col max-sm:items-stretch max-sm:gap-0 max-sm:px-4 max-sm:pt-2">
+        <h1 class="text-base font-bold">MyCMS</h1>
+        <nav class="flex gap-1 overflow-x-auto" role="tablist">
+            <button class="tab active" data-tab="git">Git</button>
+            <button class="tab" data-tab="editor">Éditeur</button>
+            <button class="tab" data-tab="preview">Prévisualisation</button>
+            <button class="tab" data-tab="settings">Paramètres</button>
+            <button class="tab" data-tab="logs">Logs</button>
+        </nav>
+    </header>
+
+    <main class="min-h-0 flex-1">
+        <!-- ======= Éditeur ======= -->
+        <section id="tab-editor" class="panel overflow-hidden">
+            <div class="flex flex-wrap items-center gap-2">
+                <select id="file-select" class="input min-w-64 max-sm:min-w-0 max-sm:flex-1" aria-label="Fichier à éditer">
+                    <option value="">Choisir un fichier…</option>
+                </select>
+                <button id="refresh-files" class="btn">Actualiser</button>
+                <span class="flex-1"></span>
+                <span id="editor-info" class="text-muted"></span>
+                <button id="reload-file" class="btn" disabled>Recharger</button>
+                <button id="save-file" class="btn btn-primary" disabled>Sauvegarder</button>
+            </div>
+            <!-- Barre de mise en forme : hors de la zone qui défile, donc toujours visible -->
+            <div id="format-bar" class="flex flex-wrap items-center gap-1.5 rounded-lg border border-line bg-surface p-1.5" role="toolbar" aria-label="Mise en forme">
+                <button class="fmt font-extrabold" data-cmd="bold" title="Gras (Ctrl+B)" aria-label="Gras">G</button>
+                <button class="fmt font-serif italic" data-cmd="italic" title="Italique (Ctrl+I)" aria-label="Italique">I</button>
+                <span class="mx-1 h-6 w-px bg-line"></span>
+                <button class="fmt px-3" data-cmd="link" title="Ajouter ou modifier un lien">Lien</button>
+                <button class="fmt px-3" data-cmd="unlink" title="Retirer le lien">Retirer le lien</button>
+                <span class="mx-1 h-6 w-px bg-line"></span>
+                <button class="fmt px-3" data-cmd="removeFormat" title="Retirer gras, italique et liens de la sélection">Retirer la mise en forme</button>
+                <span id="format-hint" class="ml-2 text-xs text-muted">Cliquez dans un élément pour le modifier.</span>
+            </div>
+            <div id="editable-list" class="flex min-h-0 flex-1 flex-col gap-2 overflow-auto pb-4">
+                <p class="py-10 text-center text-muted">Sélectionnez un fichier pour afficher ses éléments éditables (class="editable").</p>
+            </div>
+        </section>
+
+        <!-- ======= Git ======= -->
+        <section id="tab-git" class="panel active">
+            <div class="card">
+                <label for="git-repo" class="card-title">Chemin du repository</label>
+                <div class="flex items-center gap-2">
+                    <input id="git-repo" type="text" class="input flex-1" spellcheck="false">
+                    <button id="git-verify" class="btn">Vérifier</button>
+                </div>
+            </div>
+            <div class="card">
+                <span class="card-title">Actions Git</span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="git-pull" class="btn">Pull (récupérer)</button>
+                    <button id="git-push" class="btn btn-primary">Push (envoyer)</button>
+                    <button id="git-status" class="btn">Statut</button>
+                    <button id="git-add" class="btn">Ajouter les fichiers non suivis</button>
+                </div>
+                <label for="commit-message" class="card-title">Message de commit</label>
+                <input id="commit-message" type="text" class="input" value="Mise à jour du contenu" placeholder="Exemple : Mise à jour des tarifs">
+            </div>
+            <div class="card min-h-40 flex-1">
+                <span class="card-title">Statut du repository</span>
+                <pre id="git-output" class="output"></pre>
+            </div>
+        </section>
+
+        <!-- ======= Prévisualisation ======= -->
+        <section id="tab-preview" class="panel">
+            <div class="card">
+                <label for="preview-port" class="card-title">Serveur local HTTP</label>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span id="preview-state" class="badge-off">Arrêté</span>
+                    <input id="preview-port" type="number" min="1" max="65535" class="input w-28">
+                    <button id="preview-toggle" class="btn btn-primary">Démarrer</button>
+                    <a id="preview-url" class="text-accent underline" target="_blank" rel="noopener"></a>
+                </div>
+                <p class="text-muted">Le serveur sert les fichiers du repository. Les modifications sauvegardées sont visibles en rafraîchissant la page.</p>
+            </div>
+            <div class="card min-h-40 flex-1">
+                <span class="card-title">Logs du serveur</span>
+                <pre id="preview-logs" class="output"></pre>
+            </div>
+        </section>
+
+        <!-- ======= Paramètres ======= -->
+        <section id="tab-settings" class="panel">
+            <div class="card">
+                <label for="set-repo" class="card-title">Chemin du repository par défaut</label>
+                <input id="set-repo" type="text" class="input" spellcheck="false">
+                <label for="set-port" class="card-title">Port de prévisualisation par défaut</label>
+                <input id="set-port" type="number" min="1" max="65535" class="input w-28">
+                <label class="mt-2 flex items-center gap-2"><input id="set-auto-pull" type="checkbox" class="accent-accent"> Pull automatique au démarrage</label>
+                <label class="flex items-center gap-2"><input id="set-auto-refresh" type="checkbox" class="accent-accent"> Rafraîchir automatiquement l'éditeur</label>
+                <label for="set-site-url" class="card-title">URL publique du site</label>
+                <input id="set-site-url" type="url" class="input" spellcheck="false" placeholder="Vide = détection automatique (robots.txt, sitemap, CNAME, GitHub Pages)">
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <button id="settings-save" class="btn btn-primary">Sauvegarder les paramètres</button>
+                    <button id="settings-reset" class="btn">Réinitialiser</button>
+                </div>
+            </div>
+            <div class="card">
+                <span class="card-title">Sitemap</span>
+                <p id="sitemap-info" class="text-muted"></p>
+                <p class="text-muted">Régénéré automatiquement à chaque sauvegarde. Les pages bloquées par le robots.txt ou marquées <code>noindex</code> sont exclues, et les réglages existants (priority, changefreq) sont conservés.</p>
+                <div class="flex flex-wrap gap-2">
+                    <button id="sitemap-generate" class="btn">Générer le sitemap</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======= Logs ======= -->
+        <section id="tab-logs" class="panel">
+            <div class="flex flex-wrap items-center gap-2">
+                <button id="logs-clear" class="btn">Effacer les logs</button>
+                <button id="logs-export" class="btn">Exporter les logs</button>
+            </div>
+            <pre id="logs-output" class="output"></pre>
+        </section>
+    </main>
+
+    <div id="toasts" class="fixed right-4 bottom-4 z-10 flex max-w-[min(420px,calc(100vw-32px))] flex-col gap-2" aria-live="polite"></div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

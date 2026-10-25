@@ -1,0 +1,14 @@
+{
+  "name": "mycms-web",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Interface web de MyCMS (compilation du CSS Tailwind)",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./static/style.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./static/style.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

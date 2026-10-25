@@ -19,7 +19,7 @@ if errorlevel 1 (
 echo OK - Python trouve
 
 REM Verifier si les dependances sont installees
-python -c "import customtkinter" >nul 2>&1
+python -c "import flask" >nul 2>&1
 if errorlevel 1 (
     echo Installation des dependances...
     .\dependecies.bat
@@ -35,7 +35,7 @@ echo.
 echo Lancement de l'application...
 echo.
 
-python cms/source/mycms.py
+python cms/web/server.py
 
 if errorlevel 1 (
     echo L'application s'est terminee avec une erreur

@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+@source "../static";
+
+/* Couleurs sémantiques, redéfinies en mode sombre */
+:root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef0f3;
+    --line: #d9dde3;
+    --fg: #1d2129;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --tag: #0e7490;
+    --ok: #15803d;
+    --err: #b91c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #16181d;
+        --surface: #1f2228;
+        --surface-2: #2a2e36;
+        --line: #363b45;
+        --fg: #e6e8eb;
+        --muted: #9aa1ad;
+        --accent: #3b82f6;
+        --tag: #22d3ee;
+        --ok: #4ade80;
+        --err: #f87171;
+    }
+}
+
+@theme inline {
+    --color-bg: var(--bg);
+    --color-surface: var(--surface);
+    --color-surface-2: var(--surface-2);
+    --color-line: var(--line);
+    --color-fg: var(--fg);
+    --color-muted: var(--muted);
+    --color-accent: var(--accent);
+    --color-tag: var(--tag);
+    --color-ok: var(--ok);
+    --color-err: var(--err);
+}
+
+/* Composants réutilisés dans index.html et générés par app.js */
+@layer components {
+    .tab {
+        @apply cursor-pointer border-b-2 border-transparent px-3.5 pt-3.5 pb-3 whitespace-nowrap text-muted hover:text-fg;
+    }
+    .tab.active {
+        @apply border-accent text-fg;
+    }
+
+    .panel {
+        @apply hidden h-full flex-col gap-4 overflow-auto px-5 py-4 max-sm:px-4 max-sm:py-3;
+    }
+    .panel.active {
+        @apply flex;
+    }
+
+    .card {
+        @apply flex flex-col gap-2 rounded-lg border border-line bg-surface p-4;
+    }
+    .card-title {
+        @apply font-semibold [&:not(:first-child)]:mt-2;
+    }
+
+    .btn {
+        @apply cursor-pointer rounded-md border border-line bg-surface-2 px-3.5 py-2 whitespace-nowrap text-fg hover:enabled:border-muted disabled:cursor-default disabled:opacity-50;
+    }
+    .btn-primary {
+        @apply border-accent bg-accent text-white;
+    }
+    .btn.busy {
+        @apply cursor-progress opacity-70;
+    }
+
+    .input {
+        @apply rounded-md border border-line bg-surface px-2.5 py-2 text-fg focus:outline-2 focus:-outline-offset-1 focus:outline-accent;
+    }
+
+    .output {
+        @apply m-0 min-h-30 flex-1 overflow-auto rounded-md bg-surface-2 p-3 font-mono text-[13px] whitespace-pre-wrap;
+    }
+
+    .badge-on {
+        @apply rounded-full bg-ok/15 px-2.5 py-1 text-xs font-semibold text-ok;
+    }
+    .badge-off {
+        @apply rounded-full bg-err/15 px-2.5 py-1 text-xs font-semibold text-err;
+    }
+
+    .field {
+        @apply grid grid-cols-[140px_1fr] gap-3 rounded-lg border border-line bg-surface px-3 py-2.5 max-sm:grid-cols-1 max-sm:gap-1.5;
+    }
+    .field.dirty {
+        @apply border-accent;
+    }
+
+    /* Barre de mise en forme */
+    .fmt {
+        @apply min-h-9 min-w-9 cursor-pointer rounded-md border border-line bg-surface-2 text-fg hover:enabled:border-muted disabled:cursor-default disabled:opacity-40;
+    }
+    .fmt[aria-pressed="true"] {
+        @apply border-accent bg-accent/15;
+    }
+
+    /* Éditeur de texte enrichi d'un élément */
+    .rich {
+        @apply min-h-10 rounded-md border border-line bg-surface px-2.5 py-2 text-[15px] leading-relaxed text-fg focus:outline-2 focus:-outline-offset-1 focus:outline-accent;
+        overflow-wrap: anywhere;
+    }
+    /* Pas de gras par défaut du navigateur (titres) : seulement <strong>/<b> et les règles du site */
+    .rich :is(h1, h2, h3, h4, h5, h6, th) { font-weight: inherit; font-size: inherit; margin: 0; }
+    .rich strong, .rich b { @apply font-bold; }
+    .rich em, .rich i { @apply italic; }
+    .rich a { @apply text-accent underline; }
+    .rich ul { @apply list-disc pl-6; }
+    .rich ol { @apply list-decimal pl-6; }
+    .rich img { @apply inline-block max-h-24 max-w-full; }
+
+    /* Élément éditable imbriqué : verrouillé dans son parent */
+    .lock {
+        @apply mx-0.5 inline-flex cursor-pointer items-center gap-1 rounded-md border border-line bg-surface-2 px-2 align-baseline font-semibold select-none;
+    }
+
+    .toast {
+        @apply rounded-md border border-l-4 border-line border-l-ok bg-surface px-3.5 py-2.5 whitespace-pre-wrap shadow-lg;
+    }
+    .toast.error {
+        @apply border-l-err;
+    }
+}

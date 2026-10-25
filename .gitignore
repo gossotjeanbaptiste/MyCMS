@@ -6,3 +6,10 @@ build/
 dist/
 *.tmp
 ~$mment_regler_les_soucis_du_CMS.docx
+# Interface web (Tailwind) - le CSS compilé cms/web/static/style.css reste versionné
+node_modules/
+npm-debug.log*
+
+# Environnements Python
+.venv/
+venv/

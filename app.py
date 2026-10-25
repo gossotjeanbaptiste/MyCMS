@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Lanceur Simple - Démarre l'application Rout'Art CMS
+Lanceur Simple - Démarre l'interface web de MyCMS
 """
 
 import subprocess
 import sys
 import os
 
-# Aller dans le dossier source
+# Aller dans le dossier du projet
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Lancer l'app
 try:
-    # Ajouter le dossier source au PATH
-    sys.path.insert(0, 'cms/source')
-
-    # Lancer l'application
-    subprocess.run([sys.executable, 'cms/source/mycms.py'])
+    subprocess.run([sys.executable, 'cms/web/server.py'])
 except Exception as e:
     print(f"Erreur: {e}")
     sys.exit(1)
