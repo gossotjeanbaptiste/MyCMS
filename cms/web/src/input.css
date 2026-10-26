@@ -150,11 +150,7 @@
         @apply font-bold text-accent;
     }
 
-    /* Occurrences de la recherche (CSS Custom Highlight API : le contenu éditable n'est pas modifié) */
-    ::highlight(mycms-search) {
-        background-color: var(--hl);
-        color: var(--fg);
-    }
+    /* Occurrences de la recherche : static/highlight.css (pas compris par l'optimiseur de Tailwind) */
 
     .toast {
         @apply rounded-md border border-l-4 border-line border-l-ok bg-surface px-3.5 py-2.5 whitespace-pre-wrap shadow-lg;
