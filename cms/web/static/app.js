@@ -299,6 +299,7 @@ async function openFile(name, { keepScroll = false } = {}) {
         p.textContent = data.notice || "Aucun élément éditable trouvé";
         $("editable-list").replaceChildren(p);
     }
+    applySearch();
     $("editable-list").scrollTop = scroll;
 
     const total = Math.round(performance.now() - start);
@@ -326,6 +327,7 @@ editableList.addEventListener("input", (e) => {
         toast("Un élément éditable imbriqué ne peut pas être supprimé ici : modifiez-le dans sa propre carte.", true);
     }
     markDirty(index);
+    applySearch({ refilter: false });
 });
 
 editableList.addEventListener("keydown", (e) => {
@@ -356,6 +358,144 @@ editableList.addEventListener("click", (e) => {
     }
     // Les liens de l'éditeur ne s'ouvrent pas au clic
     if (e.target.closest(".rich a")) e.preventDefault();
+});
+
+// ======= Recherche =======
+
+// Cartes qui correspondent à la recherche, et celle atteinte avec Entrée
+let searchMatches = [];
+let searchCurrent = -1;
+
+// Minuscules sans accents ("Équipe" trouve "equipe"), avec la position d'origine de chaque caractère
+function fold(text) {
+    let folded = "";
+    const offsets = [];
+    let i = 0;
+    for (const char of text) {
+        const f = char.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+        for (let k = 0; k < f.length; k++) offsets.push(i);
+        folded += f;
+        i += char.length;
+    }
+    offsets.push(i);
+    return { folded, offsets };
+}
+
+function searchQuery() {
+    return fold($("search").value.trim()).folded;
+}
+
+// Texte d'une carte : balise, id, index et contenu
+function cardText(field, card) {
+    return card.textContent + (field?.kind === "src" ? " " + field.el.value : "");
+}
+
+// Occurrences dans les nœuds texte d'un éditeur, même à cheval sur plusieurs balises (<b>, <a>…)
+function searchRanges(root, query) {
+    const pieces = [];
+    let folded = "";
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let node; (node = walker.nextNode());) {
+        const f = fold(node.data);
+        pieces.push({ node, start: folded.length, offsets: f.offsets });
+        folded += f.folded;
+    }
+    const locate = (pos, isEnd) => {
+        const piece = pieces.findLast((p) => (isEnd ? p.start < pos : p.start <= pos));
+        return [piece.node, piece.offsets[pos - piece.start]];
+    };
+    const ranges = [];
+    for (let pos = folded.indexOf(query); pos !== -1; pos = folded.indexOf(query, pos + query.length)) {
+        const range = new Range();
+        range.setStart(...locate(pos, false));
+        range.setEnd(...locate(pos + query.length, true));
+        ranges.push(range);
+    }
+    return ranges;
+}
+
+function updateSearchCount() {
+    const query = searchQuery();
+    $("search-count").textContent = !query || !currentFile ? ""
+        : !searchMatches.length ? "Aucun résultat"
+        : searchCurrent >= 0 ? `${searchCurrent + 1} / ${searchMatches.length}`
+        : `${searchMatches.length} élément${searchMatches.length > 1 ? "s" : ""}`;
+}
+
+// refilter = false pendant la saisie dans un éditeur : la carte en cours d'édition ne doit pas disparaître
+function applySearch({ refilter = true } = {}) {
+    const query = searchQuery();
+    const ranges = [];
+    if (refilter) {
+        searchMatches = [];
+        searchCurrent = -1;
+        document.querySelectorAll("#editable-list .field").forEach((card) => {
+            const index = Number(card.id.slice("field-".length));
+            const match = !query || fold(cardText(fields.get(index), card)).folded.includes(query);
+            card.classList.toggle("hidden", !match);
+            card.classList.remove("search-current");
+            if (match && query) searchMatches.push(card);
+        });
+        let empty = $("search-empty");
+        if (query && !searchMatches.length && fields.size) {
+            if (!empty) {
+                empty = document.createElement("p");
+                empty.id = "search-empty";
+                empty.className = "py-10 text-center text-muted";
+                editableList.append(empty);
+            }
+            empty.textContent = `Aucun élément ne contient « ${$("search").value.trim()} »`;
+        } else {
+            empty?.remove();
+        }
+    }
+    if (query && window.CSS?.highlights) {
+        searchMatches.forEach((card) => {
+            const editor = card.querySelector(".rich");
+            if (editor) ranges.push(...searchRanges(editor, query));
+        });
+    }
+    if (window.CSS?.highlights) {
+        if (ranges.length) CSS.highlights.set("mycms-search", new Highlight(...ranges));
+        else CSS.highlights.delete("mycms-search");
+    }
+    updateSearchCount();
+}
+
+// Entrée : résultat suivant, Maj+Entrée : précédent
+function goToMatch(step) {
+    if (!searchMatches.length) return;
+    searchMatches[searchCurrent]?.classList.remove("search-current");
+    searchCurrent = (searchCurrent + step + searchMatches.length) % searchMatches.length;
+    const card = searchMatches[searchCurrent];
+    card.classList.add("search-current");
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    updateSearchCount();
+}
+
+$("search").addEventListener("input", () => {
+    applySearch();
+    editableList.scrollTop = 0;
+});
+
+$("search").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        goToMatch(e.shiftKey ? -1 : 1);
+    } else if (e.key === "Escape" && e.currentTarget.value) {
+        e.preventDefault();
+        e.currentTarget.value = "";
+        applySearch();
+    }
+});
+
+// Ctrl+F dans l'onglet Éditeur : rechercher dans les éléments plutôt que dans la page
+document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f" && $("tab-editor").classList.contains("active")) {
+        e.preventDefault();
+        $("search").focus();
+        $("search").select();
+    }
 });
 
 // ======= Barre de mise en forme =======

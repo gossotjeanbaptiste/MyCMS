@@ -26,7 +26,10 @@
                     <option value="">Choisir un fichier…</option>
                 </select>
                 <button id="refresh-files" class="btn">Actualiser</button>
-                <span class="flex-1"></span>
+                <div class="flex min-w-48 flex-1 items-center gap-2 max-sm:basis-full" role="search">
+                    <input id="search" type="search" class="input w-full" placeholder="Rechercher dans le contenu (Ctrl+F)" aria-label="Rechercher dans les éléments" spellcheck="false" autocomplete="off">
+                    <span id="search-count" class="text-xs whitespace-nowrap text-muted" aria-live="polite"></span>
+                </div>
                 <span id="editor-info" class="text-muted"></span>
                 <button id="reload-file" class="btn" disabled>Recharger</button>
                 <button id="save-file" class="btn btn-primary" disabled>Sauvegarder</button>
