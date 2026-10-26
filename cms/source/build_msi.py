@@ -73,9 +73,10 @@ def compile_to_msi():
         print("Installez-le depuis https://dotnet.microsoft.com/download puis relancez")
         return False
 
-    if not compile_to_exe():
+    # L'exécutable n'est qu'une étape : compilé dans un dossier temporaire, seul le .msi va dans dist/
+    exe_path = compile_to_exe(INSTALLER_DIR / "obj" / "exe")
+    if not exe_path:
         return False
-    exe_path = PROJECT_ROOT / "dist" / "MyCMS.exe"
 
     try:
         git_dir = prepare_mingit()
@@ -99,7 +100,10 @@ def compile_to_msi():
         return False
 
     built = next((INSTALLER_DIR / "bin").rglob("MyCMS.msi"))
-    msi_path = PROJECT_ROOT / "dist" / f"MyCMS-{version}.msi"
+    dist_dir = PROJECT_ROOT / "dist"
+    shutil.rmtree(dist_dir, ignore_errors=True)  # Anciens .exe et .msi
+    dist_dir.mkdir()
+    msi_path = dist_dir / f"MyCMS-{version}.msi"
     shutil.copy2(built, msi_path)
     for folder in ("bin", "obj"):
         shutil.rmtree(INSTALLER_DIR / folder, ignore_errors=True)

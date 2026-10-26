@@ -55,8 +55,9 @@ def build_css(project_root):
         print(f"⚠️  Compilation du CSS impossible ({e}) : le CSS déjà compilé sera utilisé")
 
 
-def compile_to_exe():
-    """Compiler l'application en .exe"""
+def compile_to_exe(dist_dir=None):
+    """Compiler l'application en .exe, dans dist/ ou dans dist_dir (dossier temporaire de l'installeur).
+    Retourne le chemin de l'exécutable, ou False en cas d'erreur"""
     if not check_pyinstaller():
         return False
     build_css(Path(__file__).parent.parent.parent)
@@ -70,7 +71,8 @@ def compile_to_exe():
     try:
         # Nettoyer les anciens builds et dist à la racine du projet
         build_dir = project_root / "build"
-        dist_dir = project_root / "dist"
+        for_installer = dist_dir is not None
+        dist_dir = Path(dist_dir) if for_installer else project_root / "dist"
         if build_dir.exists():
             shutil.rmtree(build_dir)
             print("🗑️  Dossier build supprimé")
@@ -89,7 +91,8 @@ def compile_to_exe():
                 "-m",
                 "PyInstaller",
                 str(spec_file),
-                "--noconfirm"
+                "--noconfirm",
+                "--distpath", str(dist_dir),
             ])
         finally:
             os.chdir(original_cwd)
@@ -97,10 +100,11 @@ def compile_to_exe():
             shutil.rmtree(build_dir)
             print("🧹 Dossier build supprimé")
         exe_path = dist_dir / "MyCMS.exe"
-        print("\n✅ Compilation réussie!")
-        print(f"\n📦 L'exécutable se trouve dans: {exe_path}")
-        print("\n🎉 Vous pouvez maintenant distribuer ce fichier .exe!")
-        return True
+        print("\n✅ Compilation de l'exécutable réussie!")
+        if not for_installer:
+            print(f"\n📦 L'exécutable se trouve dans: {exe_path}")
+            print("\n🎉 Vous pouvez maintenant distribuer ce fichier .exe!")
+        return exe_path
     except subprocess.CalledProcessError as e:
         print(f"\n❌ Erreur lors de la compilation: {e}")
         return False

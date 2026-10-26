@@ -7,6 +7,8 @@
         <OutputName>MyCMS</OutputName>
         <InstallerPlatform>x64</InstallerPlatform>
         <Cultures>fr-FR</Cultures>
+        <!-- WIX1105 : validation ICE impossible sans droits administrateur (elle a lieu si le build est lancé en admin) -->
+        <SuppressSpecificWarnings>1105</SuppressSpecificWarnings>
         <DefineConstants>ProductVersion=$(ProductVersion);ExeFile=$(ExeFile);GitDir=$(GitDir);IconFile=$(IconFile)</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
