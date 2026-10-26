@@ -73,6 +73,16 @@
                     <button id="git-verify" class="btn">Vérifier</button>
                 </div>
             </div>
+            <!-- Affichée seulement si le dossier choisi n'est pas un repository Git (pas de .git) -->
+            <div id="clone-card" class="card hidden">
+                <label for="clone-url" class="card-title">Récupérer le site depuis GitHub</label>
+                <p class="text-muted">Le dossier choisi n'est pas un repository Git. Copiez le site depuis GitHub sur cet ordinateur : il deviendra le repository. GitHub peut demander de se connecter dans le navigateur.</p>
+                <input id="clone-url" type="text" class="input" spellcheck="false" placeholder="Adresse du repository, ex. https://github.com/compte/site.git">
+                <div class="flex flex-wrap items-center gap-2">
+                    <input id="clone-path" type="text" class="input min-w-64 flex-1 max-sm:min-w-0" spellcheck="false" placeholder="Dossier de destination (vide = dossier personnel)" aria-label="Dossier de destination">
+                    <button id="git-clone" class="btn btn-primary">Cloner</button>
+                </div>
+            </div>
             <div class="card">
                 <span class="card-title">Actions Git</span>
                 <div class="flex flex-wrap items-center gap-2">
@@ -84,9 +94,10 @@
                 <label for="commit-message" class="card-title">Message de commit</label>
                 <input id="commit-message" type="text" class="input" value="Mise à jour du contenu" placeholder="Exemple : Mise à jour des tarifs">
             </div>
-            <div class="card min-h-40 flex-1">
+            <div class="card">
                 <span class="card-title">Statut du repository</span>
-                <pre id="git-output" class="output"></pre>
+                <!-- Texte intégré à la carte : c'est l'onglet qui défile, pas une zone à part -->
+                <pre id="git-output" class="m-0 font-mono text-[13px] whitespace-pre-wrap [overflow-wrap:anywhere]"></pre>
             </div>
         </section>
 

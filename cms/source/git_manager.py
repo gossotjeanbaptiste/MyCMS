@@ -68,6 +68,23 @@ class GitManager:
         except:
             pass
 
+    def clone(self, url, repo_path):
+        """Récupérer un repository distant dans un nouveau dossier"""
+        try:
+            repo = Repo.clone_from(url, repo_path)
+            self._ensure_git_config(repo_path)
+            message = f"✓ Site récupéré\nDossier: {repo_path}\nBranche: {repo.active_branch.name}"
+            self.logger.log(f"Git clone réussi: {url} -> {repo_path}")
+            return {"success": True, "message": message}
+        except GitCommandError as e:
+            error_msg = f"✗ Erreur Git: {str(e)}"
+            self.logger.log(f"Erreur Git: {error_msg}")
+            return {"success": False, "message": error_msg}
+        except Exception as e:
+            error_msg = f"✗ Erreur: {str(e)}"
+            self.logger.log(f"Erreur: {error_msg}")
+            return {"success": False, "message": error_msg}
+
     def pull(self, repo_path):
         """Pull les dernières modifications"""
         try:

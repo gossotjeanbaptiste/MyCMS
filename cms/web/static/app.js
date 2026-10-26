@@ -14,7 +14,9 @@ async function api(method, url, body) {
     const response = await fetch(url, options);
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
-        throw new Error(data.error || data.message || data.output || `Erreur HTTP ${response.status}`);
+        const error = new Error(data.error || data.message || data.output || `Erreur HTTP ${response.status}`);
+        error.data = data;
+        throw error;
     }
     return data;
 }
@@ -783,12 +785,26 @@ function showGitOutput(text) {
     $("git-output").textContent = text;
 }
 
-async function refreshGitStatus() {
-    try {
-        showGitOutput((await api("GET", "/api/git/status")).output);
-    } catch (e) {
-        showGitOutput(e.message);
+// Dossier choisi sans .git : proposer de récupérer le site, dans ce dossier par défaut
+let clonePathPrefill = "";
+
+function showCloneCard(hasGit) {
+    $("clone-card").classList.toggle("hidden", hasGit);
+    const input = $("clone-path");
+    if (!hasGit && (!input.value || input.value === clonePathPrefill)) {
+        input.value = clonePathPrefill = config.repo_path || "";
     }
+}
+
+async function refreshGitStatus() {
+    let status;
+    try {
+        status = await api("GET", "/api/git/status");
+    } catch (e) {
+        status = { ...e.data, output: e.message };
+    }
+    showGitOutput(status.output);
+    showCloneCard(status.has_git !== false);
 }
 
 tabLoaders.git = refreshGitStatus;
@@ -801,6 +817,22 @@ $("git-verify").addEventListener("click", (e) => withButton(e.currentTarget, asy
     toast(result.message);
     await loadFiles();
     await refreshGitStatus();
+}));
+
+$("git-clone").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
+    const url = $("clone-url").value.trim();
+    if (!url) throw new Error("Veuillez entrer l'adresse du repository");
+    showGitOutput("Récupération du site en cours…");
+    try {
+        const result = await api("POST", "/api/git/clone", { url, path: $("clone-path").value.trim() });
+        toast(result.message);
+        $("clone-url").value = "";
+        $("clone-path").value = "";
+        await loadConfig();
+        await loadFiles();
+    } finally {
+        await refreshGitStatus();
+    }
 }));
 
 $("git-pull").addEventListener("click", (e) => withButton(e.currentTarget, async () => {

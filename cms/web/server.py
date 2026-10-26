@@ -160,6 +160,30 @@ def git_verify():
     return jsonify({"success": result["valid"], "message": result["message"]})
 
 
+@app.post("/api/git/clone")
+def git_clone():
+    """Récupérer le site depuis GitHub ; le dossier cloné devient le repository courant"""
+    data = request.get_json(force=True)
+    url = (data.get("url") or "").strip()
+    if not url:
+        return _error("Veuillez entrer l'adresse du repository")
+    destination = (data.get("path") or "").strip()
+    if destination:
+        path = Path(destination).expanduser()
+    else:
+        # Par défaut : dossier personnel / nom du repository
+        name = url.rstrip("/").rsplit("/", 1)[-1].rsplit(":", 1)[-1].removesuffix(".git")
+        path = Path.home() / (name or "site")
+    if path.exists() and (not path.is_dir() or any(path.iterdir())):
+        return _error(f"Le dossier existe déjà et n'est pas vide: {path}")
+
+    result = git_manager.clone(url, str(path))
+    if not result["success"]:
+        return _error(result["message"], 500)
+    config_manager.set_repo_path(str(path))
+    return jsonify({**result, "path": str(path)})
+
+
 @app.post("/api/git/pull")
 def git_pull():
     return jsonify(git_manager.pull(str(_repo_path())))
@@ -175,7 +199,8 @@ def git_push():
 
 @app.get("/api/git/status")
 def git_status():
-    return jsonify(git_manager.get_status(str(_repo_path())))
+    # has_git : le dossier choisi est un repository (sinon l'interface propose de récupérer le site)
+    return jsonify({**git_manager.get_status(str(_repo_path())), "has_git": (_repo_path() / ".git").exists()})
 
 
 @app.post("/api/git/add")
