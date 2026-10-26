@@ -835,6 +835,27 @@ $("git-clone").addEventListener("click", (e) => withButton(e.currentTarget, asyn
     }
 }));
 
+// Messages de commit préfaits : remplissent le champ, le message reste modifiable
+function updateCommitPresets() {
+    const message = $("commit-message").value.trim();
+    document.querySelectorAll("#commit-presets button").forEach((b) => {
+        b.setAttribute("aria-pressed", String(b.textContent === message));
+    });
+}
+
+document.querySelectorAll("#commit-presets button").forEach((button) => {
+    button.addEventListener("click", () => {
+        const input = $("commit-message");
+        input.value = button.textContent;
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+        updateCommitPresets();
+    });
+});
+
+$("commit-message").addEventListener("input", updateCommitPresets);
+updateCommitPresets();
+
 $("git-pull").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
     try {
         toast((await api("POST", "/api/git/pull")).message);
