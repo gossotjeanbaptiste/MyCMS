@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 import datetime
 
-from html_source import HybridSaver, editable_sources, set_attribute
+from html_source import HybridSaver, editable_sources, parse, set_attribute
 
 
 class HTMLManager:
@@ -134,6 +134,23 @@ class HTMLManager:
             return {"success": True, "content": new_content, "changed": changed}
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    def editable_snippet(self, content, index, context=10):
+        """Lignes de code source d'un élément éditable, avec quelques lignes autour"""
+        _, editables = parse(content)
+        if not 0 <= index < len(editables):
+            return None
+        node = editables[index]
+        lines = [line.rstrip("\r") for line in content.split("\n")]
+        first = content.count("\n", 0, node.start)
+        last = content.count("\n", 0, max(node.start, node.end - 1))
+        begin = max(0, first - context)
+        return {
+            "lines": lines[begin:last + context + 1],
+            "first_line": begin + 1,
+            "start_line": first + 1,
+            "end_line": last + 1,
+        }
 
     def extract_editable_sources(self, content):
         """Contenu source exact de chaque élément éditable et index de ses éléments éditables imbriqués"""

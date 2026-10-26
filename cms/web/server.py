@@ -270,6 +270,29 @@ def save_file(name):
     })
 
 
+@app.post("/api/snippet/<path:name>")
+def file_snippet(name):
+    """Code source d'un élément tel qu'il serait sauvegardé, sans écrire le fichier"""
+    file_path = _resolve_page(name)
+    if file_path is None:
+        return _error(f"Fichier introuvable: {name}", 404)
+
+    data = request.get_json(force=True)
+    content = _read_page(file_path)
+    if data.get("hash") != _hash(content):
+        return _error("Le fichier a été modifié depuis son chargement. Rechargez-le.", 409)
+
+    values = {int(k): v for k, v in data.get("values", {}).items()}
+    result = html_manager.apply_editable_html(content, values)
+    if not result["success"]:
+        return _error(f"Aperçu du code impossible: {result['error']}", 500)
+
+    snippet = html_manager.editable_snippet(result["content"], int(data.get("index", -1)))
+    if snippet is None:
+        return _error("Élément introuvable", 404)
+    return jsonify({"success": True, **snippet})
+
+
 # ======= Sitemap =======
 
 @app.get("/api/sitemap")
