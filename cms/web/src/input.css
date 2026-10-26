@@ -75,6 +75,9 @@
     .btn-primary {
         @apply border-accent bg-accent text-white;
     }
+    .btn[aria-pressed="true"] {
+        @apply border-accent bg-accent/15;
+    }
     .btn.busy {
         @apply cursor-progress opacity-70;
     }
@@ -130,6 +133,21 @@
     /* Élément éditable imbriqué : verrouillé dans son parent */
     .lock {
         @apply mx-0.5 inline-flex cursor-pointer items-center gap-1 rounded-md border border-line bg-surface-2 px-2 align-baseline font-semibold select-none;
+    }
+
+    /* Code source de l'élément dans l'aperçu */
+    .code-line {
+        @apply flex whitespace-pre;
+        tab-size: 4;
+    }
+    .code-line .ln {
+        @apply sticky left-0 w-14 shrink-0 bg-surface-2 pr-3 text-right text-muted select-none;
+    }
+    .code-line.hl {
+        @apply bg-accent/12;
+    }
+    .code-line.hl .ln {
+        @apply font-bold text-accent;
     }
 
     /* Occurrences de la recherche (CSS Custom Highlight API : le contenu éditable n'est pas modifié) */

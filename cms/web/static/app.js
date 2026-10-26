@@ -124,8 +124,8 @@ async function loadFiles() {
 }
 
 // Les pages peuvent être dans des sous-dossiers : encoder chaque segment, garder les "/"
-function fileUrl(name) {
-    return "/api/files/" + name.split("/").map(encodeURIComponent).join("/");
+function fileUrl(name, prefix = "/api/files/") {
+    return prefix + name.split("/").map(encodeURIComponent).join("/");
 }
 
 function dirtyCount() {
@@ -286,8 +286,10 @@ async function openFile(name, { keepScroll = false } = {}) {
         throw new Error("Le serveur MyCMS tourne sur une ancienne version : fermez la fenêtre de run.bat et relancez-le.");
     }
 
+    if (name !== currentFile) paneIndex = null;
     currentFile = name;
     currentHash = data.hash;
+    elementCount = data.elements.length;
     applySiteBoldRules(data.bold_selectors || []);
 
     if (data.elements.length) {
@@ -305,12 +307,23 @@ async function openFile(name, { keepScroll = false } = {}) {
     const total = Math.round(performance.now() - start);
     $("editor-info").textContent = `${data.elements.length} éléments · ${total} ms`;
     updateEditorState();
+    refreshPane();
 }
 
 function markDirty(index) {
     const field = fields.get(index);
     if (field) field.card.classList.toggle("dirty", fieldValue(field) !== field.initial);
     updateEditorState();
+    schedulePaneUpdate();
+}
+
+// Valeurs des éléments modifiés, par index
+function dirtyValues() {
+    const values = {};
+    fields.forEach((field, index) => {
+        if (field.card.classList.contains("dirty")) values[index] = fieldValue(field);
+    });
+    return values;
 }
 
 const editableList = $("editable-list");
@@ -498,6 +511,189 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+// ======= Aperçu en direct =======
+
+let elementCount = 0;
+let paneOpen = false;
+let paneMode = "page"; // "page" : page du site, "code" : code source de l'élément
+let paneIndex = null; // Dernier élément cliqué dans l'éditeur ou dans la page
+let paneTimer = null;
+let frameReady = false; // Le script d'aperçu de la page a répondu
+let frameOrigin = "";
+let frameKey = null; // Fichier et version chargés dans l'aperçu
+let frameScroll = 0;
+let frameInfo = "";
+let snippetRequest = 0;
+let snippetShown = null;
+
+function setPaneInfo(text) {
+    $("pane-info").textContent = text;
+    $("pane-info").title = text;
+}
+
+function paneMessage(text) {
+    const p = document.createElement("p");
+    p.className = "px-3 py-10 text-center font-sans text-sm text-muted";
+    p.textContent = text;
+    return p;
+}
+
+function postToFrame(message) {
+    if (frameReady) $("preview-frame").contentWindow.postMessage({ mycms: true, ...message }, frameOrigin);
+}
+
+// La page est servie par le serveur de prévisualisation (démarré si besoin), avec ?mycms-preview
+async function loadPreviewFrame() {
+    const sameFile = frameKey?.startsWith(`${currentFile}\n`);
+    frameReady = false;
+    frameKey = `${currentFile}\n${currentHash}`;
+    if (!sameFile) frameScroll = 0;
+    setPaneInfo(frameInfo = "Chargement…");
+
+    let status = await api("GET", "/api/preview");
+    if (!status.running) {
+        setPaneInfo("Démarrage du serveur de prévisualisation…");
+        status = await api("POST", "/api/preview/start", { port: Number($("preview-port").value) || config.default_port });
+    }
+    showPreview(status);
+    frameOrigin = `http://127.0.0.1:${status.port}`;
+    const path = currentFile.split("/").map(encodeURIComponent).join("/");
+    $("preview-frame").src = `${frameOrigin}/${path}?mycms-preview&mycms-y=${Math.round(frameScroll)}`;
+}
+
+async function refreshSnippet() {
+    const view = $("code-view");
+    if (paneIndex === null) {
+        snippetShown = null;
+        view.replaceChildren(paneMessage("Cliquez dans un élément pour afficher son code source."));
+        setPaneInfo("");
+        return;
+    }
+    const request = ++snippetRequest;
+    const index = paneIndex;
+    let data;
+    try {
+        data = await api("POST", fileUrl(currentFile, "/api/snippet/"), { hash: currentHash, values: dirtyValues(), index });
+    } catch (e) {
+        if (request === snippetRequest) view.replaceChildren(paneMessage(e.message));
+        return;
+    }
+    if (request !== snippetRequest) return; // Une réponse plus récente arrive
+
+    const fragment = document.createDocumentFragment();
+    data.lines.forEach((text, k) => {
+        const number = data.first_line + k;
+        const line = document.createElement("div");
+        line.className = number >= data.start_line && number <= data.end_line ? "code-line hl" : "code-line";
+        const ln = document.createElement("span");
+        ln.className = "ln";
+        ln.textContent = number;
+        const code = document.createElement("span");
+        code.className = "pr-3";
+        code.textContent = text || " ";
+        line.append(ln, code);
+        fragment.append(line);
+    });
+    view.replaceChildren(fragment);
+    if (snippetShown !== index) view.scrollTop = 0;
+    snippetShown = index;
+
+    const dirty = $(`field-${index}`)?.classList.contains("dirty");
+    const lines = data.start_line === data.end_line ? `ligne ${data.start_line}` : `lignes ${data.start_line} à ${data.end_line}`;
+    setPaneInfo(`[${index}] · ${lines}${dirty ? " · non sauvegardé" : ""}`);
+}
+
+function refreshPane() {
+    if (!paneOpen) return;
+    if (!currentFile) {
+        $("code-view").replaceChildren(paneMessage("Sélectionnez un fichier."));
+        setPaneInfo("Sélectionnez un fichier");
+        return;
+    }
+    if (paneMode === "code") {
+        refreshSnippet();
+    } else if (frameKey !== `${currentFile}\n${currentHash}`) {
+        loadPreviewFrame().catch((e) => {
+            frameKey = null;
+            setPaneInfo(frameInfo = e.message);
+            toast(e.message, true);
+        });
+    } else {
+        setPaneInfo(frameInfo);
+        postToFrame({ type: "values", values: dirtyValues() });
+    }
+}
+
+// Pendant la saisie : l'aperçu suit sans recharger la page
+function schedulePaneUpdate() {
+    if (!paneOpen) return;
+    clearTimeout(paneTimer);
+    paneTimer = setTimeout(refreshPane, paneMode === "page" ? 100 : 300);
+}
+
+function togglePane(open) {
+    paneOpen = open;
+    $("side-pane").classList.toggle("hidden", !open);
+    $("side-pane").classList.toggle("flex", open);
+    $("toggle-pane").setAttribute("aria-pressed", String(open));
+    try {
+        localStorage.setItem("mycms-pane", open ? paneMode : "");
+    } catch {}
+    refreshPane();
+}
+
+function setPaneMode(mode) {
+    paneMode = mode;
+    document.querySelectorAll("#side-pane [data-pane]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.pane === mode)));
+    $("preview-frame").classList.toggle("hidden", mode !== "page");
+    $("code-view").classList.toggle("hidden", mode !== "code");
+    togglePane(true);
+}
+
+$("toggle-pane").addEventListener("click", () => togglePane(!paneOpen));
+$("pane-close").addEventListener("click", () => togglePane(false));
+document.querySelectorAll("#side-pane [data-pane]").forEach((b) => b.addEventListener("click", () => setPaneMode(b.dataset.pane)));
+
+editableList.addEventListener("focusin", (e) => {
+    const card = e.target.closest(".field");
+    const index = card && Number(card.id.slice("field-".length));
+    if (!card || index === paneIndex) return;
+    paneIndex = index;
+    if (paneMode === "page") postToFrame({ type: "focus", index });
+    else if (paneOpen) refreshSnippet();
+});
+
+$("preview-frame").addEventListener("load", () => {
+    // Page chargée sans réponse du script (bloqué par la page, ou erreur 404) : affichage simple
+    if (frameKey && !frameReady) setPaneInfo(frameInfo = "Page affichée telle qu'enregistrée : aperçu en direct indisponible");
+});
+
+window.addEventListener("message", (e) => {
+    if (e.source !== $("preview-frame").contentWindow || !e.data?.mycms) return;
+    if (e.data.type === "ready") {
+        frameReady = true;
+        frameInfo = e.data.count === elementCount
+            ? "En direct · modifications non sauvegardées incluses"
+            : `Attention : ${e.data.count} éléments éditables dans la page, ${elementCount} dans l'éditeur`;
+        if (paneMode === "page") setPaneInfo(frameInfo);
+        postToFrame({ type: "values", values: dirtyValues() });
+    } else if (e.data.type === "scroll") {
+        frameScroll = e.data.y;
+    } else if (e.data.type === "select") {
+        // Clic dans la page : ouvrir l'élément dans l'éditeur
+        const field = fields.get(e.data.index);
+        const card = $(`field-${e.data.index}`);
+        if (!card) return;
+        if (card.classList.contains("hidden")) {
+            $("search").value = "";
+            applySearch();
+        }
+        paneIndex = e.data.index; // Pas de défilement en retour dans la page
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        field?.el.focus({ preventScroll: true });
+    }
+});
+
 // ======= Barre de mise en forme =======
 
 function selectionElement() {
@@ -570,12 +766,7 @@ $("reload-file").addEventListener("click", (e) => withButton(e.currentTarget, ()
 
 $("save-file").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
     // Seuls les éléments modifiés sont envoyés
-    const values = {};
-    fields.forEach((field, index) => {
-        if (field.card.classList.contains("dirty")) values[index] = fieldValue(field);
-    });
-
-    const result = await api("POST", fileUrl(currentFile), { hash: currentHash, values });
+    const result = await api("POST", fileUrl(currentFile), { hash: currentHash, values: dirtyValues() });
     document.querySelectorAll("#editable-list .field.dirty").forEach((f) => f.classList.remove("dirty"));
     toast(`${result.message}\n${result.sitemap}`);
     // Recharger depuis le fichier : l'éditeur affiche exactement ce qui a été écrit
@@ -721,6 +912,12 @@ $("logs-export").addEventListener("click", () => {
         await loadFiles();
         await refreshPreview();
         await refreshGitStatus();
+        // Aperçu laissé ouvert à la dernière visite
+        let pane = "";
+        try {
+            pane = localStorage.getItem("mycms-pane") || "";
+        } catch {}
+        if (pane === "page" || pane === "code") setPaneMode(pane);
     } catch (e) {
         toast(e.message, true);
     }

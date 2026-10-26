@@ -31,6 +31,7 @@
                     <span id="search-count" class="text-xs whitespace-nowrap text-muted" aria-live="polite"></span>
                 </div>
                 <span id="editor-info" class="text-muted"></span>
+                <button id="toggle-pane" class="btn" aria-pressed="false" title="Afficher la page et le code en direct">Aperçu</button>
                 <button id="reload-file" class="btn" disabled>Recharger</button>
                 <button id="save-file" class="btn btn-primary" disabled>Sauvegarder</button>
             </div>
@@ -45,8 +46,21 @@
                 <button class="fmt px-3" data-cmd="removeFormat" title="Retirer gras, italique et liens de la sélection">Retirer la mise en forme</button>
                 <span id="format-hint" class="ml-2 text-xs text-muted">Cliquez dans un élément pour le modifier.</span>
             </div>
-            <div id="editable-list" class="flex min-h-0 flex-1 flex-col gap-2 overflow-auto pb-4">
-                <p class="py-10 text-center text-muted">Sélectionnez un fichier pour afficher ses éléments éditables (class="editable").</p>
+            <div class="flex min-h-0 flex-1 gap-4 max-lg:flex-col">
+                <div id="editable-list" class="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-auto pb-4">
+                    <p class="py-10 text-center text-muted">Sélectionnez un fichier pour afficher ses éléments éditables (class="editable").</p>
+                </div>
+                <!-- Aperçu en direct : la page avec les modifications non sauvegardées, ou le code de l'élément -->
+                <aside id="side-pane" class="hidden min-h-0 min-w-0 flex-col gap-2 rounded-lg border border-line bg-surface p-2 lg:w-[45%] max-lg:h-[45%]" aria-label="Aperçu">
+                    <div class="flex items-center gap-1.5">
+                        <button class="fmt px-3" data-pane="page" aria-pressed="true">Page</button>
+                        <button class="fmt px-3" data-pane="code" aria-pressed="false">Code</button>
+                        <span id="pane-info" class="ml-1 min-w-0 flex-1 truncate text-xs text-muted"></span>
+                        <button id="pane-close" class="fmt" title="Fermer l'aperçu" aria-label="Fermer l'aperçu">✕</button>
+                    </div>
+                    <iframe id="preview-frame" class="min-h-0 flex-1 rounded-md border border-line bg-white" title="Aperçu de la page"></iframe>
+                    <div id="code-view" class="hidden min-h-0 flex-1 overflow-auto rounded-md bg-surface-2 py-2 font-mono text-[13px]"></div>
+                </aside>
             </div>
         </section>
 
