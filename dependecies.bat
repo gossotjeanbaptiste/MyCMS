@@ -1,1 +1,0 @@
-pip install -r cms/requirements.txt

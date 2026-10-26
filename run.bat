@@ -22,7 +22,7 @@ REM Verifier si les dependances sont installees
 python -c "import flask" >nul 2>&1
 if errorlevel 1 (
     echo Installation des dependances...
-    .\dependecies.bat
+    python -m pip install -r cms\requirements.txt
     if errorlevel 1 (
         echo Erreur lors de l'installation
         pause

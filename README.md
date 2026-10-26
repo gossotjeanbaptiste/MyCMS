@@ -32,7 +32,7 @@ pip install -r cms/requirements.txt
 python app.py
 ```
 
-Ou sous Windows : `run.bat` (installe les dépendances si besoin), et `compile.bat` pour générer un `.exe` avec PyInstaller.
+Ou sous Windows : `run.bat` (installe les dépendances si besoin). Pour générer seulement le `.exe` (sans le `.msi`) : `python cms/source/build_exe.py`.
 
 Plus de détails dans [cms/DOCUMENTATION.md](cms/DOCUMENTATION.md).
 
