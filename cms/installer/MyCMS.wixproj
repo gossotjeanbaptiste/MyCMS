@@ -1,0 +1,16 @@
+<!--
+    Installeur Windows (.msi) de MyCMS, compilé par cms/source/build_msi.py :
+    dotnet build MyCMS.wixproj -p:ProductVersion=... -p:ExeFile=... -p:GitDir=... -p:IconFile=...
+-->
+<Project Sdk="WixToolset.Sdk/5.0.2">
+    <PropertyGroup>
+        <OutputName>MyCMS</OutputName>
+        <InstallerPlatform>x64</InstallerPlatform>
+        <Cultures>fr-FR</Cultures>
+        <DefineConstants>ProductVersion=$(ProductVersion);ExeFile=$(ExeFile);GitDir=$(GitDir);IconFile=$(IconFile)</DefineConstants>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+        <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+    </ItemGroup>
+</Project>

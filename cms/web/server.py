@@ -6,6 +6,8 @@ Réutilise les gestionnaires de cms/source (Git, HTML, config, logs, sitemap)
 """
 
 import hashlib
+import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -19,10 +21,18 @@ from flask import Flask, jsonify, request, send_from_directory
 if getattr(sys, "frozen", False):
     # Exécutable PyInstaller : modules intégrés, interface extraite dans sys._MEIPASS
     STATIC_DIR = Path(sys._MEIPASS) / "static"
+    # Installé par le .msi : Git portable (MinGit) à côté de l'exécutable, si Git n'est pas sur le poste
+    bundled_git = Path(sys.executable).parent / "git" / "cmd"
+    if not shutil.which("git") and (bundled_git / "git.exe").exists():
+        os.environ["PATH"] = str(bundled_git) + os.pathsep + os.environ.get("PATH", "")
 else:
     SOURCE_DIR = Path(__file__).resolve().parent.parent / "source"
     STATIC_DIR = Path(__file__).resolve().parent / "static"
     sys.path.insert(0, str(SOURCE_DIR))
+
+# Sans Git, GitPython refuse de s'importer : l'application démarre quand même et l'indique dans les logs
+GIT_FOUND = shutil.which("git") is not None
+os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
 
 from config_manager import ConfigManager  # noqa: E402
 from css_weights import bold_info  # noqa: E402
@@ -395,6 +405,10 @@ def main(host="127.0.0.1", port=5050, open_browser=True):
     if config_manager.get_auto_pull():
         logger.log("Pull automatique au démarrage...")
         threading.Thread(target=git_manager.pull, args=(str(_repo_path()),), daemon=True).start()
+
+    if not GIT_FOUND:
+        logger.log("Attention: Git est introuvable, pull et push impossibles. "
+                   "Installez MyCMS avec le .msi (Git inclus) ou Git depuis https://git-scm.com")
 
     url = f"http://{host}:{port}"
     logger.log(f"MyCMS disponible sur {url}")

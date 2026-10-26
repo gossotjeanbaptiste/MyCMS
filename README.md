@@ -15,7 +15,15 @@ Petit CMS de bureau en Python pour mettre à jour le contenu de son site web sta
 
 Workflow type : **Pull → Éditer → Prévisualiser → Push**.
 
-## 🚀 Lancement
+## 📦 Installation (Windows)
+
+Lancer `MyCMS-<version>.msi` : il installe MyCMS dans `Program Files`, crée les raccourcis (menu Démarrer et bureau) et embarque Git (MinGit). Il n'y a rien d'autre à installer : ni Python, ni Git.
+
+Sur un nouveau poste, onglet **Git** → **Récupérer le site depuis GitHub** : coller l'adresse du repository puis **Cloner**. GitHub peut demander de se connecter dans le navigateur. Si Git est déjà installé sur le poste, c'est celui-là qui est utilisé.
+
+Pour générer l'installeur : `compile_msi.bat`. Il compile l'exécutable, télécharge MinGit (version fixée, vérifiée par SHA-256) puis construit le `.msi` dans `dist/`. Nécessite Python avec `cms/requirements.txt` et le [SDK .NET](https://dotnet.microsoft.com/download) (WiX est récupéré automatiquement). La version du `.msi` est celle de `cms/web/package.json` : l'augmenter pour chaque nouvelle version distribuée.
+
+## 🚀 Lancement depuis les sources
 
 ```bash
 pip install -r cms/requirements.txt

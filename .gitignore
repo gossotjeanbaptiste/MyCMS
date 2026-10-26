@@ -13,3 +13,8 @@ npm-debug.log*
 # Environnements Python
 .venv/
 venv/
+
+# Installeur .msi : MinGit téléchargé et sorties de WiX
+cms/installer/cache/
+cms/installer/bin/
+cms/installer/obj/

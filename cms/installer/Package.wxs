@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    MyCMS : l'exécutable (Python et dépendances inclus) et un Git portable (MinGit),
+    utilisé par l'application seulement si Git n'est pas installé sur le poste.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+    <!-- UpgradeCode fixe : une nouvelle version remplace l'ancienne -->
+    <Package Name="MyCMS"
+             Manufacturer="MyCMS"
+             Version="$(ProductVersion)"
+             UpgradeCode="{6B0E6C1F-3D2A-4E7B-9C51-8F4A2D7E0B93}"
+             Language="1036"
+             Scope="perMachine">
+        <MajorUpgrade AllowSameVersionUpgrades="yes"
+                      DowngradeErrorMessage="Une version plus récente de MyCMS est déjà installée." />
+        <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+        <Icon Id="MyCMSIcon" SourceFile="$(IconFile)" />
+        <Property Id="ARPPRODUCTICON" Value="MyCMSIcon" />
+
+        <StandardDirectory Id="ProgramFiles64Folder">
+            <Directory Id="INSTALLFOLDER" Name="MyCMS">
+                <Directory Id="GITFOLDER" Name="git" />
+            </Directory>
+        </StandardDirectory>
+
+        <Feature Id="Main" Title="MyCMS">
+            <Component Directory="INSTALLFOLDER">
+                <File Id="MyCMSExe" Source="$(ExeFile)" KeyPath="yes">
+                    <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="MyCMS"
+                              Description="Modifier le contenu du site" WorkingDirectory="INSTALLFOLDER"
+                              Icon="MyCMSIcon" Advertise="yes" />
+                    <Shortcut Id="DesktopShortcut" Directory="DesktopFolder" Name="MyCMS"
+                              Description="Modifier le contenu du site" WorkingDirectory="INSTALLFOLDER"
+                              Icon="MyCMSIcon" Advertise="yes" />
+                </File>
+            </Component>
+            <Files Directory="GITFOLDER" Include="$(GitDir)\**" />
+        </Feature>
+
+        <!-- Assistant : bienvenue, dossier d'installation, installation, puis « Lancer MyCMS » -->
+        <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Lancer MyCMS" />
+        <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+        <Property Id="WixShellExecTarget" Value="[#MyCMSExe]" />
+        <CustomAction Id="LaunchApplication" BinaryRef="Wix4UtilCA_X64" DllEntry="WixShellExec" Impersonate="yes" />
+        <UI>
+            <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+            <!-- Pas de page de licence -->
+            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2" />
+            <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2" />
+            <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication"
+                     Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed" />
+        </UI>
+    </Package>
+</Wix>
