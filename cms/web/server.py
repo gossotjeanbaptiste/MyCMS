@@ -323,9 +323,11 @@ def preview_start():
     if not _repo_path().exists():
         return _error("Le chemin du repository n'existe pas")
 
+    # Script injecté dans les pages ouvertes par l'aperçu en direct de l'éditeur
+    preview_script = (STATIC_DIR / "preview-helper.js").read_text(encoding="utf-8")
     thread = threading.Thread(
         target=server_manager.start,
-        args=(str(_repo_path()), port, preview_logs.append),
+        args=(str(_repo_path()), port, preview_logs.append, preview_script),
         daemon=True
     )
     thread.start()

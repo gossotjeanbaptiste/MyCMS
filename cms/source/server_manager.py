@@ -14,17 +14,42 @@ from urllib.parse import unquote
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """Handler HTTP personnalisé"""
 
-    def __init__(self, *args, directory=None, on_log=None, **kwargs):
+    def __init__(self, *args, directory=None, on_log=None, preview_script=None, **kwargs):
         self.on_log = on_log
+        self.preview_script = preview_script
         super().__init__(*args, directory=directory, **kwargs)
 
     def do_GET(self):
         """Traiter les requêtes GET"""
+        path, _, query = self.path.partition('?')
+        if self.preview_script and 'mycms-preview' in query.split('&'):
+            page = unquote(path)
+            if page in ('', '/'):
+                page = '/index.html'
+            if page.lower().endswith(('.html', '.htm')):
+                return self._send_preview(page)
         path = unquote(self.path)
         if path == '/' or path == '':
             path = '/index.html'
         self.path = path
         return super().do_GET()
+
+    def _send_preview(self, page):
+        """Page HTML avec le script d'aperçu en direct de l'éditeur web (?mycms-preview)"""
+        file_path = Path(self.translate_path(page))
+        if not file_path.is_file():
+            return self.send_error(404, "File not found")
+        content = file_path.read_text(encoding='utf-8', errors='replace')
+        script = f"<script>{self.preview_script}</script>"
+        position = content.lower().rfind('</body>')
+        content = content + script if position == -1 else content[:position] + script + content[position:]
+
+        body = content.encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def log_message(self, format, *args):
         """Logger les messages du serveur"""
@@ -58,8 +83,9 @@ class ServerManager:
         self.server = None
         self.running = False
 
-    def start(self, repo_path, port=8000, callback=None):
-        """Démarrer le serveur HTTP (bloquant jusqu'à stop())"""
+    def start(self, repo_path, port=8000, callback=None, preview_script=None):
+        """Démarrer le serveur HTTP (bloquant jusqu'à stop()).
+        preview_script : JavaScript injecté dans les pages demandées avec ?mycms-preview"""
         try:
             # Valider et corriger le port
             if not isinstance(port, int) or port < 1 or port > 65535:
@@ -77,7 +103,8 @@ class ServerManager:
                 self.logger.log(message)
                 return False
 
-            handler = partial(CustomHTTPRequestHandler, directory=str(repo_path), on_log=callback)
+            handler = partial(CustomHTTPRequestHandler, directory=str(repo_path), on_log=callback,
+                              preview_script=preview_script)
             self.server = PreviewHTTPServer(("127.0.0.1", port), handler)
             self.running = True
 
