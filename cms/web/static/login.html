@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MyCMS - Connexion</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="flex min-h-screen items-center justify-center bg-bg px-4 text-sm text-fg">
+    <!-- Premier lancement : création des identifiants ; ensuite : connexion -->
+    <form id="auth-form" class="card w-full max-w-sm" novalidate>
+        <h1 class="text-base font-bold">MyCMS</h1>
+        <p id="auth-intro" class="text-muted">Connectez-vous pour modifier le site.</p>
+
+        <label for="username" class="card-title">Identifiant</label>
+        <input id="username" type="text" class="input" autocomplete="username" spellcheck="false" required>
+
+        <label for="password" class="card-title">Mot de passe</label>
+        <input id="password" type="password" class="input" autocomplete="current-password" required>
+
+        <div id="confirm-row" class="hidden flex-col gap-2">
+            <label for="confirm" class="card-title">Confirmer le mot de passe</label>
+            <input id="confirm" type="password" class="input" autocomplete="new-password">
+        </div>
+
+        <p id="auth-error" class="hidden text-err" role="alert"></p>
+        <button id="auth-submit" type="submit" class="btn btn-primary mt-2">Se connecter</button>
+    </form>
+    <script src="/static/login.js"></script>
+</body>
+</html>

@@ -17,6 +17,7 @@ a = Analysis(
     # Interface web (HTML, JS, CSS Tailwind compilé) et icône
     datas=[('../web/static', 'static'), ('../icon', 'icon')],
     hiddenimports=[
+        'auth_manager',
         'config_manager',
         'css_weights',
         'git_manager',

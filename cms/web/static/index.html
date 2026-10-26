@@ -16,6 +16,10 @@
             <button class="tab" data-tab="settings">Paramètres</button>
             <button class="tab" data-tab="logs">Logs</button>
         </nav>
+        <div class="ml-auto flex items-center gap-3 max-sm:ml-0 max-sm:pb-2">
+            <span id="user-name" class="text-muted"></span>
+            <button id="logout" class="btn px-2.5 py-1 text-xs">Se déconnecter</button>
+        </div>
     </header>
 
     <main class="min-h-0 flex-1">
@@ -145,6 +149,15 @@
                 <div class="mt-3 flex flex-wrap gap-2">
                     <button id="settings-save" class="btn btn-primary">Sauvegarder les paramètres</button>
                     <button id="settings-reset" class="btn">Réinitialiser</button>
+                </div>
+            </div>
+            <div class="card">
+                <label for="pw-current" class="card-title">Changer le mot de passe</label>
+                <input id="pw-current" type="password" class="input max-w-md" autocomplete="current-password" placeholder="Mot de passe actuel">
+                <input id="pw-new" type="password" class="input max-w-md" autocomplete="new-password" placeholder="Nouveau mot de passe (8 caractères minimum)" aria-label="Nouveau mot de passe">
+                <input id="pw-confirm" type="password" class="input max-w-md" autocomplete="new-password" placeholder="Confirmer le nouveau mot de passe" aria-label="Confirmer le nouveau mot de passe">
+                <div class="mt-1 flex flex-wrap gap-2">
+                    <button id="pw-save" class="btn">Changer le mot de passe</button>
                 </div>
             </div>
             <div class="card">

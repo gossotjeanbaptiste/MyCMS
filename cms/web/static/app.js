@@ -12,6 +12,11 @@ async function api(method, url, body) {
         options.body = JSON.stringify(body);
     }
     const response = await fetch(url, options);
+    if (response.status === 401) {
+        // Session expirée ou fermée : retour à la page de connexion
+        location.replace("/login");
+        throw new Error("Session expirée : reconnectez-vous");
+    }
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
         const error = new Error(data.error || data.message || data.output || `Erreur HTTP ${response.status}`);
@@ -96,6 +101,16 @@ tabLoaders.settings = () => refreshSitemapInfo().catch((e) => toast(e.message, t
 $("sitemap-generate").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
     toast((await api("POST", "/api/sitemap")).message);
     await refreshSitemapInfo();
+}));
+
+$("pw-save").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
+    const result = await api("POST", "/api/auth/password", {
+        current: $("pw-current").value,
+        new: $("pw-new").value,
+        confirm: $("pw-confirm").value,
+    });
+    ["pw-current", "pw-new", "pw-confirm"].forEach((id) => { $(id).value = ""; });
+    toast(result.message);
 }));
 
 $("settings-reset").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
@@ -775,9 +790,11 @@ $("save-file").addEventListener("click", (e) => withButton(e.currentTarget, asyn
     await openFile(currentFile, { keepScroll: true });
 }).then(updateEditorState));
 
-window.addEventListener("beforeunload", (e) => {
+function warnUnsaved(e) {
     if (dirtyCount()) e.preventDefault();
-});
+}
+
+window.addEventListener("beforeunload", warnUnsaved);
 
 // ======= Git =======
 
@@ -957,10 +974,20 @@ $("logs-export").addEventListener("click", () => {
     URL.revokeObjectURL(link.href);
 });
 
+// ======= Session =======
+
+$("logout").addEventListener("click", async () => {
+    if (dirtyCount() && !confirm("Des modifications non sauvegardées seront perdues. Se déconnecter ?")) return;
+    await api("POST", "/api/auth/logout").catch(() => {});
+    window.removeEventListener("beforeunload", warnUnsaved);
+    location.replace("/login");
+});
+
 // ======= Démarrage =======
 
 (async () => {
     try {
+        $("user-name").textContent = (await api("GET", "/api/auth/state")).username || "";
         await loadConfig();
         await loadFiles();
         await refreshPreview();

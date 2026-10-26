@@ -16,7 +16,7 @@ import webbrowser
 from collections import deque
 from pathlib import Path
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, redirect, request, send_from_directory, session
 
 if getattr(sys, "frozen", False):
     # Exécutable PyInstaller : modules intégrés, interface extraite dans sys._MEIPASS
@@ -34,6 +34,7 @@ else:
 GIT_FOUND = shutil.which("git") is not None
 os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
 
+from auth_manager import AuthManager  # noqa: E402
 from config_manager import ConfigManager  # noqa: E402
 from css_weights import bold_info  # noqa: E402
 from git_manager import GitManager  # noqa: E402
@@ -46,7 +47,16 @@ from sitemap_generator import SitemapGenerator  # noqa: E402
 app = Flask(__name__, static_folder=None)
 
 config_manager = ConfigManager()
+auth_manager = AuthManager(config_manager.config_dir)
 logger = Logger()
+
+app.secret_key = auth_manager.secret_key()
+# Cookie de session : supprimé à la fermeture du navigateur, illisible par les scripts, jamais envoyé depuis un autre site
+app.config.update(
+    SESSION_COOKIE_NAME="mycms_session",
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Strict",
+)
 git_manager = GitManager(logger)
 html_manager = HTMLManager(logger)
 server_manager = ServerManager(logger)
@@ -106,6 +116,98 @@ def _read_page(file_path):
 
 def _hash(content):
     return hashlib.sha1(content.encode("utf-8")).hexdigest()
+
+
+# ======= Authentification =======
+
+# Accessibles sans être connecté : la page de connexion et ce dont elle a besoin
+PUBLIC_PATHS = {
+    "/login", "/static/login.js", "/static/style.css",
+    "/api/auth/state", "/api/auth/login", "/api/auth/setup",
+}
+
+
+def _logged_in():
+    return auth_manager.has_credentials() and session.get("auth") == auth_manager.session_id()
+
+
+def _open_session():
+    session.clear()
+    session["auth"] = auth_manager.session_id()
+
+
+@app.before_request
+def require_login():
+    if request.path in PUBLIC_PATHS or _logged_in():
+        return None
+    if request.path.startswith("/api/"):
+        return _error("Session expirée : reconnectez-vous", 401)
+    return redirect("/login")
+
+
+@app.get("/login")
+def login_page():
+    if _logged_in():
+        return redirect("/")
+    return send_from_directory(STATIC_DIR, "login.html")
+
+
+@app.get("/api/auth/state")
+def auth_state():
+    logged_in = _logged_in()
+    return jsonify({
+        "setup_needed": not auth_manager.has_credentials(),
+        "logged_in": logged_in,
+        "username": auth_manager.username() if logged_in else None,
+    })
+
+
+@app.post("/api/auth/setup")
+def auth_setup():
+    """Premier lancement : créer les identifiants"""
+    data = request.get_json(force=True)
+    password = str(data.get("password") or "")
+    if password != str(data.get("confirm") or ""):
+        return _error("Les deux mots de passe ne correspondent pas")
+    error = auth_manager.create(str(data.get("username") or ""), password)
+    if error:
+        return _error(error)
+    logger.log(f"Identifiants créés pour {auth_manager.username()}")
+    _open_session()
+    return jsonify({"success": True})
+
+
+@app.post("/api/auth/login")
+def auth_login():
+    data = request.get_json(force=True)
+    error = auth_manager.verify(str(data.get("username") or ""), str(data.get("password") or ""))
+    if error:
+        logger.log(f"Échec de connexion: {error}")
+        return _error(error, 401)
+    logger.log(f"Connexion de {auth_manager.username()}")
+    _open_session()
+    return jsonify({"success": True})
+
+
+@app.post("/api/auth/logout")
+def auth_logout():
+    session.clear()
+    return jsonify({"success": True})
+
+
+@app.post("/api/auth/password")
+def auth_password():
+    """Changer le mot de passe : les autres sessions ouvertes sont fermées"""
+    data = request.get_json(force=True)
+    new = str(data.get("new") or "")
+    if new != str(data.get("confirm") or ""):
+        return _error("Les deux nouveaux mots de passe ne correspondent pas")
+    error = auth_manager.change_password(str(data.get("current") or ""), new)
+    if error:
+        return _error(error)
+    logger.log("Mot de passe modifié")
+    _open_session()
+    return jsonify({"success": True, "message": "Mot de passe modifié"})
 
 
 # ======= Interface =======

@@ -21,6 +21,8 @@ Lancer `MyCMS-<version>.msi` : il installe MyCMS dans `Program Files`, crée les
 
 Sur un nouveau poste, onglet **Git** → **Récupérer le site depuis GitHub** : coller l'adresse du repository puis **Cloner**. GitHub peut demander de se connecter dans le navigateur. Si Git est déjà installé sur le poste, c'est celui-là qui est utilisé.
 
+Au premier lancement, MyCMS demande de créer un identifiant et un mot de passe (8 caractères minimum). Ils sont ensuite demandés à chaque ouverture de l'interface, et le mot de passe se change dans **Paramètres**. Le mot de passe n'est pas stocké, seulement son empreinte (scrypt), dans `%USERPROFILE%\.rout_art_cms\auth.json`. En cas d'oubli : fermer MyCMS, supprimer ce fichier, puis relancer pour recréer les identifiants.
+
 Pour générer l'installeur : `compile_msi.bat`. Il compile l'exécutable, télécharge MinGit (version fixée, vérifiée par SHA-256) puis construit le `.msi` dans `dist/`. Nécessite Python avec `cms/requirements.txt` et le [SDK .NET](https://dotnet.microsoft.com/download) (WiX est récupéré automatiquement). La version du `.msi` est celle de `cms/web/package.json` : l'augmenter pour chaque nouvelle version distribuée.
 
 ## 🚀 Lancement depuis les sources
