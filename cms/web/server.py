@@ -6,12 +6,15 @@ Réutilise les gestionnaires de cms/source (Git, HTML, config, logs, sitemap)
 """
 
 import hashlib
+import json
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import threading
 import time
+import urllib.request
 import webbrowser
 from collections import deque
 from pathlib import Path
@@ -64,6 +67,7 @@ sitemap_generator = SitemapGenerator(logger)
 
 preview_state = {"port": None, "thread": None}
 preview_logs = deque(maxlen=200)
+tray_icon = None  # Icône de la zone de notification (pystray)
 
 
 def _repo_path():
@@ -570,6 +574,16 @@ def quit_check():
     return jsonify({"success": True, "git": git, "preview_running": server_manager.is_running()})
 
 
+def _exit_process():
+    # Retirer l'icône de notification, sinon elle reste affichée jusqu'au survol de la souris
+    if tray_icon is not None:
+        try:
+            tray_icon.stop()
+        except Exception:
+            pass
+    os._exit(0)
+
+
 @app.post("/api/quit")
 def quit_app():
     """Arrêter MyCMS : prévisualisation, session, puis le processus une fois la réponse envoyée"""
@@ -578,14 +592,76 @@ def quit_app():
     session.clear()
     logger.log("MyCMS fermé depuis l'interface")
     # Le serveur de développement Flask n'a pas d'arrêt propre : sortie du processus juste après la réponse
-    threading.Timer(0.5, os._exit, args=(0,)).start()
+    threading.Timer(0.5, _exit_process).start()
     return jsonify({"success": True})
 
 
 # ======= Démarrage =======
 
-def main(host="127.0.0.1", port=5050, open_browser=True):
+def _show_error(message):
+    """Erreur visible même sans console (exécutable) : boîte de message Windows"""
+    logger.log(f"Erreur: {message}")
+    if os.name == "nt":
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(None, message, "MyCMS", 0x10)  # MB_ICONERROR
+        except Exception:
+            pass
+
+
+def _running_instance(url):
+    """MyCMS répond-il déjà à cette adresse ?"""
+    try:
+        with urllib.request.urlopen(f"{url}/api/auth/state", timeout=2) as response:
+            return "setup_needed" in json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return False
+
+
+def _port_free(host, port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        try:
+            probe.bind((host, port))
+            return True
+        except OSError:
+            return False
+
+
+def _start_tray(url):
+    """Icône dans la zone de notification : montre que MyCMS tourne, permet de l'ouvrir ou de le quitter"""
+    global tray_icon
+    try:
+        import pystray
+        from PIL import Image
+    except ImportError:
+        logger.log("Icône de notification indisponible : pystray n'est pas installé")
+        return False
+    base = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).resolve().parent.parent
+    menu = pystray.Menu(
+        pystray.MenuItem("Ouvrir MyCMS", lambda: webbrowser.open(url), default=True),
+        # Même fenêtre que le bouton Quitter de l'interface : ce qui n'est pas publié est proposé avant de fermer
+        pystray.MenuItem("Quitter MyCMS…", lambda: webbrowser.open(f"{url}/#quit")),
+    )
+    tray_icon = pystray.Icon("MyCMS", Image.open(base / "icon" / "logo.png"), "MyCMS", menu)
+    threading.Thread(target=tray_icon.run, daemon=True).start()
+    return True
+
+
+def main(host="127.0.0.1", port=5050, open_browser=True, tray=True):
     """Point d'entrée principal"""
+    url = f"http://{host}:{port}"
+
+    # Double-clic alors que MyCMS tourne déjà : ouvrir l'interface de l'instance en cours
+    if _running_instance(url):
+        logger.log("MyCMS est déjà lancé : ouverture de l'interface")
+        if open_browser:
+            webbrowser.open(url)
+        return
+    if not _port_free(host, port):
+        _show_error(f"Impossible de démarrer MyCMS : le port {port} est déjà utilisé par un autre programme.\n\n"
+                    "Fermez ce programme puis relancez MyCMS, ou lancez MyCMS avec un autre port (option --port).")
+        sys.exit(1)
+
     if config_manager.get_auto_pull():
         logger.log("Pull automatique au démarrage...")
         threading.Thread(target=git_manager.pull, args=(str(_repo_path()),), daemon=True).start()
@@ -594,12 +670,18 @@ def main(host="127.0.0.1", port=5050, open_browser=True):
         logger.log("Attention: Git est introuvable, pull et push impossibles. "
                    "Installez MyCMS avec le .msi (Git inclus) ou Git depuis https://git-scm.com")
 
-    url = f"http://{host}:{port}"
     logger.log(f"MyCMS disponible sur {url}")
-    logger.log("Fermez cette fenêtre pour quitter MyCMS")
+    if tray and _start_tray(url):
+        logger.log("Icône MyCMS dans la zone de notification : Ouvrir MyCMS / Quitter MyCMS")
+    else:
+        logger.log("Fermez cette fenêtre pour quitter MyCMS")
     if open_browser:
         threading.Timer(1.0, webbrowser.open, args=(url,)).start()
-    app.run(host=host, port=port, threaded=True)
+    try:
+        app.run(host=host, port=port, threaded=True)
+    except Exception as e:
+        _show_error(f"MyCMS s'est arrêté à cause d'une erreur :\n\n{e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
@@ -608,5 +690,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MyCMS - interface web")
     parser.add_argument("--port", type=int, default=5050, help="port de l'interface (défaut : 5050)")
     parser.add_argument("--no-browser", action="store_true", help="ne pas ouvrir le navigateur au démarrage")
+    parser.add_argument("--no-tray", action="store_true", help="pas d'icône dans la zone de notification")
     args = parser.parse_args()
-    main(port=args.port, open_browser=not args.no_browser)
+    main(port=args.port, open_browser=not args.no_browser, tray=not args.no_tray)

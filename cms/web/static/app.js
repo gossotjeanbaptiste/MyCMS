@@ -1374,7 +1374,10 @@ $("quit-dialog").addEventListener("cancel", (e) => { if (quitRunning) e.preventD
     try {
         $("user-name").textContent = (await api("GET", "/api/auth/state")).username || "";
         await loadConfig();
-        if (config.show_guide !== false) openGuide();
+        // Ouvert par « Quitter MyCMS… » de l'icône de notification : fenêtre Quitter plutôt que le guide
+        const quitRequested = location.hash === "#quit";
+        if (quitRequested) history.replaceState(null, "", "/");
+        else if (config.show_guide !== false) openGuide();
         await loadFiles();
         await refreshPreview();
         await refreshGitStatus();
@@ -1384,6 +1387,7 @@ $("quit-dialog").addEventListener("cancel", (e) => { if (quitRunning) e.preventD
             pane = localStorage.getItem("mycms-pane") || "";
         } catch {}
         if (pane === "page" || pane === "code") setPaneMode(pane);
+        if (quitRequested) await openQuitDialog();
     } catch (e) {
         toast(e.message, true);
     }

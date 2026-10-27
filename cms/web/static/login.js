@@ -31,7 +31,7 @@ $("auth-form").addEventListener("submit", async (e) => {
         } else {
             await post("/api/auth/login", body);
         }
-        location.replace("/");
+        location.replace("/" + location.hash);
     } catch (err) {
         showError(err.message);
         $("password").select();
@@ -43,7 +43,7 @@ $("auth-form").addEventListener("submit", async (e) => {
 (async () => {
     try {
         const state = await (await fetch("/api/auth/state")).json();
-        if (state.logged_in) return location.replace("/");
+        if (state.logged_in) return location.replace("/" + location.hash);
         setupNeeded = state.setup_needed;
     } catch {
         showError("Le serveur MyCMS ne répond pas");

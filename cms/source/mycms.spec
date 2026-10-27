@@ -30,6 +30,9 @@ a = Analysis(
         'git',
         'bs4',
         'flask',
+        'pystray',
+        'pystray._win32',
+        'PIL.Image',
         'xml.dom.minidom',
         'xml.etree.ElementTree',
     ],
@@ -60,8 +63,9 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    # Console gardée : c'est la fenêtre du serveur, la fermer quitte MyCMS
-    console=True,
+    # Pas de terminal : MyCMS se quitte par son bouton Quitter ou l'icône de la zone de notification,
+    # et les erreurs de démarrage s'affichent dans une boîte de message Windows
+    console=False,
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,
