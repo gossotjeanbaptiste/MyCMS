@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.0.2.
+- Branche de travail : `web_v2`. Version courante : 2.0.3.
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art`. Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dépôt ni pousser dessus pendant les tests.** Travailler sur une copie.
   - La copie hérite de l'URL GitHub réelle : avant tout test de publication, faire pointer son `origin` (fetch **et** push) vers un dépôt bare local.
@@ -30,8 +30,9 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
   - `sitemap_generator.py` : création du sitemap, déplacement à la racine, détection de l'URL du site.
   - `git_manager.py` : pull, push, clone. `pending()` liste ce qui n'est pas encore publié.
   - `server_manager.py` : serveur de prévisualisation (`ThreadingHTTPServer` sur 127.0.0.1).
-  - `config_manager.py` : configuration dans `~/.rout_art_cms/config.json`.
-  - `auth_manager.py` : identifiants dans `~/.rout_art_cms/auth.json`, empreinte scrypt.
+  - `data_dir.py` : dossier de données `~/.mycms` (caché ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), et verrouillage de fichiers.
+  - `config_manager.py` : configuration dans `~/.mycms/config.json`.
+  - `auth_manager.py` : identifiants dans `~/.mycms/auth.json`, empreinte scrypt. Le fichier est verrouillé contre la modification.
   - `logger.py` : journal de l'application.
   - `mycms.py` : ancienne interface CustomTkinter. Elle est conservée mais n'est plus compilée.
   - Compilation : `build_exe.py` et `mycms.spec` (PyInstaller) ; `build_msi.py` et `cms/installer/` (WiX, avec Git portable MinGit embarqué).
@@ -87,6 +88,24 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
 - **Icône dans la zone de notification** (`pystray` et Pillow) : « Ouvrir MyCMS » ouvre l'interface ; « Quitter MyCMS… » ouvre `/#quit`, c'est-à-dire la fenêtre Quitter de l'interface, avec les mêmes vérifications. Le `#quit` survit à la redirection vers `/login` (voir `login.js`). L'icône est retirée avant `os._exit`, sinon elle resterait affichée jusqu'au survol.
 - **Instance unique** : au démarrage, si MyCMS répond déjà sur le port, on ouvre simplement l'interface et on s'arrête.
 - **Erreurs visibles sans console** : `_show_error` affiche une boîte de message Windows (`MessageBoxW`), par exemple si le port est pris par un autre programme ou si le serveur s'arrête sur une erreur. Dans les tests, remplacer `server._show_error`, sinon la boîte bloque le test et s'affiche sur l'écran de l'utilisateur.
+
+## Fonctionnalités de la v2.0.3
+
+- **Reconnexion obligatoire après un relancement** : `BOOT_ID`, tiré au hasard à chaque démarrage du serveur et jamais enregistré, est exigé dans la session (`session["boot"]`). La clé secrète des cookies, enregistrée dans `auth.json`, ne change pas ; sans ce contrôle, un navigateur resté ouvert retrouvait sa session après un relancement.
+
+- **Bouton « Parcourir… »** à côté des champs de chemin (onglet Git, dossier de destination du clone, Paramètres) : ouvre la fenêtre « Choisir un dossier » de l'Explorateur Windows.
+  - Le navigateur ne donne jamais le chemin complet d'un dossier : c'est le serveur local qui ouvre la fenêtre, par `POST /api/browse-folder`.
+  - `folder_picker.py` appelle l'API Windows `IFileOpenDialog` via `ctypes` : pas de dépendance, et tkinter n'est pas embarqué. Un thread COM « STA » dédié est utilisé, et une seule fenêtre peut être ouverte à la fois (409 sinon).
+  - La fenêtre a pour propriétaire la fenêtre active au moment du clic (le navigateur), pour s'ouvrir au premier plan.
+  - Onglet Git : le dossier choisi est aussitôt utilisé, comme avec « Vérifier ».
+  - Tests : la vraie fenêtre s'ouvre. La trouver par son titre (`FindWindowW`), puis la valider (`WM_COMMAND` avec `IDOK`) ou l'annuler (`WM_CLOSE`), depuis un processus séparé lancé **sans bloquer** Node.
+
+- **Dossier de données `~/.mycms`** : remplace `~/.rout_art_cms`, renommé automatiquement (copié si le renommage échoue). Il reçoit l'attribut « caché » de Windows, puisque le point au début du nom ne cache rien sous Windows.
+- **`auth.json` verrouillé** : règle NTFS `icacls /deny *S-1-1-0:(WD,AD)` (SID de « Tout le monde », indépendant de la langue). Ailleurs : `chmod 400`.
+  - `AuthManager._save` lève le verrou, écrit, puis le remet. Le verrou est aussi posé au démarrage sur un fichier existant.
+  - La lecture et la suppression restent possibles : supprimer `auth.json` reste la procédure en cas de mot de passe oublié. Ne pas ajouter l'attribut « lecture seule » ni interdire la suppression.
+  - C'est une protection contre une modification à la main, pas contre le propriétaire du fichier, qui peut retirer la règle.
+  - `icacls` écrit dans l'encodage OEM de la console : ne pas décoder sa sortie en UTF-8.
 
 ## Tests
 
