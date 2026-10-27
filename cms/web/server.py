@@ -660,7 +660,7 @@ def _start_tray(url):
         # Même fenêtre que le bouton Quitter de l'interface : ce qui n'est pas publié est proposé avant de fermer
         pystray.MenuItem("Quitter MyCMS…", lambda: webbrowser.open(f"{url}/#quit")),
     )
-    tray_icon = pystray.Icon("MyCMS", Image.open(base / "icon" / "logo.png"), "MyCMS", menu)
+    tray_icon = pystray.Icon("MyCMS", Image.open(base / "icon" / "logo.ico"), "MyCMS", menu)
     threading.Thread(target=tray_icon.run, daemon=True).start()
     return True
 

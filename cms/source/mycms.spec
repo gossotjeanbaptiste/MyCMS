@@ -41,8 +41,16 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    # Ancienne interface CTk : pas embarquée dans la version web
-    excludes=['customtkinter', 'tkinter'],
+    # Modules inutiles à MyCMS, embarqués sinon parce qu'ils sont installés sur le poste de compilation
+    # (Pillow importe numpy s'il est présent ; seule l'icône de notification utilise Pillow)
+    excludes=[
+        'tkinter', 'customtkinter',
+        'numpy', 'psutil', 'yaml', 'setuptools', 'pkg_resources',
+        'unittest', 'pydoc', 'pydoc_data', '_pyrepl', 'doctest', 'lib2to3',
+        'PIL._avif', 'PIL._webp', 'PIL._imagingcms', 'PIL._imagingtk', 'PIL._imagingmath',
+        'PIL.ImageQt', 'PIL.ImageTk', 'PIL.ImageCms', 'PIL.ImageMath',
+        'PIL.AvifImagePlugin', 'PIL.WebPImagePlugin',
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
