@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.0.3.
+- Branche de travail : `web_v2`. Version courante : 2.0.4.
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art`. Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dépôt ni pousser dessus pendant les tests.** Travailler sur une copie.
   - La copie hérite de l'URL GitHub réelle : avant tout test de publication, faire pointer son `origin` (fetch **et** push) vers un dépôt bare local.
@@ -24,7 +24,7 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
 - `cms/web/src/input.css` : source Tailwind v4. Les composants sont dans `@layer components`.
 - `cms/source/` : le code métier.
   - `html_source.py` : arbre HTML avec les positions exactes dans le fichier, et `HybridSaver` pour la sauvegarde hybride.
-  - `html_manager.py` : extraction des éléments `.editable`, `apply_editable_html` (utilisé par le web), `apply_editable_texts` (ancienne app CTk), extraits de code.
+  - `html_manager.py` : extraction des éléments `.editable`, `apply_editable_html` (sauvegarde), extraits de code.
   - `css_weights.py` : détermine quels éléments sont en gras d'après le CSS du site (`<link>`, `@import`, variables CSS, spécificité, héritage).
   - `page_finder.py` : détection automatique des pages.
   - `sitemap_generator.py` : création du sitemap, déplacement à la racine, détection de l'URL du site.
@@ -34,13 +34,13 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
   - `config_manager.py` : configuration dans `~/.mycms/config.json`.
   - `auth_manager.py` : identifiants dans `~/.mycms/auth.json`, empreinte scrypt. Le fichier est verrouillé contre la modification.
   - `logger.py` : journal de l'application.
-  - `mycms.py` : ancienne interface CustomTkinter. Elle est conservée mais n'est plus compilée.
   - Compilation : `build_exe.py` et `mycms.spec` (PyInstaller) ; `build_msi.py` et `cms/installer/` (WiX, avec Git portable MinGit embarqué).
-- `app.py` et `run.bat` : lancement depuis les sources, sur le port 5050.
+- `run.bat` : lancement depuis les sources (`cms/web/server.py`), sur le port 5050.
 
 ## Commandes
 
-- Lancer : `python app.py`, ou `python cms/web/server.py --port 5060 --no-browser --no-tray`.
+- Lancer : `python cms/web/server.py`, ou `python cms/web/server.py --port 5060 --no-browser --no-tray`.
+- Dépendances : `cms/requirements.txt` pour l'exécution, `cms/requirements-build.txt` (ajoute PyInstaller) pour compiler.
 - CSS, après toute modification de `input.css` ou ajout de classes Tailwind dans le HTML ou le JS : `cd cms/web && npm run build:css`. `style.css` est versionné, pour que l'application tourne sans Node.
 - Exécutable : `python cms/source/build_exe.py`, qui produit `dist/MyCMS.exe`.
 - Installeur : `compile_msi.bat`, qui produit `dist/MyCMS-<version>.msi`. Nécessite le SDK .NET.
@@ -106,6 +106,14 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
   - La lecture et la suppression restent possibles : supprimer `auth.json` reste la procédure en cas de mot de passe oublié. Ne pas ajouter l'attribut « lecture seule » ni interdire la suppression.
   - C'est une protection contre une modification à la main, pas contre le propriétaire du fichier, qui peut retirer la règle.
   - `icacls` écrit dans l'encodage OEM de la console : ne pas décoder sa sortie en UTF-8.
+
+## Optimisations de la v2.0.4
+
+- **Exe allégé** : `mycms.spec` exclut ce que PyInstaller embarquerait parce que c'est installé sur le poste de compilation (`numpy`, que Pillow importe s'il est présent ; `psutil`, `yaml`, `setuptools`, `unittest`, `pydoc`…) et les extensions de Pillow inutiles (`_avif`, `_webp`, `_imagingcms`…). Seul le format de l'icône (`.ico`) sert à Pillow. Après un ajout de dépendance, vérifier que l'exe démarre bien, car une exclusion de trop ne se voit qu'à l'exécution.
+- **MinGit** reste complet : il contient Git Credential Manager (connexion à GitHub dans le navigateur).
+- **Supprimés** : l'ancienne interface CustomTkinter (`mycms.py`) et ses anciennes docs, `app.py` (doublon de `run.bat`), `logo.png` (l'icône de notification utilise `logo.ico`), la classe `GitManager` en double et les méthodes jamais appelées. `config_manager` ignore les clés obsolètes d'une ancienne configuration (`theme`, `window_width`, `window_height`, `auto_refresh`).
+- **Croix de l'aperçu de l'éditeur** : ferme l'aperçu **et** arrête le serveur de prévisualisation (`POST /api/preview/stop`). Il redémarre tout seul quand on rouvre l'aperçu. Le bouton « Aperçu » se contente de masquer ou d'afficher le panneau.
+- **Réglage « Rafraîchir automatiquement l'éditeur » supprimé** (`auto_refresh`) : il était enregistré mais n'avait jamais d'effet, déjà dans la version CTk. La page ouverte se recharge de toute façon après un pull ou un push.
 
 ## Tests
 
