@@ -14,6 +14,7 @@
     --tag: #0e7490;
     --ok: #15803d;
     --err: #b91c1c;
+    --warn: #c2410c;
     --hl: #fde047;
 }
 
@@ -29,6 +30,7 @@
         --tag: #22d3ee;
         --ok: #4ade80;
         --err: #f87171;
+        --warn: #fb923c;
         --hl: #854d0e;
     }
 }
@@ -44,10 +46,46 @@
     --color-tag: var(--tag);
     --color-ok: var(--ok);
     --color-err: var(--err);
+    --color-warn: var(--warn);
 }
 
 /* Composants réutilisés dans index.html et générés par app.js */
 @layer components {
+    /* Boîtes de dialogue (<dialog> natif ouvert avec showModal) */
+    .modal {
+        @apply m-auto max-h-[min(88vh,900px)] w-[min(700px,calc(100vw-32px))] flex-col overflow-hidden rounded-xl border border-line bg-surface p-0 text-fg shadow-2xl backdrop:bg-black/55;
+    }
+    .modal[open] {
+        @apply flex;
+    }
+    .modal-body {
+        @apply flex min-h-0 flex-col gap-3 overflow-auto px-6 pt-5 pb-4 leading-relaxed;
+    }
+    .modal-footer {
+        @apply flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2 px-6 py-3;
+    }
+    .quit-item {
+        @apply flex flex-col gap-2 rounded-lg border border-line px-4 py-3;
+    }
+    /* Choix de la fenêtre Quitter : toute la carte est cliquable */
+    .quit-choice {
+        @apply flex cursor-pointer items-start gap-3 rounded-lg border border-line px-4 py-3 hover:border-muted has-checked:border-accent has-checked:bg-accent/8;
+    }
+    .quit-choice.danger {
+        @apply has-checked:border-err has-checked:bg-err/8;
+    }
+
+    /* Marqueurs « pas encore publié sur GitHub » : badge + carte teintée */
+    .pub-badge {
+        @apply mt-1 inline-flex h-5 min-w-5 items-center justify-center rounded px-1 font-mono text-xs font-bold text-bg;
+    }
+    .pub-badge-add, .pub-add .pub-badge { @apply bg-ok; }
+    .pub-badge-del, .pub-del .pub-badge { @apply bg-err; }
+    .pub-badge-mod, .pub-mod .pub-badge { @apply bg-warn; }
+    .field.pub-add { @apply border-l-4 border-l-ok bg-ok/6; }
+    .field.pub-del { @apply border-l-4 border-l-err bg-err/6; }
+    .field.pub-mod { @apply border-l-4 border-l-warn bg-warn/6; }
+
     .tab {
         @apply cursor-pointer border-b-2 border-transparent px-3.5 pt-3.5 pb-3 whitespace-nowrap text-muted hover:text-fg;
     }
@@ -74,6 +112,10 @@
     }
     .btn-primary {
         @apply border-accent bg-accent text-white;
+    }
+    /* Action qui fait perdre des modifications : texte sombre sur fond rouge, lisible dans les deux thèmes */
+    .btn-danger {
+        @apply border-err bg-err text-bg;
     }
     .btn[aria-pressed="true"] {
         @apply border-accent bg-accent/15;

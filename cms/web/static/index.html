@@ -17,9 +17,11 @@
             <button class="tab" data-tab="settings">Paramètres</button>
             <button class="tab" data-tab="logs">Logs</button>
         </nav>
-        <div class="ml-auto flex items-center gap-3 max-sm:ml-0 max-sm:pb-2">
-            <span id="user-name" class="text-muted"></span>
+        <div class="ml-auto flex flex-wrap items-center gap-2 max-sm:ml-0 max-sm:pb-2">
+            <button id="open-guide" class="btn px-2.5 py-1 text-xs" title="Comment utiliser MyCMS">Guide</button>
+            <span id="user-name" class="ml-1 text-muted"></span>
             <button id="logout" class="btn px-2.5 py-1 text-xs">Se déconnecter</button>
+            <button id="quit" class="btn btn-primary px-2.5 py-1 text-xs" title="Vérifier qu'il ne reste rien à faire, puis fermer MyCMS">Quitter</button>
         </div>
     </header>
 
@@ -50,6 +52,13 @@
                 <span class="mx-1 h-6 w-px bg-line"></span>
                 <button class="fmt px-3" data-cmd="removeFormat" title="Retirer gras, italique et liens de la sélection">Retirer la mise en forme</button>
                 <span id="format-hint" class="ml-2 text-xs text-muted">Cliquez dans un élément pour le modifier.</span>
+                <!-- Légende des marqueurs, affichée tant qu'un élément diffère de la version envoyée sur GitHub -->
+                <span id="pub-legend" class="ml-auto hidden items-center gap-1.5 text-xs text-muted [&:not(.hidden)]:flex">
+                    Pas encore publié sur GitHub :
+                    <span class="pub-badge pub-badge-add">+</span> ajout
+                    <span class="pub-badge pub-badge-del">−</span> retrait
+                    <span class="pub-badge pub-badge-mod">~</span> modification
+                </span>
             </div>
             <div class="flex min-h-0 flex-1 gap-4 max-lg:flex-col">
                 <div id="editable-list" class="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-auto pb-4">
@@ -181,7 +190,68 @@
         </section>
     </main>
 
-    <div id="toasts" class="fixed right-4 bottom-4 z-10 flex max-w-[min(420px,calc(100vw-32px))] flex-col gap-2" aria-live="polite"></div>
+    <!-- ======= Guide d'utilisation : au premier lancement, puis via le bouton Guide ======= -->
+    <dialog id="guide-dialog" class="modal" aria-labelledby="guide-title">
+        <div class="modal-body">
+            <h2 id="guide-title" class="text-lg font-bold">Bien utiliser MyCMS</h2>
+            <p>MyCMS sert à modifier les textes de votre site sans toucher au code. Vos modifications restent sur cet ordinateur jusqu'à ce que vous les publiiez : <strong>le site en ligne ne change qu'au moment de la publication</strong>.</p>
+
+            <h3 class="mt-2 font-semibold">À chaque fois, dans cet ordre</h3>
+            <ol class="flex list-decimal flex-col gap-2 pl-5">
+                <li><strong>Récupérer</strong> : onglet <em>Git</em>, bouton <em>Pull</em>. Vous partez ainsi de la dernière version du site, même si quelqu'un d'autre l'a modifiée entre-temps.</li>
+                <li><strong>Modifier</strong> : onglet <em>Éditeur</em>. Choisissez une page, cliquez dans un texte et modifiez-le. La barre du haut met en gras, en italique ou ajoute un lien. Terminez par <em>Sauvegarder</em>.</li>
+                <li><strong>Vérifier</strong> : bouton <em>Aperçu</em> de l'éditeur. La page s'affiche avec vos modifications, avant même de sauvegarder.</li>
+                <li><strong>Publier</strong> : onglet <em>Git</em>. Choisissez un message qui décrit la modification (ou un message préfait), puis <em>Push</em>. Le site en ligne est mis à jour quelques minutes plus tard.</li>
+                <li><strong>Quitter</strong> : bouton <em>Quitter</em> en haut à droite. MyCMS montre ce qui n'est pas encore publié et propose trois choix :
+                    <em>Revenir à l'état de base</em> (annule tout depuis le dernier commit, même ce qui est sauvegardé),
+                    <em>Sauvegarder et quitter</em> (pour reprendre plus tard, sans rien publier) ou
+                    <em>Publier sur le site et quitter</em> (envoie les modifications sur GitHub : le site en ligne est mis à jour).</li>
+            </ol>
+
+            <h3 class="mt-2 font-semibold">Bon à savoir</h3>
+            <ul class="flex list-disc flex-col gap-1.5 pl-5">
+                <li><strong>Sauvegarder n'est pas publier</strong> : une modification sauvegardée n'apparaît en ligne qu'après le <em>Push</em>.</li>
+                <li>Tant qu'un changement n'est pas publié sur GitHub, sa fiche porte un marqueur :<br>
+                    <span class="pub-badge pub-badge-add">+</span> plus de contenu qu'en ligne,<br>
+                    <span class="pub-badge pub-badge-del">−</span> moins de contenu,<br>
+                    <span class="pub-badge pub-badge-mod">~</span> autant de contenu, mais modifié.<br></li>
+                <li><strong>Seuls les éléments qui ont la classe <code class="rounded bg-surface-2 px-1 font-mono text-[13px]">class="editable"</code> dans le code HTML sont modifiables</strong> avec MyCMS. C'est volontaire : le contenu qui n'est pas prévu pour être modifié (mise en page, menus, images, style du site…) ne peut pas l'être par erreur. Pour rendre un nouveau texte modifiable, il faut ajouter cette classe dans le HTML de la page. Ainsi, il est donc d'usage de faire appel à un développeur pour ajouter cette classe.</li>
+                <li>Un texte avec un cadenas est un texte modifiable placé dans un autre : cliquez dessus pour aller à sa propre fiche.</li>
+                <li>Un texte collé arrive sans mise en forme : remettez le gras ou les liens avec la barre d'outils.</li>
+                <li>Certains textes sont en gras à cause du style du site : MyCMS ne permet pas d'en retirer le gras. Plus particulièrement, les textes qui balisées par les balises suivante <code class="rounded bg-surface-2 px-1 font-mono text-[13px]">&lt;strong&gt;</code> ou <code class="rounded bg-surface-2 px-1 font-mono text-[13px]">&lt;b&gt;</code> et <code class="rounded bg-surface-2 px-1 font-mono text-[13px]">&lt;h1&gt;</code> à <code class="rounded bg-surface-2 px-1 font-mono text-[13px]">&lt;h6&gt;</code> sont considérés comme étant en gras.</li>
+                <li>Le plan du site pour les moteurs de recherche (sitemap) se met à jour tout seul à chaque sauvegarde.</li>
+            </ul>
+        </div>
+        <footer class="modal-footer">
+            <label class="mr-auto flex items-center gap-2 text-muted"><input id="guide-at-startup" type="checkbox" class="accent-accent"> Afficher ce guide au démarrage</label>
+            <button id="guide-close" class="btn btn-primary">C'est compris</button>
+        </footer>
+    </dialog>
+
+    <!-- ======= Quitter : ce qui reste à faire, puis fermeture ======= -->
+    <dialog id="quit-dialog" class="modal" aria-labelledby="quit-title">
+        <div class="modal-body">
+            <h2 id="quit-title" class="text-lg font-bold">Quitter MyCMS</h2>
+            <div id="quit-content" class="flex flex-col gap-3" aria-live="polite"></div>
+            <p id="quit-error" class="hidden rounded-md border border-err/40 bg-err/10 px-3 py-2 text-err" role="alert"></p>
+        </div>
+        <footer class="modal-footer">
+            <span id="quit-progress" class="mr-auto text-muted" aria-live="polite"></span>
+            <button id="quit-cancel" class="btn">Annuler</button>
+            <button id="quit-confirm" class="btn btn-primary">Quitter</button>
+        </footer>
+    </dialog>
+
+    <!-- Affiché une fois MyCMS arrêté -->
+    <div id="closed-screen" class="fixed inset-0 z-20 hidden items-center justify-center bg-bg px-4">
+        <div class="card max-w-md text-center">
+            <h2 class="text-lg font-bold">MyCMS est fermé</h2>
+            <p id="closed-summary" class="text-muted"></p>
+            <p>Vous pouvez fermer cet onglet.</p>
+        </div>
+    </div>
+
+    <div id="toasts" class="fixed right-4 bottom-4 z-30 flex max-w-[min(420px,calc(100vw-32px))] flex-col gap-2" aria-live="polite"></div>
     <script src="/static/app.js"></script>
 </body>
 </html>

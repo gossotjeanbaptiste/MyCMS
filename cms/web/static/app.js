@@ -253,7 +253,10 @@ function renderElements(elements) {
         const id = document.createElement("div");
         id.className = "text-muted";
         id.textContent = elem.id ? `#${elem.id} [${elem.index}]` : `[${elem.index}]`;
-        meta.append(tag, id);
+        // Différence avec la version envoyée sur GitHub : +, − ou ~ (voir updateMarker)
+        const badge = document.createElement("span");
+        badge.className = "pub-badge hidden";
+        meta.append(tag, id, badge);
         if (elem.index in parentOf) {
             const inside = document.createElement("div");
             inside.className = "mt-1.5 text-muted";
@@ -287,6 +290,77 @@ function renderElements(elements) {
     }
     $("editable-list").replaceChildren(fragment);
     fields.forEach((field) => { field.initial = fieldValue(field); });
+    elements.forEach((elem) => setPublished(fields.get(elem.index), elem));
+    updateAllMarkers();
+}
+
+// ======= Marqueurs « pas encore publié » =======
+// Chaque élément est comparé à sa version envoyée sur GitHub : + plus de contenu, − moins, ~ autant.
+// Ils restent affichés jusqu'au push (modifications non sauvegardées comprises).
+
+let publishedKnown = false; // Version publiée connue (repository avec une branche distante)
+
+function textLength(text) {
+    return text.replace(/\s+/g, " ").trim().length;
+}
+
+// Version publiée mise dans la même forme que fieldValue() : même passage par l'éditeur
+function setPublished(field, elem) {
+    if (!field) return;
+    field.published = undefined;
+    if (!publishedKnown) return;
+    if (field.kind === "src") {
+        field.published = elem.published_value == null ? null : { value: elem.published_value, length: elem.published_value.length };
+        return;
+    }
+    if (elem.published_html == null) {
+        field.published = null; // Élément absent de la version publiée
+        return;
+    }
+    const built = buildRichEditor({ ...elem, html: elem.published_html });
+    field.published = built
+        ? { value: serializeRich(built.editor), length: textLength(built.editor.textContent) }
+        : { value: null, length: textLength(elem.published_value || "") };
+}
+
+function publishMarker(field) {
+    if (!publishedKnown || field.published === undefined) return "";
+    const current = fieldValue(field);
+    if (field.published === null) return textLength(field.kind === "rich" ? field.el.textContent : current) ? "add" : "";
+    if (current === field.published.value) return "";
+    const length = textLength(field.kind === "rich" ? field.el.textContent : current);
+    if (field.published.value === null && length === field.published.length) return ""; // Comparaison du texte seul
+    return length > field.published.length ? "add" : length < field.published.length ? "del" : "mod";
+}
+
+const MARKERS = {
+    add: { symbol: "+", title: "Plus de contenu que la version publiée sur GitHub" },
+    del: { symbol: "−", title: "Moins de contenu que la version publiée sur GitHub" },
+    mod: { symbol: "~", title: "Contenu modifié, de même longueur que la version publiée sur GitHub" },
+};
+
+function updateMarker(field) {
+    if (!field) return;
+    const marker = publishMarker(field);
+    field.card.classList.remove("pub-add", "pub-del", "pub-mod");
+    const badge = field.card.querySelector(".pub-badge");
+    if (marker) {
+        field.card.classList.add(`pub-${marker}`);
+        badge.textContent = MARKERS[marker].symbol;
+        badge.title = MARKERS[marker].title;
+    }
+    badge.classList.toggle("hidden", !marker);
+    $("pub-legend").classList.toggle("hidden", !document.querySelector("#editable-list .pub-badge:not(.hidden)"));
+}
+
+function updateAllMarkers() {
+    fields.forEach(updateMarker);
+    $("pub-legend").classList.toggle("hidden", !document.querySelector("#editable-list .pub-badge:not(.hidden)"));
+}
+
+// Après un push ou un pull, la version publiée change : recharger la page ouverte (si rien n'est en cours d'édition)
+async function refreshPublished() {
+    if (currentFile && !dirtyCount()) await openFile(currentFile, { keepScroll: true });
 }
 
 async function openFile(name, { keepScroll = false } = {}) {
@@ -306,6 +380,7 @@ async function openFile(name, { keepScroll = false } = {}) {
     if (name !== currentFile) paneIndex = null;
     currentFile = name;
     currentHash = data.hash;
+    publishedKnown = Boolean(data.published_known);
     elementCount = data.elements.length;
     applySiteBoldRules(data.bold_selectors || []);
 
@@ -330,6 +405,7 @@ async function openFile(name, { keepScroll = false } = {}) {
 function markDirty(index) {
     const field = fields.get(index);
     if (field) field.card.classList.toggle("dirty", fieldValue(field) !== field.initial);
+    updateMarker(field);
     updateEditorState();
     schedulePaneUpdate();
 }
@@ -781,10 +857,17 @@ $("refresh-files").addEventListener("click", (e) => withButton(e.currentTarget, 
 
 $("reload-file").addEventListener("click", (e) => withButton(e.currentTarget, () => openFile(currentFile, { keepScroll: true })));
 
-$("save-file").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
-    // Seuls les éléments modifiés sont envoyés
+// Seuls les éléments modifiés sont envoyés
+async function saveCurrentFile() {
     const result = await api("POST", fileUrl(currentFile), { hash: currentHash, values: dirtyValues() });
     document.querySelectorAll("#editable-list .field.dirty").forEach((f) => f.classList.remove("dirty"));
+    // Empreinte du fichier tel qu'écrit : une nouvelle sauvegarde sans rechargement reste acceptée
+    currentHash = result.hash;
+    return result;
+}
+
+$("save-file").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
+    const result = await saveCurrentFile();
     toast(`${result.message}\n${result.sitemap}`);
     // Recharger depuis le fichier : l'éditeur affiche exactement ce qui a été écrit
     await openFile(currentFile, { keepScroll: true });
@@ -878,6 +961,7 @@ $("git-pull").addEventListener("click", (e) => withButton(e.currentTarget, async
         toast((await api("POST", "/api/git/pull")).message);
     } finally {
         await refreshGitStatus();
+        await refreshPublished().catch(() => {});
     }
 }));
 
@@ -886,6 +970,7 @@ $("git-push").addEventListener("click", (e) => withButton(e.currentTarget, async
         toast((await api("POST", "/api/git/push", { message: $("commit-message").value })).message);
     } finally {
         await refreshGitStatus();
+        await refreshPublished().catch(() => {});
     }
 }));
 
@@ -983,12 +1068,313 @@ $("logout").addEventListener("click", async () => {
     location.replace("/login");
 });
 
+// ======= Guide d'utilisation =======
+
+function openGuide() {
+    $("guide-at-startup").checked = config.show_guide !== false;
+    if (!$("guide-dialog").open) $("guide-dialog").showModal();
+}
+
+$("open-guide").addEventListener("click", openGuide);
+$("guide-close").addEventListener("click", () => $("guide-dialog").close());
+
+$("guide-at-startup").addEventListener("change", (e) => {
+    api("POST", "/api/config", { show_guide: e.target.checked })
+        .then((result) => { config = result.config; })
+        .catch((err) => toast(err.message, true));
+});
+
+// ======= Quitter =======
+
+const FILE_STATES = { M: "modifié", A: "ajouté", D: "supprimé", R: "renommé", C: "copié", "??": "nouveau" };
+let quitRunning = false;
+let quitState = null; // Ce qui restait à faire à l'ouverture de la fenêtre
+const quitDone = new Set(); // Étapes réussies lors d'un essai précédent : pas refaites
+
+function element(tag, className, text) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (text !== undefined) el.textContent = text;
+    return el;
+}
+
+function plural(count, word, words = `${word}s`) {
+    return `${count} ${count > 1 ? words : word}`;
+}
+
+function bulletList(lines, className = "text-muted") {
+    const list = element("ul", `flex list-disc flex-col gap-0.5 pl-5 ${className}`);
+    lines.forEach((line) => list.append(element("li", "[overflow-wrap:anywhere]", line)));
+    return list;
+}
+
+// Un choix : toute la carte est cliquable, le bouton radio porte le libellé
+function quitChoice({ value, title, description, notes = [], extra, danger = false }) {
+    const card = element("div", danger ? "quit-choice danger" : "quit-choice");
+    const radio = element("input", "mt-1 accent-accent");
+    radio.type = "radio";
+    radio.name = "quit-choice";
+    radio.value = value;
+    radio.id = `quit-choice-${value}`;
+    const body = element("div", "flex min-w-0 flex-1 flex-col gap-1");
+    const label = element("label", "cursor-pointer font-semibold", title);
+    label.htmlFor = radio.id;
+    body.append(label, element("p", "text-muted", description));
+    if (notes.length) body.append(bulletList(notes));
+    if (extra) body.append(extra);
+    card.append(radio, body);
+    card.addEventListener("click", (e) => {
+        if (!radio.disabled && !e.target.closest("input:not([type=radio]), label")) radio.checked = true;
+        updateQuitButton();
+    });
+    radio.addEventListener("change", updateQuitButton);
+    return card;
+}
+
+function quitSelection() {
+    return document.querySelector('#quit-content input[name="quit-choice"]:checked')?.value || "quit";
+}
+
+const QUIT_BUTTONS = {
+    discard: "Annuler les modifications et quitter",
+    save: "Sauvegarder et quitter",
+    publish: "Publier sur le site et quitter",
+    quit: "Quitter",
+};
+
+function updateQuitButton() {
+    const choice = quitSelection();
+    const button = $("quit-confirm");
+    button.textContent = choice === "save" && !quitState?.dirty ? "Quitter sans publier" : QUIT_BUTTONS[choice];
+    button.classList.toggle("btn-danger", choice === "discard");
+    button.classList.toggle("btn-primary", choice !== "discard");
+}
+
+async function openQuitDialog() {
+    const content = $("quit-content");
+    content.replaceChildren(element("p", "text-muted", "Vérification de ce qui reste à faire…"));
+    $("quit-error").classList.add("hidden");
+    $("quit-progress").textContent = "";
+    $("quit-confirm").disabled = true;
+    $("quit-confirm").textContent = "Quitter";
+    quitDone.clear();
+    $("quit-dialog").showModal();
+
+    let check;
+    try {
+        check = await api("GET", "/api/quit/check");
+    } catch (e) {
+        check = { git: { available: false, message: `Vérification impossible : ${e.message}` }, preview_running: false };
+    }
+    const git = check.git;
+    const files = git.available ? git.files : [];
+    quitState = {
+        dirty: dirtyCount(),
+        file: currentFile,
+        git,
+        files,
+        untracked: files.filter((f) => f.state === "??"),
+        ahead: git.available ? git.ahead : 0,
+    };
+    const { dirty, untracked, ahead } = quitState;
+    const items = [];
+
+    // Ce qui n'est pas encore publié
+    const pending = [];
+    if (dirty) pending.push(`${plural(dirty, "élément modifié", "éléments modifiés")} pas encore sauvegardé${dirty > 1 ? "s" : ""} (${currentFile})`);
+    files.slice(0, 6).forEach((f) => pending.push(`${f.path} : ${FILE_STATES[f.state] || f.state}, sauvegardé mais pas publié`));
+    if (files.length > 6) pending.push(`… et ${plural(files.length - 6, "autre fichier")}`);
+    if (ahead) pending.push(`${plural(ahead, "commit")} pas encore envoyé${ahead > 1 ? "s" : ""} sur GitHub`);
+
+    if (!pending.length) {
+        items.push(element("p", "", git.available
+            ? "Tout est sauvegardé et publié : rien ne sera perdu."
+            : "Aucune modification non sauvegardée."));
+    } else {
+        const summary = element("section", "quit-item");
+        summary.append(element("h3", "font-semibold", "Pas encore publié sur le site"), bulletList(pending, ""));
+        items.push(summary);
+
+        const choices = element("fieldset", "flex flex-col gap-2");
+        choices.append(element("legend", "mb-1 font-semibold", "Que faire avant de quitter ?"));
+
+        // 1. Revenir à l'état de base : dernier commit
+        if (dirty || files.length) {
+            let extra;
+            if (untracked.length) {
+                extra = element("div", "flex flex-col gap-1");
+                const row = element("div", "flex items-center gap-2");
+                const box = element("input", "accent-accent");
+                box.type = "checkbox";
+                box.id = "quit-clean";
+                const boxLabel = element("label", "cursor-pointer", `Supprimer aussi les nouveaux fichiers (${untracked.length})`);
+                boxLabel.htmlFor = "quit-clean";
+                row.append(box, boxLabel);
+                extra.append(row, bulletList(untracked.slice(0, 5).map((f) => f.path).concat(
+                    untracked.length > 5 ? [`… et ${untracked.length - 5} autre(s)`] : []), "text-xs text-muted"));
+            }
+            choices.append(quitChoice({
+                value: "discard",
+                title: "Revenir à l'état de base",
+                description: git.available
+                    ? "Annule toutes les modifications depuis le dernier commit, même celles déjà sauvegardées : les fichiers reprennent leur version du dernier commit."
+                    : "Abandonne les modifications pas encore sauvegardées.",
+                notes: ahead ? [`Les ${plural(ahead, "commit")} pas encore envoyé${ahead > 1 ? "s" : ""} sont conservés.`] : [],
+                extra,
+                danger: true,
+            }));
+        }
+
+        // 2. Sauvegarder sans commit : pour reprendre plus tard
+        choices.append(quitChoice({
+            value: "save",
+            title: dirty ? "Sauvegarder et quitter" : "Quitter sans publier",
+            description: "Les modifications restent sur cet ordinateur, sans commit : vous pourrez les reprendre plus tard. Le site en ligne ne change pas.",
+        }));
+
+        // 3. Commit et publication sur GitHub
+        if (git.available) {
+            // Message seulement s'il y a un commit à créer (sinon : envoi des commits en attente)
+            const toCommit = dirty || files.length;
+            let extra;
+            if (toCommit) {
+                extra = element("div", "mt-1 flex flex-col gap-1.5");
+                const label = element("label", "text-xs text-muted", "Message décrivant la modification");
+                label.htmlFor = "quit-message";
+                const input = element("input", "input");
+                input.id = "quit-message";
+                input.value = $("commit-message").value.trim() || "Mise à jour du contenu";
+                input.addEventListener("focus", () => { $("quit-choice-publish").checked = true; updateQuitButton(); });
+
+                // Mêmes messages préfaits que l'onglet Git : un clic remplit le champ, qui reste modifiable
+                const presets = element("div", "flex flex-wrap gap-1.5");
+                const markPreset = () => presets.querySelectorAll("button").forEach((b) => {
+                    b.setAttribute("aria-pressed", String(b.textContent === input.value.trim()));
+                });
+                document.querySelectorAll("#commit-presets button").forEach((source) => {
+                    const preset = element("button", "btn px-2.5 py-1 text-xs", source.textContent);
+                    preset.type = "button";
+                    preset.addEventListener("click", () => {
+                        input.value = preset.textContent;
+                        markPreset();
+                    });
+                    presets.append(preset);
+                });
+                input.addEventListener("input", markPreset);
+                markPreset();
+                extra.append(label, input, presets);
+            }
+            choices.append(quitChoice({
+                value: "publish",
+                title: "Publier sur le site et quitter",
+                description: !toCommit
+                    ? `Envoie sur GitHub ${ahead > 1 ? "les commits" : "le commit"} en attente : le site en ligne est mis à jour.`
+                    : `${dirty ? "Sauvegarde, crée" : "Crée"} un commit et l'envoyer sur GitHub : le site en ligne est mis à jour.`,
+                extra,
+            }));
+        } else if (git.message) {
+            choices.append(element("p", "text-xs text-muted", git.message));
+        }
+
+        items.push(choices);
+    }
+
+    if (check.preview_running) items.push(element("p", "text-muted", "Le serveur de prévisualisation sera arrêté."));
+
+    content.replaceChildren(...items);
+    const defaultChoice = $("quit-choice-save");
+    if (defaultChoice) defaultChoice.checked = true;
+    $("quit-confirm").disabled = false;
+    updateQuitButton();
+    $("quit-confirm").focus();
+}
+
+function setQuitBusy(busy, progress = "") {
+    quitRunning = busy;
+    $("quit-confirm").disabled = busy;
+    $("quit-cancel").disabled = busy;
+    $("quit-content").querySelectorAll("input").forEach((input) => { input.disabled = busy; });
+    $("quit-progress").textContent = progress;
+}
+
+function showClosedScreen(summary) {
+    window.removeEventListener("beforeunload", warnUnsaved);
+    clearInterval(previewTimer);
+    clearInterval(logsTimer);
+    $("preview-frame").removeAttribute("src");
+    $("quit-dialog").close();
+    $("closed-summary").textContent = summary;
+    $("closed-screen").classList.replace("hidden", "flex");
+    window.close(); // Sans effet si l'onglet n'a pas été ouvert par un script
+}
+
+async function runQuit() {
+    const choice = quitSelection();
+    const { dirty, git, files } = quitState;
+    if (choice === "discard" && !confirm("Toutes les modifications depuis le dernier commit seront définitivement perdues, même celles déjà sauvegardées. Continuer ?")) return;
+
+    $("quit-error").classList.add("hidden");
+    let summary = "Rien n'a été perdu.";
+    try {
+        if (choice === "discard") {
+            if (git.available && files.length) {
+                setQuitBusy(true, "Retour au dernier commit…");
+                await api("POST", "/api/git/discard", { remove_untracked: Boolean($("quit-clean")?.checked) });
+            }
+            // Les modifications de l'éditeur sont abandonnées
+            document.querySelectorAll("#editable-list .field.dirty").forEach((f) => f.classList.remove("dirty"));
+            summary = git.available ? "Modifications annulées : retour au dernier commit." : "Modifications non sauvegardées abandonnées.";
+        }
+
+        if ((choice === "save" || choice === "publish") && dirty && !quitDone.has("save")) {
+            setQuitBusy(true, "Sauvegarde…");
+            await saveCurrentFile();
+            quitDone.add("save");
+        }
+        if (choice === "save") {
+            summary = dirty
+                ? "Modifications sauvegardées sur cet ordinateur, pas encore publiées."
+                : "Les modifications restent sur cet ordinateur, pas encore publiées.";
+        }
+
+        if (choice === "publish") {
+            // Sans champ message : rien à commiter, seulement des commits en attente à envoyer
+            const message = $("quit-message") ? $("quit-message").value.trim() : "Mise à jour du contenu";
+            if (!message) throw new Error("Écrivez un message décrivant la modification (ou choisissez un message préfait), ou choisissez « Sauvegarder et quitter ».");
+            setQuitBusy(true, "Commit et publication sur GitHub…");
+            try {
+                await api("POST", "/api/git/push", { message });
+            } catch (e) {
+                throw new Error(`La publication a échoué. Vérifiez la connexion Internet puis réessayez, ou choisissez « Sauvegarder et quitter ».\nDétail : ${e.message}`);
+            }
+            summary = "Modifications publiées sur GitHub : le site en ligne sera mis à jour dans quelques minutes.";
+        }
+
+        setQuitBusy(true, "Fermeture…");
+        await api("POST", "/api/quit");
+    } catch (e) {
+        // Rien n'est fermé : l'utilisateur peut réessayer ou faire un autre choix
+        setQuitBusy(false);
+        $("quit-error").textContent = e.message;
+        $("quit-error").classList.remove("hidden");
+        return;
+    }
+    showClosedScreen(summary);
+}
+
+$("quit").addEventListener("click", () => openQuitDialog().catch((e) => toast(e.message, true)));
+$("quit-cancel").addEventListener("click", () => $("quit-dialog").close());
+$("quit-confirm").addEventListener("click", runQuit);
+// Échap pendant une étape en cours : la fenêtre reste ouverte
+$("quit-dialog").addEventListener("cancel", (e) => { if (quitRunning) e.preventDefault(); });
+
 // ======= Démarrage =======
 
 (async () => {
     try {
         $("user-name").textContent = (await api("GET", "/api/auth/state")).username || "";
         await loadConfig();
+        if (config.show_guide !== false) openGuide();
         await loadFiles();
         await refreshPreview();
         await refreshGitStatus();

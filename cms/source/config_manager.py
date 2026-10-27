@@ -19,6 +19,7 @@ class ConfigManager:
         "site_url": {"type": str, "required": False},
         "auto_pull": {"type": bool, "required": True},
         "auto_refresh": {"type": bool, "required": True},
+        "show_guide": {"type": bool, "required": False},
         "default_port": {"type": int, "required": True, "min": 1, "max": 65535},
         "theme": {"type": str, "required": True, "allowed": ["dark", "light"]},
         "window_width": {"type": int, "required": True, "min": 400},
@@ -33,6 +34,7 @@ class ConfigManager:
             "site_url": "",
             "auto_pull": False,
             "auto_refresh": True,
+            "show_guide": True,
             "default_port": 8000,
             "theme": "dark",
             "window_width": 1400,
@@ -192,6 +194,14 @@ class ConfigManager:
     def set_auto_refresh(self, value: bool):
         """Définir le rafraîchissement automatique"""
         self._set_with_cache("auto_refresh", bool(value))
+
+    def get_show_guide(self) -> bool:
+        """Afficher le guide d'utilisation au démarrage"""
+        return self._get_from_cache("show_guide", self.default_config["show_guide"])
+
+    def set_show_guide(self, value: bool):
+        """Définir l'affichage du guide au démarrage"""
+        self._set_with_cache("show_guide", bool(value))
 
     def get_default_port(self) -> int:
         """Récupérer le port par défaut"""

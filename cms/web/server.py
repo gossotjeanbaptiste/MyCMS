@@ -241,6 +241,8 @@ def save_config():
             config_manager.set_auto_pull(data["auto_pull"])
         if "auto_refresh" in data:
             config_manager.set_auto_refresh(data["auto_refresh"])
+        if "show_guide" in data:
+            config_manager.set_show_guide(data["show_guide"])
         if "default_port" in data:
             config_manager.set_default_port(int(data["default_port"]))
     except (ValueError, TypeError) as e:
@@ -305,6 +307,16 @@ def git_status():
     return jsonify({**git_manager.get_status(str(_repo_path())), "has_git": (_repo_path() / ".git").exists()})
 
 
+@app.post("/api/git/discard")
+def git_discard():
+    """Revenir au dernier commit (les fichiers nouveaux ne sont supprimés que si demandé)"""
+    remove_untracked = bool(request.get_json(force=True).get("remove_untracked"))
+    result = git_manager.discard(str(_repo_path()), remove_untracked)
+    if not result["success"]:
+        return _error(result["message"], 500)
+    return jsonify(result)
+
+
 @app.post("/api/git/add")
 def git_add_untracked():
     """Ajouter tous les fichiers non suivis"""
@@ -363,6 +375,19 @@ def load_file(name):
         }
         for e, source, bold in zip(result["elements"], sources, bold_flags)
     ]
+    # Version envoyée sur GitHub de chaque élément (null : absent de cette version), pour les marqueurs +/−/~
+    published_known = False
+    if GIT_FOUND and (_repo_path() / ".git").exists():
+        published_known, published_content = git_manager.published_file(str(_repo_path()), name)
+        if published_known:
+            published = [s["html"] for s in html_manager.extract_editable_sources(published_content or "")]
+            # value : texte, ou src d'une iframe (qui n'est pas dans le contenu)
+            values = [e["editable_value"] for e in
+                      html_manager.extract_editable_elements(published_content or "").get("elements", [])]
+            for i, element in enumerate(elements):
+                element["published_html"] = published[i] if i < len(published) else None
+                element["published_value"] = values[i] if i < len(values) else None
+
     logger.log(f"Fichier ouvert: {name} ({len(elements)} éléments éditables, {elapsed_ms:.0f} ms)")
     # Une page sans élément éditable n'est pas une erreur : le message est affiché à la place de la liste
     return jsonify({
@@ -370,6 +395,7 @@ def load_file(name):
         "notice": result.get("error"),
         "elements": elements,
         "bold_selectors": bold_selectors,
+        "published_known": published_known,
         "hash": _hash(content),
         "parse_ms": round(elapsed_ms),
     })
@@ -522,6 +548,37 @@ def get_logs():
 @app.delete("/api/logs")
 def clear_logs():
     logger.clear_logs()
+    return jsonify({"success": True})
+
+
+# ======= Quitter =======
+
+@app.get("/api/quit/check")
+def quit_check():
+    """Ce qui reste à faire avant de quitter : modifications non publiées, prévisualisation active"""
+    git = {"available": False, "message": ""}
+    if not GIT_FOUND:
+        git["message"] = "Git est introuvable : la publication est impossible depuis MyCMS"
+    elif not (_repo_path() / ".git").exists():
+        git["message"] = "Le dossier du site n'est pas un repository Git : rien à publier"
+    else:
+        result = git_manager.pending(str(_repo_path()))
+        if result["success"]:
+            git = {**result, "available": True}
+        else:
+            git["message"] = result["message"]
+    return jsonify({"success": True, "git": git, "preview_running": server_manager.is_running()})
+
+
+@app.post("/api/quit")
+def quit_app():
+    """Arrêter MyCMS : prévisualisation, session, puis le processus une fois la réponse envoyée"""
+    if server_manager.is_running():
+        server_manager.stop()
+    session.clear()
+    logger.log("MyCMS fermé depuis l'interface")
+    # Le serveur de développement Flask n'a pas d'arrêt propre : sortie du processus juste après la réponse
+    threading.Timer(0.5, os._exit, args=(0,)).start()
     return jsonify({"success": True})
 
 
