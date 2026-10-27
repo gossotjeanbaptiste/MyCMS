@@ -1,10 +1,10 @@
 @echo off
-REM Script de lancement pour Windows - Rout'Art CMS
+REM Script de lancement pour Windows - MyCMS
 setlocal enabledelayedexpansion
 
 echo.
-echo Rout'Art CMS
-echo ============
+echo MyCMS
+echo =====
 echo.
 
 REM Verifier si Python est installe

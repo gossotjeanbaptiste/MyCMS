@@ -98,7 +98,6 @@ def compile_to_msi():
             f"-p:ProductVersion={version}",
             f"-p:ExeFile={exe_path}",
             f"-p:GitDir={git_dir}",
-            f"-p:IconFile={PROJECT_ROOT / 'cms' / 'icon' / 'logo.ico'}",
         ])
     except subprocess.CalledProcessError as e:
         print(f"\n❌ Erreur lors de la compilation de l'installeur: {e}")

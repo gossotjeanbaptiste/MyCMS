@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Script pour compiler l'application en .exe avec PyInstaller
-À exécuter après avoir installé PyInstaller: pip install pyinstaller
+À exécuter après avoir installé les dépendances de compilation : pip install -r cms/requirements-build.txt
 """
 
 import subprocess
@@ -10,7 +10,6 @@ import sys
 from pathlib import Path
 import shutil
 import os
-import signal
 
 
 def kill_exe_process():
@@ -34,7 +33,7 @@ def check_pyinstaller():
         return True
     except ImportError:
         print("❌ PyInstaller n'est pas installé!")
-        print("Installez-le avec: pip install pyinstaller")
+        print("Installez-le avec: pip install -r cms/requirements-build.txt")
         return False
 
 
