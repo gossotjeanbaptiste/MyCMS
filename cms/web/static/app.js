@@ -742,7 +742,19 @@ function setPaneMode(mode) {
 }
 
 $("toggle-pane").addEventListener("click", () => togglePane(!paneOpen));
-$("pane-close").addEventListener("click", () => togglePane(false));
+// La croix ferme l'aperçu et arrête le serveur de prévisualisation ; il redémarre à la prochaine ouverture
+$("pane-close").addEventListener("click", async () => {
+    togglePane(false);
+    $("preview-frame").removeAttribute("src");
+    frameReady = false;
+    frameKey = null; // La page sera rechargée à la réouverture
+    if (!previewRunning) return;
+    try {
+        showPreview(await api("POST", "/api/preview/stop"));
+    } catch (e) {
+        toast(e.message, true);
+    }
+});
 document.querySelectorAll("#side-pane [data-pane]").forEach((b) => b.addEventListener("click", () => setPaneMode(b.dataset.pane)));
 
 editableList.addEventListener("focusin", (e) => {
