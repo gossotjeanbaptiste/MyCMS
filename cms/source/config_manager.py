@@ -9,6 +9,8 @@ from pathlib import Path
 import os
 from typing import Any, Callable, Dict, Optional
 
+from data_dir import data_dir
+
 
 class ConfigManager:
     """Gère la configuration persistante de l'application avec cache, validations et hooks"""
@@ -27,7 +29,7 @@ class ConfigManager:
     }
 
     def __init__(self):
-        self.config_dir = Path.home() / ".rout_art_cms"
+        self.config_dir = data_dir()
         self.config_file = self.config_dir / "config.json"
         self.default_config = {
             "repo_path": str(Path.home() / "Rout-Art"),

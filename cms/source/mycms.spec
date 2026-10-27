@@ -20,6 +20,7 @@ a = Analysis(
         'auth_manager',
         'config_manager',
         'css_weights',
+        'data_dir',
         'git_manager',
         'html_manager',
         'html_source',

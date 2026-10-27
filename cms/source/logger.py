@@ -8,14 +8,15 @@ from pathlib import Path
 from datetime import datetime
 from collections import deque
 
+from data_dir import data_dir
+
 
 class Logger:
     """Système de logs simple et efficace"""
 
     def __init__(self, max_logs=500):
         self.logs = deque(maxlen=max_logs)
-        self.log_file = Path.home() / ".rout_art_cms" / "app.log"
-        self.log_file.parent.mkdir(parents=True, exist_ok=True)
+        self.log_file = data_dir() / "app.log"
 
     def log(self, message, level="INFO"):
         """Ajouter un log"""
