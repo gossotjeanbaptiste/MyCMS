@@ -8,6 +8,7 @@ Réutilise les gestionnaires de cms/source (Git, HTML, config, logs, sitemap)
 import hashlib
 import json
 import os
+import secrets
 import shutil
 import socket
 import subprocess
@@ -132,13 +133,21 @@ PUBLIC_PATHS = {
 }
 
 
+# Tiré au hasard à chaque démarrage et jamais enregistré : après un relancement de MyCMS,
+# les sessions ouvertes avant ne sont plus valides et il faut se reconnecter
+BOOT_ID = secrets.token_hex(16)
+
+
 def _logged_in():
-    return auth_manager.has_credentials() and session.get("auth") == auth_manager.session_id()
+    return (auth_manager.has_credentials()
+            and session.get("auth") == auth_manager.session_id()
+            and session.get("boot") == BOOT_ID)
 
 
 def _open_session():
     session.clear()
     session["auth"] = auth_manager.session_id()
+    session["boot"] = BOOT_ID
 
 
 @app.before_request
