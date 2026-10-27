@@ -68,9 +68,14 @@ def prepare_mingit():
 def compile_to_msi():
     """Compiler l'exécutable puis l'installeur .msi"""
     dotnet = shutil.which("dotnet")
-    if not dotnet:
-        print("❌ Le SDK .NET est introuvable (commande dotnet)")
-        print("Installez-le depuis https://dotnet.microsoft.com/download puis relancez")
+    # Le runtime .NET seul fournit aussi la commande dotnet : vérifier qu'un SDK est installé
+    sdks = ""
+    if dotnet:
+        sdks = subprocess.run([dotnet, "--list-sdks"], capture_output=True, text=True).stdout.strip()
+    if not sdks:
+        print("❌ Le SDK .NET est introuvable" + (" (seul le runtime .NET est installé)" if dotnet else " (commande dotnet)"))
+        print("Installez-le puis relancez, par exemple avec : winget install Microsoft.DotNet.SDK.8")
+        print("ou depuis https://dotnet.microsoft.com/download")
         return False
 
     # L'exécutable n'est qu'une étape : compilé dans un dossier temporaire, seul le .msi va dans dist/

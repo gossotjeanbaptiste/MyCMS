@@ -16,8 +16,10 @@
                       DowngradeErrorMessage="Une version plus récente de MyCMS est déjà installée." />
         <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-        <Icon Id="MyCMSIcon" SourceFile="$(IconFile)" />
-        <Property Id="ARPPRODUCTICON" Value="MyCMSIcon" />
+        <!-- Raccourcis annoncés (Advertise) : l'icône doit avoir l'extension du fichier clé, .exe (règle ICE50).
+             Elle est donc prise dans MyCMS.exe, qui contient déjà logo.ico (ajouté par PyInstaller). -->
+        <Icon Id="MyCMSIcon.exe" SourceFile="$(ExeFile)" />
+        <Property Id="ARPPRODUCTICON" Value="MyCMSIcon.exe" />
 
         <StandardDirectory Id="ProgramFiles64Folder">
             <Directory Id="INSTALLFOLDER" Name="MyCMS">
@@ -30,10 +32,10 @@
                 <File Id="MyCMSExe" Source="$(ExeFile)" KeyPath="yes">
                     <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="MyCMS"
                               Description="Modifier le contenu du site" WorkingDirectory="INSTALLFOLDER"
-                              Icon="MyCMSIcon" Advertise="yes" />
+                              Icon="MyCMSIcon.exe" Advertise="yes" />
                     <Shortcut Id="DesktopShortcut" Directory="DesktopFolder" Name="MyCMS"
                               Description="Modifier le contenu du site" WorkingDirectory="INSTALLFOLDER"
-                              Icon="MyCMSIcon" Advertise="yes" />
+                              Icon="MyCMSIcon.exe" Advertise="yes" />
                 </File>
             </Component>
             <Files Directory="GITFOLDER" Include="$(GitDir)\**" />
