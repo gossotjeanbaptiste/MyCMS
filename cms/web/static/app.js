@@ -71,7 +71,6 @@ async function loadConfig() {
     $("set-port").value = config.default_port;
     $("set-site-url").value = config.site_url || "";
     $("set-auto-pull").checked = config.auto_pull;
-    $("set-auto-refresh").checked = config.auto_refresh;
     if (!previewRunning) $("preview-port").value = config.default_port;
 }
 
@@ -81,7 +80,6 @@ $("settings-save").addEventListener("click", (e) => withButton(e.currentTarget, 
         site_url: $("set-site-url").value.trim(),
         default_port: Number($("set-port").value),
         auto_pull: $("set-auto-pull").checked,
-        auto_refresh: $("set-auto-refresh").checked,
     });
     await loadConfig();
     await loadFiles();

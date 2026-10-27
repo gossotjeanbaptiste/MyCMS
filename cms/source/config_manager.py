@@ -6,26 +6,21 @@ Gestionnaire de Configuration - Stockage et récupération des paramètres
 
 import json
 from pathlib import Path
-import os
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
 from data_dir import data_dir
 
 
 class ConfigManager:
-    """Gère la configuration persistante de l'application avec cache, validations et hooks"""
+    """Gère la configuration persistante de l'application avec cache et validations"""
 
     # Schéma de validation pour chaque clé
     VALIDATION_SCHEMA = {
         "repo_path": {"type": str, "required": True},
         "site_url": {"type": str, "required": False},
         "auto_pull": {"type": bool, "required": True},
-        "auto_refresh": {"type": bool, "required": True},
         "show_guide": {"type": bool, "required": False},
         "default_port": {"type": int, "required": True, "min": 1, "max": 65535},
-        "theme": {"type": str, "required": True, "allowed": ["dark", "light"]},
-        "window_width": {"type": int, "required": True, "min": 400},
-        "window_height": {"type": int, "required": True, "min": 300},
     }
 
     def __init__(self):
@@ -35,19 +30,12 @@ class ConfigManager:
             "repo_path": str(Path.home() / "Rout-Art"),
             "site_url": "",
             "auto_pull": False,
-            "auto_refresh": True,
             "show_guide": True,
             "default_port": 8000,
-            "theme": "dark",
-            "window_width": 1400,
-            "window_height": 800
         }
 
-        # Cache et hooks
         self._cache: Dict[str, Any] = {}
         self._cache_dirty = False
-        self._on_before_change: Dict[str, list[Callable]] = {}
-        self._on_after_change: Dict[str, list[Callable]] = {}
 
         self.config_dir.mkdir(parents=True, exist_ok=True)
         self.config = self.default_config.copy()
@@ -77,30 +65,6 @@ class ConfigManager:
 
         return True, None
 
-    def register_hook(self, key: str, hook_type: str, callback: Callable):
-        """Enregistrer un hook avant ou après modification"""
-        if hook_type not in ("before", "after"):
-            raise ValueError("hook_type doit être 'before' ou 'after'")
-
-        if hook_type == "before":
-            if key not in self._on_before_change:
-                self._on_before_change[key] = []
-            self._on_before_change[key].append(callback)
-        else:
-            if key not in self._on_after_change:
-                self._on_after_change[key] = []
-            self._on_after_change[key].append(callback)
-
-    def _execute_hooks(self, key: str, hook_type: str, old_value: Any, new_value: Any):
-        """Exécuter les hooks enregistrés"""
-        hooks = self._on_before_change.get(
-            key, []) if hook_type == "before" else self._on_after_change.get(key, [])
-        for hook in hooks:
-            try:
-                hook(key, old_value, new_value)
-            except Exception as e:
-                print(f"Erreur lors de l'exécution du hook {hook_type}: {e}")
-
     def load_config(self):
         """Charger la configuration depuis le fichier"""
         try:
@@ -110,6 +74,9 @@ class ConfigManager:
 
                     # Valider et nettoyer chaque clé chargée
                     for key, value in loaded_config.items():
+                        # Clé d'une ancienne version (thème, taille de fenêtre, auto_refresh…) : abandonnée
+                        if key not in self.VALIDATION_SCHEMA:
+                            continue
                         is_valid, error_msg = self._validate_value(key, value)
                         if not is_valid:
                             print(f"⚠️  Config invalide '{key}': {error_msg}")
@@ -151,19 +118,10 @@ class ConfigManager:
         if not is_valid:
             raise ValueError(error_msg)
 
-        old_value = self._get_from_cache(key)
-
-        # Hook before
-        self._execute_hooks(key, "before", old_value, value)
-
-        # Appliquer le changement
         self.config[key] = value
         self._cache[key] = value
         self._cache_dirty = True
         self.save_config()
-
-        # Hook after
-        self._execute_hooks(key, "after", old_value, value)
 
     def get_repo_path(self) -> str:
         """Récupérer le chemin du repository"""
@@ -189,14 +147,6 @@ class ConfigManager:
         """Définir le pull automatique"""
         self._set_with_cache("auto_pull", bool(value))
 
-    def get_auto_refresh(self) -> bool:
-        """Récupérer le paramètre de rafraîchissement automatique"""
-        return self._get_from_cache("auto_refresh", self.default_config["auto_refresh"])
-
-    def set_auto_refresh(self, value: bool):
-        """Définir le rafraîchissement automatique"""
-        self._set_with_cache("auto_refresh", bool(value))
-
     def get_show_guide(self) -> bool:
         """Afficher le guide d'utilisation au démarrage"""
         return self._get_from_cache("show_guide", self.default_config["show_guide"])
@@ -212,27 +162,6 @@ class ConfigManager:
     def set_default_port(self, port: int):
         """Définir le port par défaut"""
         self._set_with_cache("default_port", int(port))
-
-    def get_theme(self) -> str:
-        """Récupérer le thème"""
-        return self._get_from_cache("theme", self.default_config["theme"])
-
-    def set_theme(self, theme: str):
-        """Définir le thème"""
-        self._set_with_cache("theme", theme)
-
-    def get_window_dimensions(self) -> tuple[int, int]:
-        """Récupérer les dimensions de la fenêtre"""
-        width = self._get_from_cache(
-            "window_width", self.default_config["window_width"])
-        height = self._get_from_cache(
-            "window_height", self.default_config["window_height"])
-        return (width, height)
-
-    def set_window_dimensions(self, width: int, height: int):
-        """Définir les dimensions de la fenêtre"""
-        self._set_with_cache("window_width", width)
-        self._set_with_cache("window_height", height)
 
     def get_all_config(self) -> Dict[str, Any]:
         """Récupérer toute la configuration"""

@@ -253,8 +253,6 @@ def save_config():
             config_manager.set_site_url(data["site_url"])
         if "auto_pull" in data:
             config_manager.set_auto_pull(data["auto_pull"])
-        if "auto_refresh" in data:
-            config_manager.set_auto_refresh(data["auto_refresh"])
         if "show_guide" in data:
             config_manager.set_show_guide(data["show_guide"])
         if "default_port" in data:

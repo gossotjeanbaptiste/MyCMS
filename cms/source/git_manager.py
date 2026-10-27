@@ -7,32 +7,7 @@ Gestionnaire Git - Opérations de synchronisation avec GitHub
 from git import Repo, GitCommandError
 from pathlib import Path
 import datetime
-import os
 import subprocess
-
-
-class GitManager:
-    """Gère les opérations Git (pull, push, statut)"""
-
-    def __init__(self, logger):
-        self.logger = logger
-        self._setup_git_safe_directory()
-
-    def _setup_git_safe_directory(self):
-        """Configurer le répertoire comme safe directory pour éviter les erreurs de propriété"""
-        try:
-            repo_path = Path(__file__).parent.parent.parent
-            result = subprocess.run(
-                ["git", "config", "--global", "--add",
-                    "safe.directory", str(repo_path.resolve())],
-                capture_output=True,
-                text=True
-            )
-            if result.returncode == 0:
-                self.logger.log("Git safe directory configuré")
-        except Exception as e:
-            self.logger.log(
-                f"Attention: impossible de configurer git safe directory: {e}")
 
 
 class GitManager:
