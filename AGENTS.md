@@ -7,14 +7,14 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.0.1.
+- Branche de travail : `web_v2`. Version courante : 2.0.2.
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art`. Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dépôt ni pousser dessus pendant les tests.** Travailler sur une copie.
   - La copie hérite de l'URL GitHub réelle : avant tout test de publication, faire pointer son `origin` (fetch **et** push) vers un dépôt bare local.
 
 ## Arborescence
 
-- `cms/web/server.py` : serveur Flask. Il fournit l'API JSON et les pages, vérifie la connexion avant chaque requête (`before_request`), et accepte les options `--port` et `--no-browser`.
+- `cms/web/server.py` : serveur Flask. Il fournit l'API JSON et les pages, vérifie la connexion avant chaque requête (`before_request`), et accepte les options `--port`, `--no-browser` et `--no-tray`.
 - `cms/web/static/` :
   - `index.html` et `app.js` : toute l'interface, en JS sans framework ;
   - `login.html` et `login.js` : la connexion ;
@@ -39,7 +39,7 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
 
 ## Commandes
 
-- Lancer : `python app.py`, ou `python cms/web/server.py --port 5060 --no-browser`.
+- Lancer : `python app.py`, ou `python cms/web/server.py --port 5060 --no-browser --no-tray`.
 - CSS, après toute modification de `input.css` ou ajout de classes Tailwind dans le HTML ou le JS : `cd cms/web && npm run build:css`. `style.css` est versionné, pour que l'application tourne sans Node.
 - Exécutable : `python cms/source/build_exe.py`, qui produit `dist/MyCMS.exe`.
 - Installeur : `compile_msi.bat`, qui produit `dist/MyCMS-<version>.msi`. Nécessite le SDK .NET.
@@ -80,6 +80,13 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
   - Côté serveur, `git_manager.published_file` lit la version de la branche distante suivie, dans son dernier état connu, sans requête réseau. Le chargement d'une page renvoie `published_known` ainsi que `published_html` et `published_value` pour chaque élément.
   - Côté navigateur, la version publiée passe par `buildRichEditor` puis `serializeRich`, pour être comparable à `fieldValue()`. La page ouverte est rechargée après un pull ou un push.
 - **`git_manager.push`** envoie aussi les commits restés en attente, par exemple après un push précédent qui a échoué.
+
+## Fonctionnalités de la v2.0.2
+
+- **Plus de terminal** : l'exécutable est compilé avec `console=False` dans `mycms.spec`. `run.bat` garde sa console pour le développement.
+- **Icône dans la zone de notification** (`pystray` et Pillow) : « Ouvrir MyCMS » ouvre l'interface ; « Quitter MyCMS… » ouvre `/#quit`, c'est-à-dire la fenêtre Quitter de l'interface, avec les mêmes vérifications. Le `#quit` survit à la redirection vers `/login` (voir `login.js`). L'icône est retirée avant `os._exit`, sinon elle resterait affichée jusqu'au survol.
+- **Instance unique** : au démarrage, si MyCMS répond déjà sur le port, on ouvre simplement l'interface et on s'arrête.
+- **Erreurs visibles sans console** : `_show_error` affiche une boîte de message Windows (`MessageBoxW`), par exemple si le port est pris par un autre programme ou si le serveur s'arrête sur une erreur. Dans les tests, remplacer `server._show_error`, sinon la boîte bloque le test et s'affiche sur l'écran de l'utilisateur.
 
 ## Tests
 
