@@ -84,6 +84,7 @@
                 <label for="git-repo" class="card-title">Chemin du repository</label>
                 <div class="flex items-center gap-2">
                     <input id="git-repo" type="text" class="input flex-1" spellcheck="false">
+                    <button class="btn" data-browse="git-repo" data-browse-title="Choisir le dossier du site" title="Choisir le dossier dans l'Explorateur Windows">Parcourir…</button>
                     <button id="git-verify" class="btn">Vérifier</button>
                 </div>
             </div>
@@ -94,6 +95,7 @@
                 <input id="clone-url" type="text" class="input" spellcheck="false" placeholder="Adresse du repository, ex. https://github.com/compte/site.git">
                 <div class="flex flex-wrap items-center gap-2">
                     <input id="clone-path" type="text" class="input min-w-64 flex-1 max-sm:min-w-0" spellcheck="false" placeholder="Dossier de destination (vide = dossier personnel)" aria-label="Dossier de destination">
+                    <button class="btn" data-browse="clone-path" data-browse-title="Choisir où copier le site" title="Choisir le dossier dans l'Explorateur Windows">Parcourir…</button>
                     <button id="git-clone" class="btn btn-primary">Cloner</button>
                 </div>
             </div>
@@ -149,7 +151,10 @@
         <section id="tab-settings" class="panel">
             <div class="card">
                 <label for="set-repo" class="card-title">Chemin du repository par défaut</label>
-                <input id="set-repo" type="text" class="input" spellcheck="false">
+                <div class="flex items-center gap-2">
+                    <input id="set-repo" type="text" class="input flex-1" spellcheck="false">
+                    <button class="btn" data-browse="set-repo" data-browse-title="Choisir le dossier du site" title="Choisir le dossier dans l'Explorateur Windows">Parcourir…</button>
+                </div>
                 <label for="set-port" class="card-title">Port de prévisualisation par défaut</label>
                 <input id="set-port" type="number" min="1" max="65535" class="input w-28">
                 <label class="mt-2 flex items-center gap-2"><input id="set-auto-pull" type="checkbox" class="accent-accent"> Pull automatique au démarrage</label>

@@ -40,6 +40,7 @@ os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
 from auth_manager import AuthManager  # noqa: E402
 from config_manager import ConfigManager  # noqa: E402
 from css_weights import bold_info  # noqa: E402
+from folder_picker import choose_folder  # noqa: E402
 from git_manager import GitManager  # noqa: E402
 from html_manager import HTMLManager  # noqa: E402
 from logger import Logger  # noqa: E402
@@ -252,6 +253,16 @@ def save_config():
     except (ValueError, TypeError) as e:
         return _error(str(e))
     return jsonify({"success": True, "config": config_manager.get_all_config()})
+
+
+@app.post("/api/browse-folder")
+def browse_folder():
+    """Fenêtre « Choisir un dossier » de Windows, ouverte par le serveur local (le navigateur ne donne pas le chemin)"""
+    data = request.get_json(force=True, silent=True) or {}
+    result = choose_folder(str(data.get("title") or "Choisir un dossier"), str(data.get("start") or ""))
+    if "error" in result:
+        return _error(result["error"], 409 if "déjà ouverte" in result["error"] else 500)
+    return jsonify({"success": True, **result})
 
 
 @app.post("/api/config/reset")

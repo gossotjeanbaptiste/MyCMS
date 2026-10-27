@@ -21,6 +21,7 @@ a = Analysis(
         'config_manager',
         'css_weights',
         'data_dir',
+        'folder_picker',
         'git_manager',
         'html_manager',
         'html_source',

@@ -909,15 +909,36 @@ async function refreshGitStatus() {
 
 tabLoaders.git = refreshGitStatus;
 
-$("git-verify").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
-    // Le chemin saisi devient le repository courant
+// Le chemin saisi devient le repository courant
+async function useRepoPath() {
     await api("POST", "/api/config", { repo_path: $("git-repo").value.trim() });
     await loadConfig();
-    const result = await api("POST", "/api/git/verify");
-    toast(result.message);
-    await loadFiles();
-    await refreshGitStatus();
-}));
+    try {
+        toast((await api("POST", "/api/git/verify")).message);
+    } finally {
+        await loadFiles();
+        await refreshGitStatus();
+    }
+}
+
+$("git-verify").addEventListener("click", (e) => withButton(e.currentTarget, useRepoPath));
+
+// « Parcourir… » : la fenêtre « Choisir un dossier » de Windows est ouverte par le serveur local,
+// car le navigateur ne donne jamais le chemin complet d'un dossier
+document.querySelectorAll("[data-browse]").forEach((button) => {
+    button.addEventListener("click", () => withButton(button, async () => {
+        const input = $(button.dataset.browse);
+        const result = await api("POST", "/api/browse-folder", {
+            title: button.dataset.browseTitle,
+            start: input.value.trim() || config.repo_path || "",
+        });
+        if (result.cancelled || !result.path) return;
+        input.value = result.path;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        // Onglet Git : le dossier choisi est utilisé tout de suite, comme avec « Vérifier »
+        if (button.dataset.browse === "git-repo") await useRepoPath();
+    }));
+});
 
 $("git-clone").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
     const url = $("clone-url").value.trim();
