@@ -12,6 +12,8 @@ from pathlib import Path
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from data_dir import lock_file, unlock_file
+
 MIN_PASSWORD_LENGTH = 8
 MAX_FAILURES = 5  # Tentatives avant blocage temporaire
 LOCK_SECONDS = 30
@@ -23,6 +25,8 @@ class AuthManager:
     def __init__(self, config_dir):
         self.auth_file = Path(config_dir) / "auth.json"
         self._data = self._load()
+        # Fichiers créés avant le verrouillage : verrouillés dès le démarrage
+        lock_file(self.auth_file)
         self._failures = 0
         self._locked_until = 0.0
 
@@ -38,9 +42,14 @@ class AuthManager:
         return {"secret_key": secrets.token_hex(32)}
 
     def _save(self):
+        """Écrire le fichier : il est verrouillé contre la modification, sauf pendant cette écriture"""
         self.auth_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.auth_file, "w", encoding="utf-8") as f:
-            json.dump(self._data, f, indent=4, ensure_ascii=False)
+        unlock_file(self.auth_file)
+        try:
+            with open(self.auth_file, "w", encoding="utf-8") as f:
+                json.dump(self._data, f, indent=4, ensure_ascii=False)
+        finally:
+            lock_file(self.auth_file)
 
     def has_credentials(self):
         return "password_hash" in self._data
