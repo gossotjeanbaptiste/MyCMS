@@ -1,0 +1,36 @@
+<!-- ======= Paramètres ======= -->
+<section id="tab-settings" class="panel">
+    <div class="card">
+        <label for="set-repo" class="card-title">Chemin du repository par défaut</label>
+        <div class="flex items-center gap-2">
+            <input id="set-repo" type="text" class="input flex-1" spellcheck="false">
+            <button class="btn" data-browse="set-repo" data-browse-title="Choisir le dossier du site" title="Choisir le dossier dans l'Explorateur Windows">Parcourir…</button>
+        </div>
+        <label for="set-port" class="card-title">Port de prévisualisation par défaut</label>
+        <input id="set-port" type="number" min="1" max="65535" class="input w-28">
+        <label class="mt-2 flex items-center gap-2"><input id="set-auto-pull" type="checkbox" class="accent-accent"> Pull automatique au démarrage</label>
+        <label for="set-site-url" class="card-title">URL publique du site</label>
+        <input id="set-site-url" type="url" class="input" spellcheck="false" placeholder="Vide = détection automatique (robots.txt, sitemap, CNAME, GitHub Pages)">
+        <div class="mt-3 flex flex-wrap gap-2">
+            <button id="settings-save" class="btn btn-primary">Sauvegarder les paramètres</button>
+            <button id="settings-reset" class="btn">Réinitialiser</button>
+        </div>
+    </div>
+    <div class="card">
+        <label for="pw-current" class="card-title">Changer le mot de passe</label>
+        <input id="pw-current" type="password" class="input max-w-md" autocomplete="current-password" placeholder="Mot de passe actuel">
+        <input id="pw-new" type="password" class="input max-w-md" autocomplete="new-password" placeholder="Nouveau mot de passe (8 caractères minimum)" aria-label="Nouveau mot de passe">
+        <input id="pw-confirm" type="password" class="input max-w-md" autocomplete="new-password" placeholder="Confirmer le nouveau mot de passe" aria-label="Confirmer le nouveau mot de passe">
+        <div class="mt-1 flex flex-wrap gap-2">
+            <button id="pw-save" class="btn">Changer le mot de passe</button>
+        </div>
+    </div>
+    <div class="card">
+        <span class="card-title">Sitemap</span>
+        <p id="sitemap-info" class="text-muted"></p>
+        <p class="text-muted">Régénéré automatiquement à chaque sauvegarde. Les pages bloquées par le robots.txt ou marquées <code>noindex</code> sont exclues, et les réglages existants (priority, changefreq) sont conservés.</p>
+        <div class="flex flex-wrap gap-2">
+            <button id="sitemap-generate" class="btn">Générer le sitemap</button>
+        </div>
+    </div>
+</section>

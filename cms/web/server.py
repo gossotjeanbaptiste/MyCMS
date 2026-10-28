@@ -1,696 +1,85 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Serveur web de MyCMS - API JSON + interface web
-Réutilise les gestionnaires de cms/source (Git, HTML, config, logs, sitemap)
+Serveur web de MyCMS - Point d'entrée : prépare l'environnement, puis lance l'interface
+(les routes sont dans api/, le code métier dans cms/source)
 """
 
-import hashlib
-import json
+import argparse
 import os
-import secrets
 import shutil
-import socket
-import subprocess
 import sys
 import threading
-import time
-import urllib.request
 import webbrowser
-from collections import deque
+from dataclasses import dataclass
 from pathlib import Path
 
-from flask import Flask, jsonify, redirect, request, send_from_directory, session
 
-if getattr(sys, "frozen", False):
-    # Exécutable PyInstaller : modules intégrés, interface extraite dans sys._MEIPASS
-    STATIC_DIR = Path(sys._MEIPASS) / "static"
-    # Installé par le .msi : Git portable (MinGit) à côté de l'exécutable, si Git n'est pas sur le poste
-    bundled_git = Path(sys.executable).parent / "git" / "cmd"
-    if not shutil.which("git") and (bundled_git / "git.exe").exists():
-        os.environ["PATH"] = str(bundled_git) + os.pathsep + os.environ.get("PATH", "")
-else:
-    SOURCE_DIR = Path(__file__).resolve().parent.parent / "source"
-    STATIC_DIR = Path(__file__).resolve().parent / "static"
-    sys.path.insert(0, str(SOURCE_DIR))
-
-# Sans Git, GitPython refuse de s'importer : l'application démarre quand même et l'indique dans les logs
-GIT_FOUND = shutil.which("git") is not None
-os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
-
-from core.auth_manager import AuthManager  # noqa: E402
-from core.config_manager import ConfigManager  # noqa: E402
-from content.css_weights import bold_info  # noqa: E402
-from desktop.folder_picker import choose_folder  # noqa: E402
-from publishing.git_manager import GitManager  # noqa: E402
-from content.html_manager import HTMLManager  # noqa: E402
-from core.logger import Logger  # noqa: E402
-from content.page_finder import find_html_pages  # noqa: E402
-from desktop.server_manager import ServerManager  # noqa: E402
-from publishing.sitemap_generator import SitemapGenerator  # noqa: E402
-
-app = Flask(__name__, static_folder=None)
-
-config_manager = ConfigManager()
-auth_manager = AuthManager(config_manager.config_dir)
-logger = Logger()
-
-app.secret_key = auth_manager.secret_key()
-# Cookie de session : supprimé à la fermeture du navigateur, illisible par les scripts, jamais envoyé depuis un autre site
-app.config.update(
-    SESSION_COOKIE_NAME="mycms_session",
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Strict",
-)
-git_manager = GitManager(logger)
-html_manager = HTMLManager(logger)
-server_manager = ServerManager(logger)
-sitemap_generator = SitemapGenerator(logger)
-
-preview_state = {"port": None, "thread": None}
-preview_logs = deque(maxlen=200)
-tray_icon = None  # Icône de la zone de notification (pystray)
+@dataclass(frozen=True)
+class Resources:
+    """Fichiers de l'interface : dans le dossier du projet, ou extraits de l'exécutable (sys._MEIPASS)"""
+    static_dir: Path
+    templates_dir: Path
+    icon_file: Path
 
 
-def _repo_path():
-    return Path(config_manager.get_repo_path())
-
-
-def _error(message, status=400):
-    return jsonify({"success": False, "error": message}), status
-
-
-def _get_page_files():
-    """Toutes les pages HTML du repository (chemins relatifs)"""
-    if not _repo_path().is_dir():
-        return []
-    return find_html_pages(_repo_path())
-
-
-def _resolve_page(name):
-    """Chemin d'une page de la liste, ou None si elle n'en fait pas partie"""
-    if name not in _get_page_files():
-        return None
-    return _repo_path() / name
-
-
-def _update_sitemap():
-    """Régénérer le sitemap et décrire ce qui a été fait"""
-    result = sitemap_generator.update_sitemap(str(_repo_path()), config_manager.get_site_url())
-    if not result["success"]:
-        logger.log(f"Attention: {result['error']}")
-        return result
-
-    if result["created"]:
-        summary = "Sitemap créé à la racine"
-    elif result["moved_from"]:
-        summary = f"Sitemap déplacé à la racine (depuis {result['moved_from']})"
+def prepare_environment():
+    """Chemins des modules et de l'interface, Git portable du .msi. Retourne (Resources, Git trouvé)"""
+    if getattr(sys, "frozen", False):
+        # Exécutable PyInstaller : modules intégrés, interface extraite dans sys._MEIPASS
+        base = Path(sys._MEIPASS)
+        resources = Resources(base / "static", base / "templates", base / "icon" / "logo.ico")
+        # Installé par le .msi : Git portable (MinGit) à côté de l'exécutable, si Git n'est pas sur le poste
+        bundled_git = Path(sys.executable).parent / "git" / "cmd"
+        if not shutil.which("git") and (bundled_git / "git.exe").exists():
+            os.environ["PATH"] = str(bundled_git) + os.pathsep + os.environ.get("PATH", "")
     else:
-        summary = "Sitemap mis à jour"
-    result["message"] = f"{summary} : {len(result['included'])} pages"
-    if result["excluded"]:
-        result["message"] += f", {len(result['excluded'])} exclues ({', '.join(result['excluded'])})"
-    logger.log(result["message"])
-    return result
-
-
-def _read_page(file_path):
-    """Contenu exact du fichier (sans conversion des fins de ligne)"""
-    with open(file_path, encoding="utf-8", newline="") as f:
-        return f.read()
-
-
-def _hash(content):
-    return hashlib.sha1(content.encode("utf-8")).hexdigest()
-
-
-# ======= Authentification =======
-
-# Accessibles sans être connecté : la page de connexion et ce dont elle a besoin
-PUBLIC_PATHS = {
-    "/login", "/static/login.js", "/static/style.css",
-    "/api/auth/state", "/api/auth/login", "/api/auth/setup",
-}
-
-
-# Tiré au hasard à chaque démarrage et jamais enregistré : après un relancement de MyCMS,
-# les sessions ouvertes avant ne sont plus valides et il faut se reconnecter
-BOOT_ID = secrets.token_hex(16)
-
-
-def _logged_in():
-    return (auth_manager.has_credentials()
-            and session.get("auth") == auth_manager.session_id()
-            and session.get("boot") == BOOT_ID)
-
-
-def _open_session():
-    session.clear()
-    session["auth"] = auth_manager.session_id()
-    session["boot"] = BOOT_ID
-
-
-@app.before_request
-def require_login():
-    if request.path in PUBLIC_PATHS or _logged_in():
-        return None
-    if request.path.startswith("/api/"):
-        return _error("Session expirée : reconnectez-vous", 401)
-    return redirect("/login")
-
-
-@app.get("/login")
-def login_page():
-    if _logged_in():
-        return redirect("/")
-    return send_from_directory(STATIC_DIR, "login.html")
-
-
-@app.get("/api/auth/state")
-def auth_state():
-    logged_in = _logged_in()
-    return jsonify({
-        "setup_needed": not auth_manager.has_credentials(),
-        "logged_in": logged_in,
-        "username": auth_manager.username() if logged_in else None,
-    })
-
-
-@app.post("/api/auth/setup")
-def auth_setup():
-    """Premier lancement : créer les identifiants"""
-    data = request.get_json(force=True)
-    password = str(data.get("password") or "")
-    if password != str(data.get("confirm") or ""):
-        return _error("Les deux mots de passe ne correspondent pas")
-    error = auth_manager.create(str(data.get("username") or ""), password)
-    if error:
-        return _error(error)
-    logger.log(f"Identifiants créés pour {auth_manager.username()}")
-    _open_session()
-    return jsonify({"success": True})
-
-
-@app.post("/api/auth/login")
-def auth_login():
-    data = request.get_json(force=True)
-    error = auth_manager.verify(str(data.get("username") or ""), str(data.get("password") or ""))
-    if error:
-        logger.log(f"Échec de connexion: {error}")
-        return _error(error, 401)
-    logger.log(f"Connexion de {auth_manager.username()}")
-    _open_session()
-    return jsonify({"success": True})
-
-
-@app.post("/api/auth/logout")
-def auth_logout():
-    session.clear()
-    return jsonify({"success": True})
-
-
-@app.post("/api/auth/password")
-def auth_password():
-    """Changer le mot de passe : les autres sessions ouvertes sont fermées"""
-    data = request.get_json(force=True)
-    new = str(data.get("new") or "")
-    if new != str(data.get("confirm") or ""):
-        return _error("Les deux nouveaux mots de passe ne correspondent pas")
-    error = auth_manager.change_password(str(data.get("current") or ""), new)
-    if error:
-        return _error(error)
-    logger.log("Mot de passe modifié")
-    _open_session()
-    return jsonify({"success": True, "message": "Mot de passe modifié"})
-
-
-# ======= Interface =======
-
-@app.get("/")
-def index():
-    return send_from_directory(STATIC_DIR, "index.html")
-
-
-@app.get("/static/<path:filename>")
-def static_files(filename):
-    return send_from_directory(STATIC_DIR, filename)
-
-
-# ======= Configuration =======
-
-@app.get("/api/config")
-def get_config():
-    return jsonify(config_manager.get_all_config())
-
-
-@app.post("/api/config")
-def save_config():
-    data = request.get_json(force=True)
-    try:
-        if "repo_path" in data:
-            config_manager.set_repo_path(data["repo_path"])
-        if "site_url" in data:
-            config_manager.set_site_url(data["site_url"])
-        if "auto_pull" in data:
-            config_manager.set_auto_pull(data["auto_pull"])
-        if "show_guide" in data:
-            config_manager.set_show_guide(data["show_guide"])
-        if "default_port" in data:
-            config_manager.set_default_port(int(data["default_port"]))
-    except (ValueError, TypeError) as e:
-        return _error(str(e))
-    return jsonify({"success": True, "config": config_manager.get_all_config()})
-
-
-@app.post("/api/browse-folder")
-def browse_folder():
-    """Fenêtre « Choisir un dossier » de Windows, ouverte par le serveur local (le navigateur ne donne pas le chemin)"""
-    data = request.get_json(force=True, silent=True) or {}
-    result = choose_folder(str(data.get("title") or "Choisir un dossier"), str(data.get("start") or ""))
-    if "error" in result:
-        return _error(result["error"], 409 if "déjà ouverte" in result["error"] else 500)
-    return jsonify({"success": True, **result})
-
-
-@app.post("/api/config/reset")
-def reset_config():
-    config_manager.reset_to_defaults()
-    return jsonify({"success": True, "config": config_manager.get_all_config()})
-
-
-# ======= Git =======
-
-@app.post("/api/git/verify")
-def git_verify():
-    result = git_manager.verify_repo(str(_repo_path()))
-    return jsonify({"success": result["valid"], "message": result["message"]})
-
-
-@app.post("/api/git/clone")
-def git_clone():
-    """Récupérer le site depuis GitHub ; le dossier cloné devient le repository courant"""
-    data = request.get_json(force=True)
-    url = (data.get("url") or "").strip()
-    if not url:
-        return _error("Veuillez entrer l'adresse du repository")
-    destination = (data.get("path") or "").strip()
-    if destination:
-        path = Path(destination).expanduser()
-    else:
-        # Par défaut : dossier personnel / nom du repository
-        name = url.rstrip("/").rsplit("/", 1)[-1].rsplit(":", 1)[-1].removesuffix(".git")
-        path = Path.home() / (name or "site")
-    if path.exists() and (not path.is_dir() or any(path.iterdir())):
-        return _error(f"Le dossier existe déjà et n'est pas vide: {path}")
-
-    result = git_manager.clone(url, str(path))
-    if not result["success"]:
-        return _error(result["message"], 500)
-    config_manager.set_repo_path(str(path))
-    return jsonify({**result, "path": str(path)})
-
-
-@app.post("/api/git/pull")
-def git_pull():
-    return jsonify(git_manager.pull(str(_repo_path())))
-
-
-@app.post("/api/git/push")
-def git_push():
-    message = (request.get_json(force=True).get("message") or "").strip()
-    if not message:
-        return _error("Veuillez entrer un message de commit")
-    return jsonify(git_manager.push(str(_repo_path()), message))
-
-
-@app.get("/api/git/status")
-def git_status():
-    # has_git : le dossier choisi est un repository (sinon l'interface propose de récupérer le site)
-    return jsonify({**git_manager.get_status(str(_repo_path())), "has_git": (_repo_path() / ".git").exists()})
-
-
-@app.post("/api/git/discard")
-def git_discard():
-    """Revenir au dernier commit (les fichiers nouveaux ne sont supprimés que si demandé)"""
-    remove_untracked = bool(request.get_json(force=True).get("remove_untracked"))
-    result = git_manager.discard(str(_repo_path()), remove_untracked)
-    if not result["success"]:
-        return _error(result["message"], 500)
-    return jsonify(result)
-
-
-@app.post("/api/git/add")
-def git_add_untracked():
-    """Ajouter tous les fichiers non suivis"""
-    try:
-        result = subprocess.run(
-            ["git", "add", "."],
-            cwd=str(_repo_path()),
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-    except Exception as e:
-        logger.log(f"Erreur: {e}")
-        return _error(str(e), 500)
-
-    if result.returncode == 0:
-        logger.log("Fichiers non suivis ajoutés avec succès")
-        return jsonify({"success": True, "message": "Tous les fichiers non suivis ont été ajoutés"})
-    logger.log(f"Erreur ajout: {result.stderr}")
-    return _error(f"Erreur lors de l'ajout: {result.stderr}", 500)
-
-
-# ======= Éditeur =======
-
-@app.get("/api/files")
-def list_files():
-    return jsonify({"success": True, "files": _get_page_files()})
-
-
-@app.get("/api/files/<path:name>")
-def load_file(name):
-    file_path = _resolve_page(name)
-    if file_path is None:
-        return _error(f"Fichier introuvable: {name}", 404)
-
-    content = _read_page(file_path)
-    start = time.perf_counter()
-    result = html_manager.extract_editable_elements(content)
-    sources = html_manager.extract_editable_sources(content)
-    bold_flags, bold_selectors = bold_info(_repo_path(), name, content)
-    elapsed_ms = (time.perf_counter() - start) * 1000
-    if not len(sources) == len(bold_flags) == len(result["elements"]):
-        return _error("Structure HTML non reconnue : le nombre d'éléments éditables ne correspond pas", 500)
-
-    # value : texte (ou src d'une iframe) ; html : contenu source exact, édité en texte enrichi
-    elements = [
-        {
-            "index": e["index"],
-            "id": e["id"],
-            "tag": e["tag"],
-            "is_iframe": e["is_iframe"],
-            "value": e["editable_value"],
-            "html": source["html"],
-            "nested": source["nested"],
-            "bold": bold,
-        }
-        for e, source, bold in zip(result["elements"], sources, bold_flags)
-    ]
-    # Version envoyée sur GitHub de chaque élément (null : absent de cette version), pour les marqueurs +/−/~
-    published_known = False
-    if GIT_FOUND and (_repo_path() / ".git").exists():
-        published_known, published_content = git_manager.published_file(str(_repo_path()), name)
-        if published_known:
-            published = [s["html"] for s in html_manager.extract_editable_sources(published_content or "")]
-            # value : texte, ou src d'une iframe (qui n'est pas dans le contenu)
-            values = [e["editable_value"] for e in
-                      html_manager.extract_editable_elements(published_content or "").get("elements", [])]
-            for i, element in enumerate(elements):
-                element["published_html"] = published[i] if i < len(published) else None
-                element["published_value"] = values[i] if i < len(values) else None
-
-    logger.log(f"Fichier ouvert: {name} ({len(elements)} éléments éditables, {elapsed_ms:.0f} ms)")
-    # Une page sans élément éditable n'est pas une erreur : le message est affiché à la place de la liste
-    return jsonify({
-        "success": True,
-        "notice": result.get("error"),
-        "elements": elements,
-        "bold_selectors": bold_selectors,
-        "published_known": published_known,
-        "hash": _hash(content),
-        "parse_ms": round(elapsed_ms),
-    })
-
-
-@app.post("/api/files/<path:name>")
-def save_file(name):
-    file_path = _resolve_page(name)
-    if file_path is None:
-        return _error(f"Fichier introuvable: {name}", 404)
-
-    data = request.get_json(force=True)
-    content = _read_page(file_path)
-
-    # Les éléments sont repérés par leur index : refuser si le fichier a changé depuis le chargement
-    if data.get("hash") != _hash(content):
-        return _error("Le fichier a été modifié depuis son chargement. Rechargez-le avant de sauvegarder.", 409)
-
-    values = {int(k): v for k, v in data.get("values", {}).items()}
-    result = html_manager.apply_editable_html(content, values)
-    if not result["success"]:
-        logger.log(f"Erreur sauvegarde: {result['error']}")
-        return _error(f"Impossible de sauvegarder: {result['error']}", 500)
-
-    html_manager.write_file(file_path, result["content"])
-
-    # Générer automatiquement le sitemap après la sauvegarde
-    sitemap_result = _update_sitemap()
-
-    return jsonify({
-        "success": True,
-        "message": f"Fichier sauvegardé: {name} ({result['changed']} élément(s) modifié(s))",
-        "sitemap": sitemap_result.get("message") or sitemap_result.get("error"),
-        "hash": _hash(result["content"]),
-    })
-
-
-@app.post("/api/snippet/<path:name>")
-def file_snippet(name):
-    """Code source d'un élément tel qu'il serait sauvegardé, sans écrire le fichier"""
-    file_path = _resolve_page(name)
-    if file_path is None:
-        return _error(f"Fichier introuvable: {name}", 404)
-
-    data = request.get_json(force=True)
-    content = _read_page(file_path)
-    if data.get("hash") != _hash(content):
-        return _error("Le fichier a été modifié depuis son chargement. Rechargez-le.", 409)
-
-    values = {int(k): v for k, v in data.get("values", {}).items()}
-    result = html_manager.apply_editable_html(content, values)
-    if not result["success"]:
-        return _error(f"Aperçu du code impossible: {result['error']}", 500)
-
-    snippet = html_manager.editable_snippet(result["content"], int(data.get("index", -1)))
-    if snippet is None:
-        return _error("Élément introuvable", 404)
-    return jsonify({"success": True, **snippet})
-
-
-# ======= Sitemap =======
-
-@app.get("/api/sitemap")
-def sitemap_info():
-    repo_path = _repo_path()
-    if not repo_path.is_dir():
-        return jsonify({"success": True, "location": None, "base_url": ""})
-    location = sitemap_generator.find_sitemap(repo_path)
-    relative = location.relative_to(repo_path).as_posix() if location else "sitemap.xml"
-    return jsonify({
-        "success": True,
-        "location": relative if location else None,
-        "base_url": sitemap_generator.detect_base_url(repo_path, config_manager.get_site_url(), relative),
-    })
-
-
-@app.post("/api/sitemap")
-def sitemap_generate():
-    result = _update_sitemap()
-    if not result["success"]:
-        return _error(result["error"], 500)
-    return jsonify({"success": True, "message": result["message"], "base_url": result["base_url"]})
-
-
-# ======= Prévisualisation =======
-
-def _preview_status():
-    return {
-        "running": server_manager.is_running(),
-        "port": preview_state["port"],
-        "logs": list(preview_logs),
-    }
-
-
-@app.get("/api/preview")
-def preview_status():
-    return jsonify(_preview_status())
-
-
-@app.post("/api/preview/start")
-def preview_start():
-    if server_manager.is_running():
-        return jsonify({"success": True, **_preview_status()})
-
-    try:
-        port = int(request.get_json(force=True).get("port"))
-    except (TypeError, ValueError):
-        return _error("Le port doit être un nombre valide")
-    if not 1 <= port <= 65535:
-        return _error(f"Le port doit être entre 1 et 65535 (reçu: {port})")
-    if not _repo_path().exists():
-        return _error("Le chemin du repository n'existe pas")
-
-    # Script injecté dans les pages ouvertes par l'aperçu en direct de l'éditeur
-    preview_script = (STATIC_DIR / "preview-helper.js").read_text(encoding="utf-8")
-    thread = threading.Thread(
-        target=server_manager.start,
-        args=(str(_repo_path()), port, preview_logs.append, preview_script),
-        daemon=True
-    )
-    thread.start()
-    preview_state.update(port=port, thread=thread)
-
-    # Laisser le temps au serveur de démarrer (ou d'échouer, ex: port occupé)
-    for _ in range(20):
-        if server_manager.is_running() or not thread.is_alive():
-            break
-        time.sleep(0.05)
-
-    status = _preview_status()
-    if not status["running"]:
-        return jsonify({"success": False, "error": preview_logs[-1] if preview_logs else "Échec du démarrage", **status})
-    return jsonify({"success": True, **status})
-
-
-@app.post("/api/preview/stop")
-def preview_stop():
-    server_manager.stop()
-    preview_logs.append("Serveur arrêté")
-    return jsonify({"success": True, **_preview_status()})
-
-
-# ======= Logs =======
-
-@app.get("/api/logs")
-def get_logs():
-    return jsonify({"logs": logger.get_logs()})
-
-
-@app.delete("/api/logs")
-def clear_logs():
-    logger.clear_logs()
-    return jsonify({"success": True})
-
-
-# ======= Quitter =======
-
-@app.get("/api/quit/check")
-def quit_check():
-    """Ce qui reste à faire avant de quitter : modifications non publiées, prévisualisation active"""
-    git = {"available": False, "message": ""}
-    if not GIT_FOUND:
-        git["message"] = "Git est introuvable : la publication est impossible depuis MyCMS"
-    elif not (_repo_path() / ".git").exists():
-        git["message"] = "Le dossier du site n'est pas un repository Git : rien à publier"
-    else:
-        result = git_manager.pending(str(_repo_path()))
-        if result["success"]:
-            git = {**result, "available": True}
-        else:
-            git["message"] = result["message"]
-    return jsonify({"success": True, "git": git, "preview_running": server_manager.is_running()})
-
-
-def _exit_process():
-    # Retirer l'icône de notification, sinon elle reste affichée jusqu'au survol de la souris
-    if tray_icon is not None:
-        try:
-            tray_icon.stop()
-        except Exception:
-            pass
-    os._exit(0)
-
-
-@app.post("/api/quit")
-def quit_app():
-    """Arrêter MyCMS : prévisualisation, session, puis le processus une fois la réponse envoyée"""
-    if server_manager.is_running():
-        server_manager.stop()
-    session.clear()
-    logger.log("MyCMS fermé depuis l'interface")
-    # Le serveur de développement Flask n'a pas d'arrêt propre : sortie du processus juste après la réponse
-    threading.Timer(0.5, _exit_process).start()
-    return jsonify({"success": True})
-
-
-# ======= Démarrage =======
-
-def _show_error(message):
-    """Erreur visible même sans console (exécutable) : boîte de message Windows"""
-    logger.log(f"Erreur: {message}")
-    if os.name == "nt":
-        try:
-            import ctypes
-            ctypes.windll.user32.MessageBoxW(None, message, "MyCMS", 0x10)  # MB_ICONERROR
-        except Exception:
-            pass
-
-
-def _running_instance(url):
-    """MyCMS répond-il déjà à cette adresse ?"""
-    try:
-        with urllib.request.urlopen(f"{url}/api/auth/state", timeout=2) as response:
-            return "setup_needed" in json.loads(response.read().decode("utf-8"))
-    except Exception:
-        return False
-
-
-def _port_free(host, port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-        try:
-            probe.bind((host, port))
-            return True
-        except OSError:
-            return False
-
-
-def _start_tray(url):
-    """Icône dans la zone de notification : montre que MyCMS tourne, permet de l'ouvrir ou de le quitter"""
-    global tray_icon
-    try:
-        import pystray
-        from PIL import Image
-    except ImportError:
-        logger.log("Icône de notification indisponible : pystray ou Pillow n'est pas installé "
-                   "(python -m pip install -r cms/requirements.txt)")
-        return False
-    base = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).resolve().parent.parent
-    menu = pystray.Menu(
-        pystray.MenuItem("Ouvrir MyCMS", lambda: webbrowser.open(url), default=True),
-        # Même fenêtre que le bouton Quitter de l'interface : ce qui n'est pas publié est proposé avant de fermer
-        pystray.MenuItem("Quitter MyCMS…", lambda: webbrowser.open(f"{url}/#quit")),
-    )
-    tray_icon = pystray.Icon("MyCMS", Image.open(base / "icon" / "logo.ico"), "MyCMS", menu)
-    threading.Thread(target=tray_icon.run, daemon=True).start()
-    return True
+        web_dir = Path(__file__).resolve().parent
+        resources = Resources(web_dir / "static", web_dir / "templates", web_dir.parent / "icon" / "logo.ico")
+        sys.path.insert(0, str(web_dir.parent / "source"))
+
+    # Sans Git, GitPython refuse de s'importer : l'application démarre quand même et l'indique dans les logs
+    os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
+    return resources, shutil.which("git") is not None
 
 
 def main(host="127.0.0.1", port=5050, open_browser=True, tray=True):
     """Point d'entrée principal"""
+    resources, git_found = prepare_environment()
+    # Après prepare_environment : les modules de cms/source sont alors importables
+    from api import create_app
+    from desktop import startup
+    from desktop.tray import start_tray
+
+    app = create_app(resources, git_found)
+    services = app.extensions["mycms"]
+    logger = services.logger
     url = f"http://{host}:{port}"
 
     # Double-clic alors que MyCMS tourne déjà : ouvrir l'interface de l'instance en cours
-    if _running_instance(url):
+    if startup.running_instance(url):
         logger.log("MyCMS est déjà lancé : ouverture de l'interface")
         if open_browser:
             webbrowser.open(url)
         return
-    if not _port_free(host, port):
-        _show_error(f"Impossible de démarrer MyCMS : le port {port} est déjà utilisé par un autre programme.\n\n"
-                    "Fermez ce programme puis relancez MyCMS, ou lancez MyCMS avec un autre port (option --port).")
+    if not startup.port_free(host, port):
+        startup.show_error(f"Impossible de démarrer MyCMS : le port {port} est déjà utilisé par un autre programme.\n\n"
+                           "Fermez ce programme puis relancez MyCMS, ou lancez MyCMS avec un autre port (option --port).",
+                           logger)
         sys.exit(1)
 
-    if config_manager.get_auto_pull():
+    if services.config.get_auto_pull():
         logger.log("Pull automatique au démarrage...")
-        threading.Thread(target=git_manager.pull, args=(str(_repo_path()),), daemon=True).start()
+        threading.Thread(target=services.git.pull, args=(str(services.repo_path()),), daemon=True).start()
 
-    if not GIT_FOUND:
+    if not git_found:
         logger.log("Attention: Git est introuvable, pull et push impossibles. "
                    "Installez MyCMS avec le .msi (Git inclus) ou Git depuis https://git-scm.com")
 
     logger.log(f"MyCMS disponible sur {url}")
-    if tray and _start_tray(url):
+    if tray:
+        services.tray = start_tray(url, resources.icon_file, logger)
+    if services.tray is not None:
         logger.log("Icône MyCMS dans la zone de notification : Ouvrir MyCMS / Quitter MyCMS")
     else:
         logger.log("Fermez cette fenêtre pour quitter MyCMS")
@@ -699,13 +88,11 @@ def main(host="127.0.0.1", port=5050, open_browser=True, tray=True):
     try:
         app.run(host=host, port=port, threaded=True)
     except Exception as e:
-        _show_error(f"MyCMS s'est arrêté à cause d'une erreur :\n\n{e}")
+        startup.show_error(f"MyCMS s'est arrêté à cause d'une erreur :\n\n{e}", logger)
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(description="MyCMS - interface web")
     parser.add_argument("--port", type=int, default=5050, help="port de l'interface (défaut : 5050)")
     parser.add_argument("--no-browser", action="store_true", help="ne pas ouvrir le navigateur au démarrage")

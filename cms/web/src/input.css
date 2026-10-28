@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @source "../static";
+@source "../templates";
 
 /* Couleurs sémantiques, redéfinies en mode sombre */
 :root {

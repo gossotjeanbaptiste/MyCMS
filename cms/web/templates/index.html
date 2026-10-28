@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MyCMS</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/highlight.css">
+</head>
+<body class="flex h-screen flex-col bg-bg text-sm text-fg">
+    <header class="flex items-center gap-6 border-b border-line bg-surface px-5 max-sm:flex-col max-sm:items-stretch max-sm:gap-0 max-sm:px-4 max-sm:pt-2">
+        <h1 class="text-base font-bold">MyCMS</h1>
+        <nav class="flex gap-1 overflow-x-auto" role="tablist">
+            <button class="tab active" data-tab="git">Git</button>
+            <button class="tab" data-tab="editor">Éditeur</button>
+            <button class="tab" data-tab="preview">Prévisualisation</button>
+            <button class="tab" data-tab="settings">Paramètres</button>
+            <button class="tab" data-tab="logs">Logs</button>
+        </nav>
+        <div class="ml-auto flex flex-wrap items-center gap-2 max-sm:ml-0 max-sm:pb-2">
+            <button id="open-guide" class="btn px-2.5 py-1 text-xs" title="Comment utiliser MyCMS">Guide</button>
+            <span id="user-name" class="ml-1 text-muted"></span>
+            <button id="logout" class="btn px-2.5 py-1 text-xs">Se déconnecter</button>
+            <button id="quit" class="btn btn-primary px-2.5 py-1 text-xs" title="Vérifier qu'il ne reste rien à faire, puis fermer MyCMS">Quitter</button>
+        </div>
+    </header>
+
+    <main class="min-h-0 flex-1">
+        {% include "tabs/editor.html" %}
+
+        {% include "tabs/git.html" %}
+
+        {% include "tabs/preview.html" %}
+
+        {% include "tabs/settings.html" %}
+
+        {% include "tabs/logs.html" %}
+    </main>
+
+    {% include "dialogs/guide.html" %}
+
+    {% include "dialogs/quit.html" %}
+
+    <!-- Affiché une fois MyCMS arrêté -->
+    <div id="closed-screen" class="fixed inset-0 z-20 hidden items-center justify-center bg-bg px-4">
+        <div class="card max-w-md text-center">
+            <h2 class="text-lg font-bold">MyCMS est fermé</h2>
+            <p id="closed-summary" class="text-muted"></p>
+            <p>Vous pouvez fermer cet onglet.</p>
+        </div>
+    </div>
+
+    <div id="toasts" class="fixed right-4 bottom-4 z-30 flex max-w-[min(420px,calc(100vw-32px))] flex-col gap-2" aria-live="polite"></div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

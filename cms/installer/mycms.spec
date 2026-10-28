@@ -10,19 +10,21 @@ block_cipher = None
 
 a = Analysis(
     ['../web/server.py'],
-    # Les paquets de cms/source (core, content, publishing, desktop) sont importés
+    # Les paquets de cms/source (core, content, publishing, desktop) et cms/web (api) sont importés
     # par nom depuis server.py (pathex est relatif au dossier courant, d'où SPECPATH = dossier de ce fichier)
     pathex=[os.path.join(SPECPATH, '..', 'source'), os.path.join(SPECPATH, '..', 'web')],
     binaries=[],
-    # Interface web (HTML, JS, CSS Tailwind compilé) et icône
-    datas=[('../web/static', 'static'), ('../icon', 'icon')],
+    # Interface web (modèles HTML, JS, CSS Tailwind compilé) et icône
+    datas=[('../web/static', 'static'), ('../web/templates', 'templates'), ('../icon', 'icon')],
     hiddenimports=[
+        'api', 'api.auth', 'api.editor', 'api.pages', 'api.repository', 'api.services',
+        'api.settings', 'api.shutdown', 'api.site',
         'core.auth_manager', 'core.config_manager', 'core.data_dir', 'core.logger',
         'content.css_weights', 'content.html_manager', 'content.html_tree', 'content.hybrid_saver',
         'content.node_diff', 'content.page_finder',
         'publishing.git_manager', 'publishing.git_status', 'publishing.robots', 'publishing.site_url',
         'publishing.sitemap_files', 'publishing.sitemap_generator',
-        'desktop.folder_picker', 'desktop.server_manager',
+        'desktop.folder_picker', 'desktop.server_manager', 'desktop.startup', 'desktop.tray',
         'git',
         'bs4',
         'flask',

@@ -28,9 +28,6 @@ SHOW, SET_OPTIONS, GET_OPTIONS, SET_FOLDER, SET_TITLE, SET_OK_LABEL, GET_RESULT 
 RELEASE = 2
 GET_DISPLAY_NAME = 5  # IShellItem
 
-_busy = threading.Lock()  # Une seule fenêtre à la fois
-
-
 class _GUID(ctypes.Structure):
     _fields_ = [("Data1", wintypes.DWORD), ("Data2", wintypes.WORD), ("Data3", wintypes.WORD), ("Data4", ctypes.c_ubyte * 8)]
 
@@ -99,18 +96,24 @@ def _pick(title, start, result):
         ole32.CoUninitialize()
 
 
-def choose_folder(title="Choisir un dossier", start=""):
-    """Ouvre la fenêtre et attend le choix. Retourne {"path"}, {"cancelled": True} ou {"error"}."""
-    if os.name != "nt":
-        return {"error": "La sélection de dossier n'est disponible que sous Windows : saisissez le chemin"}
-    if not _busy.acquire(blocking=False):
-        return {"error": "Une fenêtre de sélection de dossier est déjà ouverte"}
-    try:
-        result = {}
-        # COM a besoin d'un thread « STA » dédié, indépendant des threads du serveur web
-        thread = threading.Thread(target=_pick, args=(title, start, result), daemon=True)
-        thread.start()
-        thread.join()
-        return result
-    finally:
-        _busy.release()
+class FolderPicker:
+    """Fenêtre de sélection de dossier : une seule ouverte à la fois"""
+
+    def __init__(self):
+        self._busy = threading.Lock()
+
+    def choose(self, title="Choisir un dossier", start=""):
+        """Ouvre la fenêtre et attend le choix. Retourne {"path"}, {"cancelled": True} ou {"error"}."""
+        if os.name != "nt":
+            return {"error": "La sélection de dossier n'est disponible que sous Windows : saisissez le chemin"}
+        if not self._busy.acquire(blocking=False):
+            return {"error": "Une fenêtre de sélection de dossier est déjà ouverte"}
+        try:
+            result = {}
+            # COM a besoin d'un thread « STA » dédié, indépendant des threads du serveur web
+            thread = threading.Thread(target=_pick, args=(title, start, result), daemon=True)
+            thread.start()
+            thread.join()
+            return result
+        finally:
+            self._busy.release()

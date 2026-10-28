@@ -1,0 +1,50 @@
+<!-- ======= Git ======= -->
+<section id="tab-git" class="panel active">
+    <div class="card">
+        <label for="git-repo" class="card-title">Chemin du repository</label>
+        <div class="flex items-center gap-2">
+            <input id="git-repo" type="text" class="input flex-1" spellcheck="false">
+            <button class="btn" data-browse="git-repo" data-browse-title="Choisir le dossier du site" title="Choisir le dossier dans l'Explorateur Windows">Parcourir…</button>
+            <button id="git-verify" class="btn">Vérifier</button>
+        </div>
+    </div>
+    <!-- Affichée seulement si le dossier choisi n'est pas un repository Git (pas de .git) -->
+    <div id="clone-card" class="card hidden">
+        <label for="clone-url" class="card-title">Récupérer le site depuis GitHub</label>
+        <p class="text-muted">Le dossier choisi n'est pas un repository Git. Copiez le site depuis GitHub sur cet ordinateur : il deviendra le repository. GitHub peut demander de se connecter dans le navigateur.</p>
+        <input id="clone-url" type="text" class="input" spellcheck="false" placeholder="Adresse du repository, ex. https://github.com/compte/site.git">
+        <div class="flex flex-wrap items-center gap-2">
+            <input id="clone-path" type="text" class="input min-w-64 flex-1 max-sm:min-w-0" spellcheck="false" placeholder="Dossier de destination (vide = dossier personnel)" aria-label="Dossier de destination">
+            <button class="btn" data-browse="clone-path" data-browse-title="Choisir où copier le site" title="Choisir le dossier dans l'Explorateur Windows">Parcourir…</button>
+            <button id="git-clone" class="btn btn-primary">Cloner</button>
+        </div>
+    </div>
+    <div class="card">
+        <span class="card-title">Actions Git</span>
+        <div class="flex flex-wrap items-center gap-2">
+            <button id="git-pull" class="btn">Pull (récupérer)</button>
+            <button id="git-push" class="btn btn-primary">Push (envoyer)</button>
+            <button id="git-status" class="btn">Statut</button>
+            <button id="git-add" class="btn">Ajouter les fichiers non suivis</button>
+        </div>
+        <label for="commit-message" class="card-title">Message de commit</label>
+        <input id="commit-message" type="text" class="input" value="Mise à jour du contenu" placeholder="Exemple : Mise à jour des tarifs">
+        <!-- Messages préfaits : un clic remplit le champ, qui reste modifiable -->
+        <div id="commit-presets" class="flex flex-wrap items-center gap-1.5" aria-label="Messages préfaits">
+            <span class="mr-1 text-xs text-muted">Messages préfaits :</span>
+            <button class="btn px-2.5 py-1 text-xs">Mise à jour du contenu</button>
+            <button class="btn px-2.5 py-1 text-xs">Mise à jour des tarifs</button>
+            <button class="btn px-2.5 py-1 text-xs">Mise à jour des horaires</button>
+            <button class="btn px-2.5 py-1 text-xs">Mise à jour des formations</button>
+            <button class="btn px-2.5 py-1 text-xs">Mise à jour des actualités</button>
+            <button class="btn px-2.5 py-1 text-xs">Mise à jour des coordonnées</button>
+            <button class="btn px-2.5 py-1 text-xs">Mise à jour des images</button>
+            <button class="btn px-2.5 py-1 text-xs">Correction de fautes</button>
+        </div>
+    </div>
+    <div class="card">
+        <span class="card-title">Statut du repository</span>
+        <!-- Texte intégré à la carte : c'est l'onglet qui défile, pas une zone à part -->
+        <pre id="git-output" class="m-0 font-mono text-[13px] whitespace-pre-wrap [overflow-wrap:anywhere]"></pre>
+    </div>
+</section>

@@ -1,0 +1,51 @@
+<!-- ======= Éditeur ======= -->
+<section id="tab-editor" class="panel overflow-hidden">
+    <div class="flex flex-wrap items-center gap-2">
+        <select id="file-select" class="input min-w-64 max-sm:min-w-0 max-sm:flex-1" aria-label="Fichier à éditer">
+            <option value="">Choisir un fichier…</option>
+        </select>
+        <button id="refresh-files" class="btn">Actualiser</button>
+        <div class="flex min-w-48 flex-1 items-center gap-2 max-sm:basis-full" role="search">
+            <input id="search" type="search" class="input w-full" placeholder="Rechercher dans le contenu (Ctrl+F)" aria-label="Rechercher dans les éléments" spellcheck="false" autocomplete="off">
+            <span id="search-count" class="text-xs whitespace-nowrap text-muted" aria-live="polite"></span>
+        </div>
+        <span id="editor-info" class="text-muted"></span>
+        <button id="toggle-pane" class="btn" aria-pressed="false" title="Afficher la page et le code en direct">Aperçu</button>
+        <button id="reload-file" class="btn" disabled>Recharger</button>
+        <button id="save-file" class="btn btn-primary" disabled>Sauvegarder</button>
+    </div>
+    <!-- Barre de mise en forme : hors de la zone qui défile, donc toujours visible -->
+    <div id="format-bar" class="flex flex-wrap items-center gap-1.5 rounded-lg border border-line bg-surface p-1.5" role="toolbar" aria-label="Mise en forme">
+        <button class="fmt font-extrabold" data-cmd="bold" title="Gras (Ctrl+B)" aria-label="Gras">G</button>
+        <button class="fmt font-serif italic" data-cmd="italic" title="Italique (Ctrl+I)" aria-label="Italique">I</button>
+        <span class="mx-1 h-6 w-px bg-line"></span>
+        <button class="fmt px-3" data-cmd="link" title="Ajouter ou modifier un lien">Lien</button>
+        <button class="fmt px-3" data-cmd="unlink" title="Retirer le lien">Retirer le lien</button>
+        <span class="mx-1 h-6 w-px bg-line"></span>
+        <button class="fmt px-3" data-cmd="removeFormat" title="Retirer gras, italique et liens de la sélection">Retirer la mise en forme</button>
+        <span id="format-hint" class="ml-2 text-xs text-muted">Cliquez dans un élément pour le modifier.</span>
+        <!-- Légende des marqueurs, affichée tant qu'un élément diffère de la version envoyée sur GitHub -->
+        <span id="pub-legend" class="ml-auto hidden items-center gap-1.5 text-xs text-muted [&:not(.hidden)]:flex">
+            Pas encore publié sur GitHub :
+            <span class="pub-badge pub-badge-add">+</span> ajout
+            <span class="pub-badge pub-badge-del">−</span> retrait
+            <span class="pub-badge pub-badge-mod">~</span> modification
+        </span>
+    </div>
+    <div class="flex min-h-0 flex-1 gap-4 max-lg:flex-col">
+        <div id="editable-list" class="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-auto pb-4">
+            <p class="py-10 text-center text-muted">Sélectionnez un fichier pour afficher ses éléments éditables (class="editable").</p>
+        </div>
+        <!-- Aperçu en direct : la page avec les modifications non sauvegardées, ou le code de l'élément -->
+        <aside id="side-pane" class="hidden min-h-0 min-w-0 flex-col gap-2 rounded-lg border border-line bg-surface p-2 lg:w-[45%] max-lg:h-[45%]" aria-label="Aperçu">
+            <div class="flex items-center gap-1.5">
+                <button class="fmt px-3" data-pane="page" aria-pressed="true">Page</button>
+                <button class="fmt px-3" data-pane="code" aria-pressed="false">Code</button>
+                <span id="pane-info" class="ml-1 min-w-0 flex-1 truncate text-xs text-muted"></span>
+                <button id="pane-close" class="fmt" title="Fermer l'aperçu" aria-label="Fermer l'aperçu">✕</button>
+            </div>
+            <iframe id="preview-frame" class="min-h-0 flex-1 rounded-md border border-line bg-white" title="Aperçu de la page"></iframe>
+            <div id="code-view" class="hidden min-h-0 flex-1 overflow-auto rounded-md bg-surface-2 py-2 font-mono text-[13px]"></div>
+        </aside>
+    </div>
+</section>
