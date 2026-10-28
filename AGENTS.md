@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.0.4.
+- Branche de travail : `web_v2`. Version courante : 2.0.5.
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art`. Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dépôt ni pousser dessus pendant les tests.** Travailler sur une copie.
   - La copie hérite de l'URL GitHub réelle : avant tout test de publication, faire pointer son `origin` (fetch **et** push) vers un dépôt bare local.
@@ -35,6 +35,7 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
   - `auth_manager.py` : identifiants dans `~/.mycms/auth.json`, empreinte scrypt. Le fichier est verrouillé contre la modification.
   - `logger.py` : journal de l'application.
   - Compilation : `build_exe.py` et `mycms.spec` (PyInstaller) ; `build_msi.py` et `cms/installer/` (WiX, avec Git portable MinGit embarqué).
+- `cms/icon/logo.ico` : l'icône de l'exe (`mycms.spec`), de l'installeur et de la zone de notification (`server.py`).
 - `run.bat` : lancement depuis les sources (`cms/web/server.py`), sur le port 5050.
 
 ## Commandes
@@ -114,6 +115,13 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
 - **Supprimés** : l'ancienne interface CustomTkinter (`mycms.py`) et ses anciennes docs, `app.py` (doublon de `run.bat`), `logo.png` (l'icône de notification utilise `logo.ico`), la classe `GitManager` en double et les méthodes jamais appelées. `config_manager` ignore les clés obsolètes d'une ancienne configuration (`theme`, `window_width`, `window_height`, `auto_refresh`).
 - **Croix de l'aperçu de l'éditeur** : ferme l'aperçu **et** arrête le serveur de prévisualisation (`POST /api/preview/stop`). Il redémarre tout seul quand on rouvre l'aperçu. Le bouton « Aperçu » se contente de masquer ou d'afficher le panneau.
 - **Réglage « Rafraîchir automatiquement l'éditeur » supprimé** (`auto_refresh`) : il était enregistré mais n'avait jamais d'effet, déjà dans la version CTk. La page ouverte se recharge de toute façon après un pull ou un push.
+
+## Changements de la v2.0.5
+
+- **Nouveau logo** (`cms/icon/logo.ico`) : logos Python et Git sur une tuile bleu nuit arrondie (`#1E293B`).
+  - En 64, 128 et 256 px, le texte « MyCMS » est ajouté sous les logos : « My » en jaune Python (`#FFD43B`), « CMS » en orange Git (`#F05133`), police Segoe UI Black.
+  - En 16, 24, 32 et 48 px, la tuile n'a pas de texte, qui serait illisible.
+  - Le `.ico` contient donc deux dessins différents selon la taille. Pour le régénérer avec Pillow, passer chaque taille déjà redimensionnée dans `append_images`, sinon Pillow redimensionne une seule image pour toutes les tailles. Les images sources ne sont pas versionnées.
 
 ## Tests
 
