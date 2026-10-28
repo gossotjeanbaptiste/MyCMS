@@ -652,7 +652,8 @@ def _start_tray(url):
         import pystray
         from PIL import Image
     except ImportError:
-        logger.log("Icône de notification indisponible : pystray n'est pas installé")
+        logger.log("Icône de notification indisponible : pystray ou Pillow n'est pas installé "
+                   "(python -m pip install -r cms/requirements.txt)")
         return False
     base = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).resolve().parent.parent
     menu = pystray.Menu(

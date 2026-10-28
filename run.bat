@@ -18,8 +18,9 @@ if errorlevel 1 (
 
 echo OK - Python trouve
 
-REM Verifier si les dependances sont installees
-python -c "import flask" >nul 2>&1
+REM Verifier si les dependances sont installees : toutes, pas seulement Flask
+REM (une dependance ajoutee plus tard, comme pystray pour l'icone de notification, serait sinon oubliee)
+python -c "import importlib.util as u, sys; sys.exit(any(u.find_spec(m) is None for m in ('flask', 'bs4', 'git', 'pystray', 'PIL')))" >nul 2>&1
 if errorlevel 1 (
     echo Installation des dependances...
     python -m pip install -r cms\requirements.txt
