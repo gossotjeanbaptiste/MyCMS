@@ -90,6 +90,8 @@ class ConfigManager:
                     self._cache_dirty = False
                     self.save_config()  # Sauvegarder la config nettoyée
             else:
+                # Premier lancement : le cache part des valeurs par défaut (sinon il resterait vide)
+                self._cache = self.config.copy()
                 self.save_config()
         except Exception as e:
             print(f"Erreur lors du chargement de la config: {e}")
@@ -164,8 +166,8 @@ class ConfigManager:
         self._set_with_cache("default_port", int(port))
 
     def get_all_config(self) -> Dict[str, Any]:
-        """Récupérer toute la configuration"""
-        return self._cache.copy() if not self._cache_dirty else self.config.copy()
+        """Récupérer toute la configuration (self.config reçoit chaque modification : il est toujours complet)"""
+        return self.config.copy()
 
     def reset_to_defaults(self):
         """Réinitialiser aux paramètres par défaut"""
