@@ -63,7 +63,7 @@ def compile_to_exe(dist_dir=None):
     print("\n🛑 Vérification de l'application en cours d'exécution...\n")
     kill_exe_process()
     print("\n🔨 Compilation en cours...\n")
-    # Le répertoire parent du script est cms/source, on doit remonter à la racine du projet
+    # Le répertoire parent du script est cms/installer, on doit remonter à la racine du projet
     source_dir = Path(__file__).parent
     project_root = source_dir.parent.parent
     spec_file = source_dir / "mycms.spec"

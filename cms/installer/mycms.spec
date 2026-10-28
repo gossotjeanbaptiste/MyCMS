@@ -10,9 +10,9 @@ block_cipher = None
 
 a = Analysis(
     ['../web/server.py'],
-    # Les paquets de cms/source (core, content, publishing, desktop) sont importés par nom depuis server.py
-    # (pathex est relatif au dossier courant, d'où SPECPATH = dossier de ce fichier)
-    pathex=[SPECPATH, os.path.join(SPECPATH, '..', 'web')],
+    # Les paquets de cms/source (core, content, publishing, desktop) sont importés
+    # par nom depuis server.py (pathex est relatif au dossier courant, d'où SPECPATH = dossier de ce fichier)
+    pathex=[os.path.join(SPECPATH, '..', 'source'), os.path.join(SPECPATH, '..', 'web')],
     binaries=[],
     # Interface web (HTML, JS, CSS Tailwind compilé) et icône
     datas=[('../web/static', 'static'), ('../icon', 'icon')],

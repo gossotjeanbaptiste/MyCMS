@@ -30,6 +30,6 @@ pip install -r cms/requirements.txt
 python cms/web/server.py
 ```
 
-Ou sous Windows : `run.bat` (installe les dépendances si besoin). Pour générer seulement le `.exe` (sans le `.msi`) : `pip install -r cms/requirements-build.txt` puis `python cms/source/build_exe.py`.
+Ou sous Windows : `run.bat` (installe les dépendances si besoin). Pour générer seulement le `.exe` (sans le `.msi`) : `pip install -r cms/requirements-build.txt` puis `python cms/installer/build_exe.py`.
 
 Les notes techniques (architecture, règles à respecter, tests) sont dans [AGENTS.md](AGENTS.md).
