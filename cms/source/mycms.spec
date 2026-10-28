@@ -10,25 +10,19 @@ block_cipher = None
 
 a = Analysis(
     ['../web/server.py'],
-    # Les modules de cms/source sont importés par nom depuis server.py
+    # Les paquets de cms/source (core, content, publishing, desktop) sont importés par nom depuis server.py
     # (pathex est relatif au dossier courant, d'où SPECPATH = dossier de ce fichier)
     pathex=[SPECPATH, os.path.join(SPECPATH, '..', 'web')],
     binaries=[],
     # Interface web (HTML, JS, CSS Tailwind compilé) et icône
     datas=[('../web/static', 'static'), ('../icon', 'icon')],
     hiddenimports=[
-        'auth_manager',
-        'config_manager',
-        'css_weights',
-        'data_dir',
-        'folder_picker',
-        'git_manager',
-        'html_manager',
-        'html_source',
-        'logger',
-        'page_finder',
-        'server_manager',
-        'sitemap_generator',
+        'core.auth_manager', 'core.config_manager', 'core.data_dir', 'core.logger',
+        'content.css_weights', 'content.html_manager', 'content.html_tree', 'content.hybrid_saver',
+        'content.node_diff', 'content.page_finder',
+        'publishing.git_manager', 'publishing.git_status', 'publishing.robots', 'publishing.site_url',
+        'publishing.sitemap_files', 'publishing.sitemap_generator',
+        'desktop.folder_picker', 'desktop.server_manager',
         'git',
         'bs4',
         'flask',

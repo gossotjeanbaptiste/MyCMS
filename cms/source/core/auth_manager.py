@@ -12,7 +12,7 @@ from pathlib import Path
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from data_dir import lock_file, unlock_file
+from core.data_dir import lock_file, unlock_file
 
 MIN_PASSWORD_LENGTH = 8
 MAX_FAILURES = 5  # Tentatives avant blocage temporaire

@@ -38,16 +38,16 @@ else:
 GIT_FOUND = shutil.which("git") is not None
 os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
 
-from auth_manager import AuthManager  # noqa: E402
-from config_manager import ConfigManager  # noqa: E402
-from css_weights import bold_info  # noqa: E402
-from folder_picker import choose_folder  # noqa: E402
-from git_manager import GitManager  # noqa: E402
-from html_manager import HTMLManager  # noqa: E402
-from logger import Logger  # noqa: E402
-from page_finder import find_html_pages  # noqa: E402
-from server_manager import ServerManager  # noqa: E402
-from sitemap_generator import SitemapGenerator  # noqa: E402
+from core.auth_manager import AuthManager  # noqa: E402
+from core.config_manager import ConfigManager  # noqa: E402
+from content.css_weights import bold_info  # noqa: E402
+from desktop.folder_picker import choose_folder  # noqa: E402
+from publishing.git_manager import GitManager  # noqa: E402
+from content.html_manager import HTMLManager  # noqa: E402
+from core.logger import Logger  # noqa: E402
+from content.page_finder import find_html_pages  # noqa: E402
+from desktop.server_manager import ServerManager  # noqa: E402
+from publishing.sitemap_generator import SitemapGenerator  # noqa: E402
 
 app = Flask(__name__, static_folder=None)
 

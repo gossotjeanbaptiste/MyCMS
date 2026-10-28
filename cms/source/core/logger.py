@@ -7,7 +7,7 @@ Logger - Système de journalisation centralisé
 from datetime import datetime
 from collections import deque
 
-from data_dir import data_dir
+from core.data_dir import data_dir
 
 
 class Logger:
