@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.0.5.
+- Branche de travail : `web_v2`. Version courante : 2.0.6.
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art`. Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dépôt ni pousser dessus pendant les tests.** Travailler sur une copie.
   - La copie hérite de l'URL GitHub réelle : avant tout test de publication, faire pointer son `origin` (fetch **et** push) vers un dépôt bare local.
@@ -122,6 +122,15 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
   - En 64, 128 et 256 px, le texte « MyCMS » est ajouté sous les logos : « My » en jaune Python (`#FFD43B`), « CMS » en orange Git (`#F05133`), police Segoe UI Black.
   - En 16, 24, 32 et 48 px, la tuile n'a pas de texte, qui serait illisible.
   - Le `.ico` contient donc deux dessins différents selon la taille. Pour le régénérer avec Pillow, passer chaque taille déjà redimensionnée dans `append_images`, sinon Pillow redimensionne une seule image pour toutes les tailles. Les images sources ne sont pas versionnées.
+
+## Changements de la v2.0.6
+
+- **Icône de notification absente avec `run.bat`** : `run.bat` ne testait que `import flask`. Un poste qui avait déjà Flask ne recevait donc jamais `pystray` ni Pillow, ajoutés en v2.0.2, et le serveur démarrait sans icône, avec seulement une ligne dans les logs.
+  - `run.bat` vérifie désormais toutes les dépendances d'exécution avec `importlib.util.find_spec`, sans les importer. `import git` échoue sur un poste sans Git, et relancerait l'installation à chaque démarrage.
+  - **Une dépendance ajoutée à `cms/requirements.txt` doit aussi être ajoutée à la liste de `run.bat`**, en utilisant le nom du module (`bs4`, `git`, `PIL`) et non celui du paquet.
+- **Guide, section « Bon à savoir »** (`index.html`) : l'ordre des points est changé.
+  - En premier : seuls les éléments `class="editable"` sont modifiables. C'est volontaire, et rendre un nouveau texte modifiable demande un développeur.
+  - En dernier : « Sauvegarder n'est pas publier ».
 
 ## Tests
 
