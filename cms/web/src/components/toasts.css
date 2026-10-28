@@ -1,0 +1,9 @@
+/* Messages en bas à droite */
+@layer components {
+    .toast {
+        @apply rounded-md border border-l-4 border-line border-l-ok bg-surface px-3.5 py-2.5 whitespace-pre-wrap shadow-lg;
+    }
+    .toast.error {
+        @apply border-l-err;
+    }
+}

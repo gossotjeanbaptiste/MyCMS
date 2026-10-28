@@ -1,0 +1,13 @@
+/* Marqueurs « pas encore publié sur GitHub » */
+@layer components {
+    /* Marqueurs « pas encore publié sur GitHub » : badge + carte teintée */
+    .pub-badge {
+        @apply mt-1 inline-flex h-5 min-w-5 items-center justify-center rounded px-1 font-mono text-xs font-bold text-bg;
+    }
+    .pub-badge-add, .pub-add .pub-badge { @apply bg-ok; }
+    .pub-badge-del, .pub-del .pub-badge { @apply bg-err; }
+    .pub-badge-mod, .pub-mod .pub-badge { @apply bg-warn; }
+    .field.pub-add { @apply border-l-4 border-l-ok bg-ok/6; }
+    .field.pub-del { @apply border-l-4 border-l-err bg-err/6; }
+    .field.pub-mod { @apply border-l-4 border-l-warn bg-warn/6; }
+}

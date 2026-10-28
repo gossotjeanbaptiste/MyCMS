@@ -1,0 +1,57 @@
+/* Éditeur : cartes des éléments, barre de mise en forme, texte enrichi, code de l'aperçu */
+@layer components {
+    .field {
+        @apply grid grid-cols-[140px_1fr] gap-3 rounded-lg border border-line bg-surface px-3 py-2.5 max-sm:grid-cols-1 max-sm:gap-1.5;
+    }
+    .field.dirty {
+        @apply border-accent;
+    }
+    /* Résultat de recherche atteint avec Entrée */
+    .field.search-current {
+        @apply outline-2 outline-offset-2 outline-accent/60;
+    }
+
+    /* Barre de mise en forme */
+    .fmt {
+        @apply min-h-9 min-w-9 cursor-pointer rounded-md border border-line bg-surface-2 text-fg hover:enabled:border-muted disabled:cursor-default disabled:opacity-40;
+    }
+    .fmt[aria-pressed="true"] {
+        @apply border-accent bg-accent/15;
+    }
+
+    /* Éditeur de texte enrichi d'un élément */
+    .rich {
+        @apply min-h-10 rounded-md border border-line bg-surface px-2.5 py-2 text-[15px] leading-relaxed text-fg focus:outline-2 focus:-outline-offset-1 focus:outline-accent;
+        overflow-wrap: anywhere;
+    }
+    /* Pas de gras par défaut du navigateur (titres) : seulement <strong>/<b> et les règles du site */
+    .rich :is(h1, h2, h3, h4, h5, h6, th) { font-weight: inherit; font-size: inherit; margin: 0; }
+    .rich strong, .rich b { @apply font-bold; }
+    .rich em, .rich i { @apply italic; }
+    .rich a { @apply text-accent underline; }
+    .rich ul { @apply list-disc pl-6; }
+    .rich ol { @apply list-decimal pl-6; }
+    .rich img { @apply inline-block max-h-24 max-w-full; }
+
+    /* Élément éditable imbriqué : verrouillé dans son parent */
+    .lock {
+        @apply mx-0.5 inline-flex cursor-pointer items-center gap-1 rounded-md border border-line bg-surface-2 px-2 align-baseline font-semibold select-none;
+    }
+
+    /* Code source de l'élément dans l'aperçu */
+    .code-line {
+        @apply flex whitespace-pre;
+        tab-size: 4;
+    }
+    .code-line .ln {
+        @apply sticky left-0 w-14 shrink-0 bg-surface-2 pr-3 text-right text-muted select-none;
+    }
+    .code-line.hl {
+        @apply bg-accent/12;
+    }
+    .code-line.hl .ln {
+        @apply font-bold text-accent;
+    }
+
+    /* Occurrences de la recherche : static/highlight.css (pas compris par l'optimiseur de Tailwind) */
+}
