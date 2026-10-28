@@ -7,43 +7,57 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.0.6.
-- Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art`. Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
+- Branche de travail : `web_v2`. Version courante : 2.0.7.
+- Site de référence pour les tests : `C:\Users\jbgos\Documents\autoecoleroutart.github.io`. Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dépôt ni pousser dessus pendant les tests.** Travailler sur une copie.
   - La copie hérite de l'URL GitHub réelle : avant tout test de publication, faire pointer son `origin` (fetch **et** push) vers un dépôt bare local.
 
 ## Arborescence
 
-- `cms/web/server.py` : serveur Flask. Il fournit l'API JSON et les pages, vérifie la connexion avant chaque requête (`before_request`), et accepte les options `--port`, `--no-browser` et `--no-tray`.
+Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas de variable globale** (voir « Règles »).
+
+- `cms/web/server.py` : point d'entrée. `prepare_environment()` règle les chemins et le Git portable, `main()` gère l'instance unique, l'icône et le lancement. Options `--port`, `--no-browser` et `--no-tray`.
+- `cms/web/api/` : l'application Flask.
+  - `create_app()` (`__init__.py`) crée l'application et enregistre un blueprint par domaine : `auth` (connexion exigée avant chaque requête, `before_app_request`), `pages`, `settings` (configuration, logs, choix d'un dossier), `repository` (Git), `editor`, `site` (sitemap, prévisualisation) et `shutdown` (Quitter).
+  - `services.py` : la classe `Services` regroupe les gestionnaires et l'état du processus (`boot_id`, prévisualisation, icône). Elle est rangée dans `app.extensions["mycms"]`, et les routes l'obtiennent avec `services()`.
+- `cms/web/templates/` : modèles Jinja.
+  - `index.html` inclut `tabs/*.html` (un onglet par fichier) et `dialogs/*.html` (guide, Quitter).
+  - `login.html` : la connexion.
 - `cms/web/static/` :
-  - `index.html` et `app.js` : toute l'interface, en JS sans framework ;
-  - `login.html` et `login.js` : la connexion ;
-  - `preview-helper.js` : injecté dans les pages servies par la prévisualisation, pour l'aperçu en direct ;
-  - `style.css` : généré par Tailwind, ne pas l'éditer à la main ;
+  - `scripts/` : modules ES, sans framework. `main.js` (l'interface) et `login.js` (la connexion) sont les points d'entrée.
+    - `core/` : `dom.js` (`$`, `api`, `toast`…), `state.js` (état partagé) et `tabs.js`.
+    - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js` et `format-bar.js`.
+    - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
+    - `git/` : `git.js` et `browse.js` (« Parcourir… »).
+    - `quit/` : `quit.js` et `quit-content.js`.
+    - `settings/` : `settings.js`, `header.js` (guide, déconnexion) et `logs.js`.
+  - `style.css` : généré par Tailwind, ne pas l'éditer à la main.
   - `highlight.css` : surlignage de la recherche, hors Tailwind.
-- `cms/web/src/input.css` : source Tailwind v4. Les composants sont dans `@layer components`.
-- `cms/source/` : le code métier.
-  - `html_source.py` : arbre HTML avec les positions exactes dans le fichier, et `HybridSaver` pour la sauvegarde hybride.
-  - `html_manager.py` : extraction des éléments `.editable`, `apply_editable_html` (sauvegarde), extraits de code.
-  - `css_weights.py` : détermine quels éléments sont en gras d'après le CSS du site (`<link>`, `@import`, variables CSS, spécificité, héritage).
-  - `page_finder.py` : détection automatique des pages.
-  - `sitemap_generator.py` : création du sitemap, déplacement à la racine, détection de l'URL du site.
-  - `git_manager.py` : pull, push, clone. `pending()` liste ce qui n'est pas encore publié.
-  - `server_manager.py` : serveur de prévisualisation (`ThreadingHTTPServer` sur 127.0.0.1).
-  - `data_dir.py` : dossier de données `~/.mycms` (caché ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), et verrouillage de fichiers.
-  - `config_manager.py` : configuration dans `~/.mycms/config.json`.
-  - `auth_manager.py` : identifiants dans `~/.mycms/auth.json`, empreinte scrypt. Le fichier est verrouillé contre la modification.
-  - `logger.py` : journal de l'application.
-  - Compilation : `build_exe.py` et `mycms.spec` (PyInstaller) ; `build_msi.py` et `cms/installer/` (WiX, avec Git portable MinGit embarqué).
-- `cms/icon/logo.ico` : l'icône de l'exe (`mycms.spec`), de l'installeur et de la zone de notification (`server.py`).
-- `run.bat` : lancement depuis les sources (`cms/web/server.py`), sur le port 5050.
+- `cms/web/src/` : sources Tailwind v4. `input.css` importe `theme.css` (couleurs) et `components/*.css` (une couche `@layer components` par fichier).
+- `cms/source/` : le code métier, importé par paquet (`from content.html_tree import parse`).
+  - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (`auth.json`, empreinte scrypt, fichier verrouillé) et `logger.py`.
+  - `content/` :
+    - `html_tree.py` : arbre HTML avec les positions exactes dans le fichier ;
+    - `hybrid_saver.py` et `node_diff.py` : la sauvegarde hybride ;
+    - `html_manager.py` : extraction des `.editable`, `apply_editable_html`, extraits de code ;
+    - `css_weights.py` : gras d'après le CSS du site (`<link>`, `@import`, variables, spécificité, héritage) ;
+    - `page_finder.py` : détection des pages.
+  - `publishing/` :
+    - `git_manager.py` : pull, push, clone, `pending()` ;
+    - `git_status.py` : rapport de l'onglet Git ;
+    - `sitemap_generator.py`, `sitemap_files.py`, `robots.py` et `site_url.py` : sitemap, robots.txt, URL du site.
+  - `desktop/` : `server_manager.py` (prévisualisation, `ThreadingHTTPServer` sur 127.0.0.1), `folder_picker.py` (classe `FolderPicker`), `tray.py` (icône de notification) et `startup.py` (instance unique, port libre, `show_error`).
+- `cms/installer/` : compilation. `build_exe.py` et `mycms.spec` (PyInstaller), `build_msi.py`, `MyCMS.wixproj` et `Package.wxs` (WiX, avec Git portable MinGit).
+  - Un nouveau module Python doit être ajouté aux `hiddenimports` de `mycms.spec`, et un nouveau dossier de l'interface à ses `datas`.
+- `cms/icon/logo.ico` : l'icône de l'exe, de l'installeur et de la zone de notification.
+- `run.bat` : lancement depuis les sources, sur le port 5050.
 
 ## Commandes
 
 - Lancer : `python cms/web/server.py`, ou `python cms/web/server.py --port 5060 --no-browser --no-tray`.
 - Dépendances : `cms/requirements.txt` pour l'exécution, `cms/requirements-build.txt` (ajoute PyInstaller) pour compiler.
-- CSS, après toute modification de `input.css` ou ajout de classes Tailwind dans le HTML ou le JS : `cd cms/web && npm run build:css`. `style.css` est versionné, pour que l'application tourne sans Node.
-- Exécutable : `python cms/source/build_exe.py`, qui produit `dist/MyCMS.exe`.
+- CSS, après toute modification de `src/` ou ajout de classes Tailwind dans les modèles ou les scripts : `cd cms/web && npm run build:css`. `style.css` est versionné, pour que l'application tourne sans Node.
+- Exécutable : `python cms/installer/build_exe.py`, qui produit `dist/MyCMS.exe`.
 - Installeur : `compile_msi.bat`, qui produit `dist/MyCMS-<version>.msi`. Nécessite le SDK .NET.
 - Version : la changer **à la fois** dans `cms/web/package.json` (lue par le `.msi`) et dans `cms/source/__init__.py`.
 
@@ -62,6 +76,10 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
   - on ne retire pas le gras d'un élément qui est lui-même un `<strong>` ou qui est gras via le CSS : un message l'explique à l'utilisateur.
 - **Python modifié = serveur à relancer.** Flask ne recharge pas le code. Le JS et le CSS sont relus au F5. Si le JS reçoit une réponse d'un serveur obsolète, il affiche un message pour relancer.
 - **Emojis dans la console** : ils plantent sur une console non UTF-8. Le logger et les scripts de compilation sont protégés contre ça ; garder cette protection.
+- **200 lignes au plus par fichier**, Python, JS, HTML et CSS. Au-delà, découper par fonctionnalité, dans un sous-dossier si besoin.
+- **Pas de variable globale.**
+  - Python : pas de `global` ni d'état modifiable au niveau d'un module. L'état vit dans une instance : `Services`, ou une classe comme `FolderPicker`. Seules les constantes en MAJUSCULES et les blueprints `bp` restent au niveau du module.
+  - JS : modules ES uniquement, sans rien poser sur `window`. L'état partagé est dans `core/state.js`, et l'état propre à une fonctionnalité dans un objet privé de son module. Chaque module exporte une fonction `init…()`, appelée par `main.js`.
 - **Prévisualisation** : servie sur `127.0.0.1` (pas `localhost`, qui coûte environ 2 s sous Windows) et multi-thread (les préconnexions des navigateurs bloquaient un serveur mono-thread).
 
 ## Fonctionnalités de la v2.0.1
@@ -88,7 +106,7 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
 - **Plus de terminal** : l'exécutable est compilé avec `console=False` dans `mycms.spec`. `run.bat` garde sa console pour le développement.
 - **Icône dans la zone de notification** (`pystray` et Pillow) : « Ouvrir MyCMS » ouvre l'interface ; « Quitter MyCMS… » ouvre `/#quit`, c'est-à-dire la fenêtre Quitter de l'interface, avec les mêmes vérifications. Le `#quit` survit à la redirection vers `/login` (voir `login.js`). L'icône est retirée avant `os._exit`, sinon elle resterait affichée jusqu'au survol.
 - **Instance unique** : au démarrage, si MyCMS répond déjà sur le port, on ouvre simplement l'interface et on s'arrête.
-- **Erreurs visibles sans console** : `_show_error` affiche une boîte de message Windows (`MessageBoxW`), par exemple si le port est pris par un autre programme ou si le serveur s'arrête sur une erreur. Dans les tests, remplacer `server._show_error`, sinon la boîte bloque le test et s'affiche sur l'écran de l'utilisateur.
+- **Erreurs visibles sans console** : `show_error` (`desktop/startup.py`) affiche une boîte de message Windows (`MessageBoxW`), par exemple si le port est pris par un autre programme ou si le serveur s'arrête sur une erreur. Dans les tests, remplacer `desktop.startup.show_error`, sinon la boîte bloque le test et s'affiche sur l'écran de l'utilisateur.
 
 ## Fonctionnalités de la v2.0.3
 
@@ -132,15 +150,26 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
   - En premier : seuls les éléments `class="editable"` sont modifiables. C'est volontaire, et rendre un nouveau texte modifiable demande un développeur.
   - En dernier : « Sauvegarder n'est pas publier ».
 
+## Changements de la v2.0.7
+
+- **Ménage : fichiers de 200 lignes au plus, rangés par fonctionnalité, sans variable globale.** Le comportement ne change pas, et l'arborescence est décrite plus haut.
+  - `server.py` (714 lignes) devient `server.py`, avec `cms/web/api/` (un blueprint par domaine et `Services`) et `desktop/tray.py` et `startup.py`.
+  - `app.js` (1425 lignes) devient une vingtaine de modules ES dans `static/scripts/`, et `index.html` des modèles Jinja dans `templates/`.
+  - `html_source.py`, `git_manager.py`, `sitemap_generator.py` et `input.css` sont découpés.
+  - Les scripts de compilation passent dans `cms/installer/`.
+- **Vérifié** : les sorties du code métier (sauvegarde, extraction, gras, extraits, sitemap, statut Git) sont identiques avant et après le découpage, sur les 17 pages du site. Le CSS compilé est identique à l'octet près.
+- **Configuration incomplète au premier lancement (corrigé)** : sans `config.json`, le cache de `ConfigManager` restait vide, puis ne contenait que le premier réglage enregistré. `get_all_config()` renvoyait alors seulement `repo_path`, et l'aperçu refusait de démarrer (« Le port doit être un nombre valide ») jusqu'au relancement. `get_all_config()` renvoie maintenant `self.config`, qui est toujours complet.
+
 ## Tests
 
 Il n'y a pas de suite de tests dans le dépôt. Les vérifications faites jusqu'ici, à refaire selon ce qui est touché :
 
 - **Tests unitaires Python** de `HybridSaver`, avec des entrées qui imitent le navigateur : `<b>`, attributs réécrits, fins de ligne `\n`, marqueurs de verrou.
-- **Aller-retour dans jsdom** sur toutes les pages du site : on extrait les vraies fonctions `buildRichEditor` et `serializeRich` d'`app.js`, et on vérifie que le fichier reste identique.
+- **Aller-retour dans jsdom** sur toutes les pages du site : on utilise les vraies fonctions `buildRichEditor` et `serializeRich` de `static/scripts/editor/rich-editor.js`, et on vérifie que le fichier reste identique. Dans Chrome : `await import("/static/scripts/editor/rich-editor.js")`.
 - **Bout en bout dans Chrome** avec `puppeteer-core`.
   - Chrome se trouve dans `C:\Program Files\Google\Chrome\Application\chrome.exe`.
-  - Lancer le serveur avec `USERPROFILE` pointant vers un dossier temporaire, pour isoler la config et les identifiants.
+  - Lancer le serveur avec `USERPROFILE` pointant vers un dossier temporaire, pour isoler la config et les identifiants. Seulement pour le serveur : Chrome ne démarre pas avec ce profil.
+  - Arrêter le serveur de test par son PID : `POST /api/quit` exige une session ouverte.
   - Se connecter avec `POST /api/auth/setup` (premier lancement), sinon `POST /api/auth/login`.
   - Attention : après une sauvegarde, l'éditeur se recharge. Attendre la fin du rechargement avant d'agir dessus.
 
