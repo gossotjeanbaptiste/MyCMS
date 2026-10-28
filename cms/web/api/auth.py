@@ -12,7 +12,7 @@ bp = Blueprint("auth", __name__)
 
 # Accessibles sans être connecté : la page de connexion et ce dont elle a besoin
 PUBLIC_PATHS = {
-    "/login", "/static/login.js", "/static/style.css",
+    "/login", "/static/scripts/login.js", "/static/style.css",
     "/api/auth/state", "/api/auth/login", "/api/auth/setup",
 }
 

@@ -58,7 +58,7 @@ def preview_start():
         return error("Le chemin du repository n'existe pas")
 
     # Script injecté dans les pages ouvertes par l'aperçu en direct de l'éditeur
-    preview_script = (s.resources.static_dir / "preview-helper.js").read_text(encoding="utf-8")
+    preview_script = (s.resources.static_dir / "scripts" / "preview" / "preview-helper.js").read_text(encoding="utf-8")
     thread = threading.Thread(
         target=s.preview.start,
         args=(str(s.repo_path()), port, s.preview_logs.append, preview_script),

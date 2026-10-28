@@ -1,8 +1,8 @@
 // MyCMS - page de connexion (et création des identifiants au premier lancement)
-"use strict";
+// Module autonome : la page est accessible sans être connecté, sans les autres scripts de l'interface
 
 const $ = (id) => document.getElementById(id);
-let setupNeeded = false;
+const login = { setupNeeded: false };
 
 function showError(message) {
     $("auth-error").textContent = message;
@@ -26,7 +26,7 @@ $("auth-form").addEventListener("submit", async (e) => {
     const body = { username: $("username").value, password: $("password").value };
     $("auth-submit").disabled = true;
     try {
-        if (setupNeeded) {
+        if (login.setupNeeded) {
             await post("/api/auth/setup", { ...body, confirm: $("confirm").value });
         } else {
             await post("/api/auth/login", body);
@@ -40,15 +40,15 @@ $("auth-form").addEventListener("submit", async (e) => {
     }
 });
 
-(async () => {
+async function start() {
     try {
         const state = await (await fetch("/api/auth/state")).json();
         if (state.logged_in) return location.replace("/" + location.hash);
-        setupNeeded = state.setup_needed;
+        login.setupNeeded = state.setup_needed;
     } catch {
         showError("Le serveur MyCMS ne répond pas");
     }
-    if (setupNeeded) {
+    if (login.setupNeeded) {
         document.title = "MyCMS - Création des identifiants";
         $("auth-intro").textContent = "Premier lancement : choisissez l'identifiant et le mot de passe (8 caractères minimum) qui seront demandés pour modifier le site. Notez-les bien.";
         $("password").autocomplete = "new-password";
@@ -57,4 +57,6 @@ $("auth-form").addEventListener("submit", async (e) => {
         $("auth-submit").textContent = "Créer les identifiants";
     }
     $("username").focus();
-})();
+}
+
+start();
