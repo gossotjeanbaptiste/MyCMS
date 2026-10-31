@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Règles du projet (AGENTS.md) vérifiées automatiquement : taille des fichiers, pas de variable globale,
+"""Règles du projet (docs/AGENTS.md) vérifiées automatiquement : taille des fichiers, pas de variable globale,
 version, modules déclarés pour l'exécutable, dépendances vérifiées par run.bat"""
 
 import json

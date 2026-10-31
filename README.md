@@ -40,7 +40,7 @@ Le développeur du site garde la main sur ce qui est modifiable : seuls les él�
 - **Le sitemap à jour** : régénéré à chaque sauvegarde, en respectant le `robots.txt` et les pages `noindex`.
 - **Une application de bureau** : un installeur `.msi` qui embarque Git, une icône dans la zone de notification, une seule instance à la fois, et un bouton Quitter qui propose de sauvegarder ou publier avant de fermer.
 
-Toute la documentation technique (architecture, règles de sauvegarde, API, tests…) est dans [**AGENTS.md**](AGENTS.md).
+Toute la documentation technique (architecture, règles de sauvegarde, API, tests…) est dans [**docs/AGENTS.md**](docs/AGENTS.md).
 
 ## Installation
 
