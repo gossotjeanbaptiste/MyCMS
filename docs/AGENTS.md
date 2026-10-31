@@ -353,6 +353,10 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   1. pousser `web_v2` ;
   2. ouvrir une PR de `web_v2` vers `main` (la branche par défaut sur GitHub, qui contient encore la version d'origine) et la fusionner ;
   3. taguer `v2.2.3` sur le résultat.
+- **`.gitattributes`** : fins de ligne fixées, quel que soit le réglage `core.autocrlf` du poste.
+  - `cms/web/static/style.css` est en LF, comme Tailwind l'écrit. Git le prenait pour un fichier binaire (lignes très longues) et le stockait tel quel : chaque recompilation apparaissait comme une modification, sans aucun changement de règle CSS.
+  - Les `.bat` sont toujours en CRLF : cmd gère mal les fins de ligne LF (étiquettes `goto`).
+  - Ne pas repasser `style.css` en CRLF à la main avant un commit.
 - **Scripts `.bat` rangés dans `scripts/`** (`run.bat`, `run_tests.bat`, `compile_msi.bat`), pour alléger la racine. Ils cherchent seuls la racine du dépôt, donc marchent aussi copiés ailleurs dans le dépôt (racine ou `scripts/`). `run.bat` et `compile_msi.bat` comptaient avant sur le dossier courant, ce qui ne marchait que par double-clic. `test_project_rules.py` lit la liste des dépendances dans `scripts/run.bat`.
 - **Documentation rangée dans `docs/`** : `AGENTS.md`, `CLAUDE.md` et le modèle de contrat de licence d'usage interne. Un `CLAUDE.md` d'une ligne reste à la racine, et les liens (README, `pytest.ini`, `test_project_rules.py`) pointent vers `docs/AGENTS.md`.
   - Le contrat : usage interne seulement, à partir de l'installeur `.msi`, versions 2.2.3 et suivantes pendant la durée du contrat, commercialisation réservée à l'auteur, et clause d'interopérabilité (code source public sur GitHub). Le README renvoie à sa version Notion.
