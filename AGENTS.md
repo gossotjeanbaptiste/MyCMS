@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.10 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.2.0 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -17,7 +17,8 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
 
 Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas de variable globale** (voir « Règles »).
 
-- `cms/web/server.py` : point d'entrée. `prepare_environment()` règle les chemins et le Git portable, `main()` gère l'instance unique, l'icône et le lancement. Options `--port`, `--no-browser` et `--no-tray`.
+- `cms/web/wsgi.py` : point d'entrée WSGI. `prepare_environment()` règle les chemins et le Git portable, `create_application()` construit l'application Flask, et `wsgi.app` la fournit à la demande (rien n'est créé à l'import). Un autre serveur peut la servir : `waitress-serve --listen=127.0.0.1:5050 wsgi:app`, depuis `cms/web`.
+- `cms/web/server.py` : le lanceur, et le point d'entrée de l'exe. `main()` gère l'instance unique, l'icône et le navigateur, puis sert `wsgi.create_application()` avec **Waitress** (`THREADS = 8`). Options `--port`, `--no-browser` et `--no-tray`.
 - `cms/web/api/` : l'application Flask.
   - `create_app()` (`__init__.py`) crée l'application et enregistre un blueprint par domaine : `auth` (connexion exigée avant chaque requête, `before_app_request`), `users` (gestion des comptes, administrateurs seulement), `pages`, `settings` (configuration, logs, choix d'un dossier), `repository` (Git), `publish` (vérification, mise en ligne, reprise de la version en ligne), `editor`, `structure` (dupliquer, supprimer), `media` (images), `site` (sitemap, prévisualisation) et `shutdown` (Quitter).
   - `services.py` : la classe `Services` regroupe les gestionnaires et l'état du processus (`boot_id`, prévisualisation, icône). Elle est rangée dans `app.extensions["mycms"]`, et les routes l'obtiennent avec `services()`.
@@ -306,12 +307,22 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - **Supprimés** : `cms/icon/make_wide_logo.py`, car les sources d'images ne sont pas versionnées (seul `logo-wide.png` l'est), et le dossier `assets/` vide à la racine.
 - **Lancement** : le `.msi` installe `MyCMS.exe`, compilé par PyInstaller depuis `cms/web/server.py`. Il n'y a ni `app.py` (supprimé en v2.0.4) ni `wsgi.py`. Le serveur est celui de Flask (`app.run`, multi-thread, sur 127.0.0.1).
 
+## Changements de la v2.2.0
+
+- **Point d'entrée WSGI et serveur de production** : l'application n'est plus servie par le serveur de développement de Flask (`app.run`), mais par **Waitress** (`waitress>=3.0.0` dans `requirements.txt`, dans `run.bat` et dans les `hiddenimports`).
+  - `cms/web/wsgi.py` fournit l'application (`create_application()`, `wsgi:app`), et `server.py` la lance avec `serve(app, host, port, threads=8, ident="MyCMS")`. `Resources` et `prepare_environment` passent de `server.py` à `wsgi.py`.
+  - **8 threads** : certaines requêtes occupent un thread longtemps (fenêtre « Choisir un dossier », clone, push, démarrage de l'aperçu). Le nombre de threads est fixe, contrairement au serveur de Flask qui en créait un par requête.
+  - Plus d'avertissement « development server ». L'en-tête HTTP `Server` vaut `MyCMS`.
+  - Quitter garde `os._exit` après la réponse : vérifié dans l'exe recompilé (14,0 Mo, +180 Ko), le processus se ferme.
+  - Dans les tests, `server.serve` est remplacé (il bloquerait). `test_waitress_serves_the_application` lance un vrai serveur Waitress sur un port libre.
+- La version passe à 2.2.0 (changement de serveur).
+
 ## Tests
 
 **Lancer `run_tests.bat` avant chaque commit.** Il installe ce qui manque, puis lance les deux suites. GitHub Actions (`tests.yml`) les relance à chaque push, sous Windows. Ses arguments sont passés à pytest (`run_tests.bat -q`, `run_tests.bat -k editor`).
 
 - **Python** : `python -m pytest`, depuis la racine (`pytest.ini`). Il dépend de `cms/requirements-dev.txt`.
-  - `cms/tests/` contient un dossier par paquet : `core/`, `content/`, `publishing/` et `desktop/` (dont `server.py`).
+  - `cms/tests/` contient un dossier par paquet : `core/`, `content/`, `publishing/` et `desktop/` (dont `wsgi.py` et `server.py`, avec un vrai serveur Waitress).
   - `api/` contient les tests fonctionnels de chaque route, avec le client de test Flask.
   - `test_project_rules.py` vérifie les règles de ce fichier : 200 lignes, pas de `global`, versions identiques, `hiddenimports` de `mycms.spec`, dépendances de `run.bat`, CSS recompilé.
 - **Site de test** : `site_builder.py` écrit en CRLF des pages qui reprennent les cas du vrai site (options de liste déroulante, sommaire, éléments imbriqués, iframe, gras du CSS, page `noindex`, page exclue par le robots.txt).
