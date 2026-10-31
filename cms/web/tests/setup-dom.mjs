@@ -12,6 +12,8 @@ const dom = new JSDOM(`<!DOCTYPE html><html><head></head><body>
     <input id="commit-message" value="">
     <div id="commit-presets"><button>Mise à jour des tarifs</button><button>Correction</button></div>
     <button id="save-file"></button><button id="reload-file"></button>
+    <pre id="git-output"></pre><p id="online-status" class="hidden"></p>
+    <button id="git-check"></button><button id="git-reset-remote" class="hidden"></button>
     <div id="toasts"></div>
 </body></html>`, { url: "http://127.0.0.1:5050/" });
 
