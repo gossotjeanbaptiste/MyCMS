@@ -90,3 +90,9 @@ def test_readme_version_badge():
     from version import VERSION
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert f"badge/Version-{VERSION}-" in readme
+
+
+def test_mit_license():
+    """Licence MIT : le fichier LICENSE existe, et le README l'annonce"""
+    assert (ROOT / "LICENSE").read_text(encoding="utf-8").startswith("MIT License")
+    assert "badge/Licence-MIT-" in (ROOT / "README.md").read_text(encoding="utf-8")

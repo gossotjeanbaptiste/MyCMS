@@ -342,7 +342,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - **Nouveau README**, sur le modèle de celui d'Echoing Void : logo centré (`cms/web/static/logo.png`), accroche, badges (Python, Flask, Waitress, Windows, version), puis « À propos », « Points forts », « Installation », « Pour les développeurs » et « Crédits & Licences ».
   - La documentation technique reste dans AGENTS.md, vers lequel le README renvoie.
-  - Le dépôt n'a pas de fichier de licence. Le README le dit, sans inventer de licence pour le code, et crédite les dépendances, MinGit (GPLv2) et les logos Python et Git.
+  - **Licence MIT** (`LICENSE`, copyright Jean-Baptiste GOSSOT). Le README l'indique par un badge et dans « Crédits & Licences », qui crédite aussi les dépendances, MinGit (GPLv2) et les logos Python et Git.
   - Le badge de version est vérifié par un test (`test_readme_version_badge`).
 
 ## Tests

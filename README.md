@@ -15,6 +15,7 @@
   <img alt="Flask" src="https://img.shields.io/badge/Flask-3-000000?logo=flask&logoColor=white">
   <img alt="Waitress" src="https://img.shields.io/badge/Serveur-Waitress-2e2e2e">
   <img alt="Windows" src="https://img.shields.io/badge/Windows-.msi-0078d4?logo=windows&logoColor=white">
+  <img alt="Licence" src="https://img.shields.io/badge/Licence-MIT-blue">
   <img alt="Version" src="https://img.shields.io/badge/Version-2.2.3-orange">
 </p>
 
@@ -80,7 +81,7 @@ Pousser un tag `v<version>` déclenche GitHub Actions, qui teste, compile et pub
 
 ## Crédits & Licences
 
-- Ce dépôt ne contient pas encore de fichier de licence : tant qu'aucune licence n'est ajoutée, le code de MyCMS reste sous les droits par défaut de son auteur.
+- Le **code source** de MyCMS est publié sous licence **MIT** (voir [LICENSE](LICENSE)) : libre de réutilisation, de modification et de redistribution, y compris à des fins commerciales, à condition de garder la mention de copyright.
 - MyCMS s'appuie sur [Flask](https://flask.palletsprojects.com/), [Waitress](https://docs.pylonsproject.org/projects/waitress/), [GitPython](https://github.com/gitpython-developers/GitPython), [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), [pystray](https://github.com/moses-palmer/pystray), [Pillow](https://python-pillow.org/) et [Tailwind CSS](https://tailwindcss.com/), chacun sous sa propre licence.
 - L'installeur embarque **MinGit** ([Git for Windows](https://gitforwindows.org/)), distribué sous licence GPLv2.
 - Le logo associe le logo **Python**, marque de la Python Software Foundation, et le [logo **Git**](https://git-scm.com/downloads/logos) de Jason Long, sous licence CC BY 3.0. MyCMS n'est affilié ni à la Python Software Foundation, ni au projet Git, ni à GitHub.
