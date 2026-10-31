@@ -4,11 +4,12 @@
 
 ## Le projet
 
-CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
+CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est la personne qui gère les textes du site. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.2.0 (la 2.0.9 a été sautée).
-- Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
+- Branche de travail : `web_v2`. Version courante : 2.2.1 (la 2.0.9 a été sautée).
+- **Aucun nom de client dans le dépôt** : MyCMS est une version personnelle. Pas de nom de client ni d'organisation dans le code, les tests, la doc ou les messages de commit ; utiliser des noms neutres (`MyCMS`, `exemple`, `MonSite`).
+- Site de référence pour les tests : un vrai site local, dont le chemin se passe aux tests par `MYCMS_SITE` (voir « Tests »). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
   - Le push passe par SSH : lancer le serveur de test avec `USERPROFILE` temporaire mais le vrai `HOME`, sinon la clé SSH n'est pas trouvée.
@@ -42,7 +43,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `version.py` : `VERSION`, la version de MyCMS.
   - `core/` :
     - `auth/` : `auth_manager.py` (comptes, rôles, profil ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant) et `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format) ;
-    - `storage/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement) et `config_manager.py` (`config.json`) ;
+    - `storage/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers) et `config_manager.py` (`config.json`) ;
     - `logs/` : `logger.py` et `log_buffer.py` (journal numéroté) ;
     - `updates.py` : nouvelle version sur GitHub.
   - `content/` :
@@ -130,7 +131,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Onglet Git : le dossier choisi est aussitôt utilisé, comme avec « Vérifier ».
   - Tests : la vraie fenêtre s'ouvre. La trouver par son titre (`FindWindowW`), puis la valider (`WM_COMMAND` avec `IDOK`) ou l'annuler (`WM_CLOSE`), depuis un processus séparé lancé **sans bloquer** Node.
 
-- **Dossier de données `~/.mycms`** : remplace `~/.rout_art_cms`, renommé automatiquement (copié si le renommage échoue). Il reçoit l'attribut « caché » de Windows, puisque le point au début du nom ne cache rien sous Windows.
+- **Dossier de données `~/.mycms`** : il reçoit l'attribut « caché » de Windows, puisque le point au début du nom ne cache rien sous Windows.
 - **`auth.json` verrouillé** : règle NTFS `icacls /deny *S-1-1-0:(WD,AD)` (SID de « Tout le monde », indépendant de la langue). Ailleurs : `chmod 400`.
   - `AuthManager._save` lève le verrou, écrit, puis le remet. Le verrou est aussi posé au démarrage sur un fichier existant.
   - La lecture et la suppression restent possibles : supprimer `auth.json` reste la procédure en cas de mot de passe oublié. Ne pas ajouter l'attribut « lecture seule » ni interdire la suppression.
@@ -316,6 +317,12 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Quitter garde `os._exit` après la réponse : vérifié dans l'exe recompilé (14,0 Mo, +180 Ko), le processus se ferme.
   - Dans les tests, `server.serve` est remplacé (il bloquerait). `test_waitress_serves_the_application` lance un vrai serveur Waitress sur un port libre.
 - La version passe à 2.2.0 (changement de serveur).
+
+## Changements de la v2.2.1
+
+- **Aucune référence à un nom de client** dans le code, les tests et la doc : remplacée par `MyCMS` ou des noms neutres (`exemple`, `MonSite`). À vérifier avant chaque commit, avec un `git grep` insensible à la casse.
+- **Dossier du site par défaut (corrigé)** : `~/mycms` (`ConfigManager.default_config`). Pendant le renommage, il était devenu le dossier personnel lui-même : l'éditeur aurait cherché des pages HTML dans tout le profil Windows, et deux tests échouaient.
+- **Retiré** : la reprise automatique d'un ancien dossier de données au premier lancement (`data_dir.py`). Une installation qui aurait encore ses identifiants dans cet ancien dossier ne les retrouve plus.
 
 ## Tests
 
