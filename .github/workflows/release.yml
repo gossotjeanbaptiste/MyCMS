@@ -1,0 +1,65 @@
+# Publication d'une version : pousser un tag v<version> (ex. git tag v2.1.5 && git push origin v2.1.5).
+# Les tests passent, puis MyCMS.exe et MyCMS-<version>.msi sont compilés et joints à une release GitHub.
+# MyCMS signale ensuite la nouvelle version à ses utilisateurs (voir publishing/updates.py).
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Le tag correspond à la version
+        shell: pwsh
+        run: |
+          $version = (Get-Content cms/web/package.json -Raw | ConvertFrom-Json).version
+          if ("v$version" -ne "${{ github.ref_name }}") {
+            throw "Le tag ${{ github.ref_name }} ne correspond pas à la version $version (cms/web/package.json)"
+          }
+
+      - name: Dépendances
+        run: |
+          python -m pip install -r cms/requirements-dev.txt -r cms/requirements-build.txt
+          npm ci --prefix cms/web
+
+      - name: Tests
+        run: |
+          python -m pytest -q
+          npm test --prefix cms/web
+
+      # build_msi.py vide dist/ : l'exécutable est mis de côté avant de compiler l'installeur
+      - name: Exécutable
+        shell: pwsh
+        run: |
+          python cms/installer/build_exe.py
+          New-Item -ItemType Directory -Force release | Out-Null
+          Copy-Item dist/MyCMS.exe release/
+
+      - name: Installeur (.msi, avec Git portable)
+        shell: pwsh
+        run: |
+          python cms/installer/build_msi.py
+          Copy-Item dist/*.msi release/
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: MyCMS ${{ github.ref_name }}
+          files: release/*
+          generate_release_notes: true
