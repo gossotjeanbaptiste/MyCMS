@@ -9,6 +9,7 @@ CMS local qui permet de modifier les textes d'un site statique (HTML hébergé s
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
 - Branche de travail : `web_v2`. Version courante : 2.2.3 (la 2.0.9 a été sautée).
 - **Aucun nom de client dans le dépôt** : MyCMS est une version personnelle. Pas de nom de client ni d'organisation dans le code, les tests, la doc ou les messages de commit ; utiliser des noms neutres (`MyCMS`, `exemple`, `MonSite`).
+  - La règle vaut pour les **fichiers actuels et les nouveaux commits**. L'historique existant (`main`, la branche `old`, les commits qui documentent la reprise et le renommage des dossiers) vient de la version d'origine, faite pour un client : il le nomme légitimement, et il ne faut pas le réécrire.
 - Site de référence pour les tests : un vrai site local, dont le chemin se passe aux tests par `MYCMS_SITE` (voir « Tests »). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -346,6 +347,11 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Le README annonce la licence par un badge et dans « Crédits & Licences », qui crédite aussi les dépendances, MinGit (GPLv2 : en cas de vente du `.msi`, indiquer où trouver le code source de Git) et les logos Python et Git.
   - Ne pas changer de licence sans l'accord de l'auteur, et ne jamais remettre une licence permissive (MIT…) dans l'historique : elle autoriserait la revente.
   - Le badge de version est vérifié par un test (`test_readme_version_badge`).
+- **Publication prévue de la v2.2.3**, faite par l'auteur après relecture de son contrat de licence d'usage interne :
+  1. pousser `web_v2` ;
+  2. ouvrir une PR de `web_v2` vers `main` (la branche par défaut sur GitHub, qui contient encore la version d'origine) et la fusionner ;
+  3. taguer `v2.2.3` sur le résultat.
+  - Pourquoi : ce contrat affirme que le code source de chaque version couverte (à partir de la 2.2.3) est publié sur https://github.com/gossotjeanbaptiste/MyCMS, ce qui écarte la décompilation au titre de l'interopérabilité (article L. 122-6-1, IV, du Code de la propriété intellectuelle). Le dépôt doit donc rester public, et chaque version doit être retrouvable par son tag.
 
 ## Tests
 
