@@ -71,3 +71,17 @@ def test_logs(client, services):
     assert services.logger.get_logs()[-1] in client.get("/api/logs").get_json()["logs"]
     assert client.delete("/api/logs").get_json() == {"success": True}
     assert client.get("/api/logs").get_json()["logs"] == []
+
+
+def test_update_check_is_done_once(client, monkeypatch):
+    from core import updates
+    calls = []
+    monkeypatch.setattr(updates, "fetch_latest", lambda: calls.append(1) or {"tag": "v99.0.0", "url": "https://r"})
+    first = client.get("/api/update").get_json()
+    assert first["available"] and first["latest"] == "99.0.0" and first["url"] == "https://r"
+    assert client.get("/api/update").get_json() == first and calls == [1]
+
+
+def test_favicon_is_public(app):
+    response = app.test_client().get("/favicon.ico")
+    assert response.status_code == 200 and response.mimetype == "image/x-icon" and response.data[:4] == b"\x00\x00\x01\x00"
