@@ -12,7 +12,7 @@ const dom = new JSDOM(`<!DOCTYPE html><html><head></head><body>
     <input id="commit-message" value="">
     <div id="commit-presets"><button>Mise à jour des tarifs</button><button>Correction</button></div>
     <button id="save-file"></button><button id="reload-file"></button>
-    <pre id="git-output"></pre><p id="online-status" class="hidden"></p>
+    <pre id="git-output"></pre><p id="online-status" class="hidden"></p><div id="check-results" class="hidden"></div>
     <button id="git-check"></button><button id="git-reset-remote" class="hidden"></button>
     <ul id="git-history"></ul><a id="update-link" class="hidden"></a>
     <input id="account-name"><input id="account-email"><p id="account-author"></p><button id="account-save"></button>

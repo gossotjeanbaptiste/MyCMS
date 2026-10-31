@@ -28,7 +28,10 @@ test("des problèmes : ils sont affichés et l'utilisateur choisit", async () =>
     globalThis.confirm = (text) => { asked = text; return false; };
     assert.equal(await confirmPublication(), false);
     assert.match(asked, /1 problème trouvé[\s\S]*Publier quand même/);
-    assert.match($("git-output").textContent, /ligne 352/);
+    // Liste en rouge sous les boutons, avec la page, la ligne et le problème
+    assert.equal($("check-results").className, "check-results error");
+    assert.match($("check-results").textContent, /Avant la publication : 1 problème trouvé/);
+    assert.match($("check-results").textContent, /page\/financement\.html, ligne 352 : Fichier introuvable/);
 });
 
 test("suivi de la mise en ligne jusqu'à ce que toutes les pages soient à jour", async () => {
@@ -65,5 +68,13 @@ test("conflit : le bouton « Reprendre la version en ligne » apparaît", async 
     globalThis.fetch = async () => Response.json({ success: true, pages: ["a.html", "b.html"], problems: [] });
     $("git-check").click();
     await flush();
-    assert.equal($("git-output").textContent, "✓ Aucun problème trouvé (2 pages vérifiées).");
+    assert.equal($("check-results").className, "check-results ok");
+    assert.equal($("check-results").textContent, "✓ Aucun problème trouvé (2 pages vérifiées).");
+    globalThis.fetch = async () => Response.json({ success: true, pages: ["a.html"], problems: [PROBLEM, PROBLEM] });
+    $("git-check").click();
+    await flush();
+    assert.equal($("check-results").className, "check-results error");
+    assert.equal($("check-results").querySelectorAll("li").length, 2);
+    // Message en rouge, qui dit où est la liste
+    assert.match(document.querySelector("#toasts .toast.error:last-child").textContent, /2 problèmes trouvés : la liste est sous les boutons/);
 });

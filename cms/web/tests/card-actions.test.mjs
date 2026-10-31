@@ -59,6 +59,18 @@ test("« Version en ligne » remet le contenu publié et la carte devient modifi
     assert.match(document.querySelector("#toasts .toast:last-child").textContent, /Version en ligne remise/);
 });
 
+test("« Version en ligne » qui annule seulement la saisie : rien à sauvegarder", () => {
+    // Fichier enregistré identique à la version en ligne ; seule la saisie l'avait changé
+    const field = state.editor.fields.get(1);
+    field.el.innerHTML = "75€";
+    field.el.dispatchEvent(new window.Event("input", { bubbles: true }));
+    $("field-1").querySelector('[data-action="restore"]').click();
+    assert.equal(field.el.innerHTML, "70€");
+    assert.ok(!$("field-1").classList.contains("dirty"));
+    assert.equal(document.querySelector("#toasts .toast:last-child").textContent,
+        "Texte revenu à la version en ligne : rien à sauvegarder.");
+});
+
 test("supprimer demande une confirmation", () => {
     let called = false;
     globalThis.fetch = async () => { called = true; return Response.json({}); };

@@ -29,3 +29,11 @@ def test_push_is_signed_by_the_logged_in_user(site_client, app, git_site):
 def test_history_without_repository(client, services, tmp_path):
     services.config.set_repo_path(str(tmp_path))
     assert client.get("/api/git/history").get_json() == {"success": True, "entries": []}
+
+
+def test_commit_details_route(site_client, git_site):
+    entry = site_client.get("/api/git/history").get_json()["entries"][0]
+    details = site_client.get(f"/api/git/commit/{entry['hash']}").get_json()
+    assert details["success"] and details["message"] == "Site initial" and len(details["pages"]) == 7
+    assert site_client.get("/api/git/commit/1234567").status_code == 404
+    assert site_client.get("/api/git/commit/pas-un-hash").status_code == 404
