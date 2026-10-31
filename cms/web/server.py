@@ -1,57 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Serveur web de MyCMS - Point d'entrée : prépare l'environnement, puis lance l'interface
-(les routes sont dans api/, le code métier dans cms/source)
+Serveur web de MyCMS - Lanceur : instance unique, icône de notification, navigateur, puis l'application
+(wsgi.py) servie par Waitress, un serveur WSGI de production. Les routes sont dans api/, le code métier
+dans cms/source.
 """
 
 import argparse
-import os
-import shutil
 import sys
 import threading
 import webbrowser
-from dataclasses import dataclass
-from pathlib import Path
 
+from waitress import serve
 
-@dataclass(frozen=True)
-class Resources:
-    """Fichiers de l'interface : dans le dossier du projet, ou extraits de l'exécutable (sys._MEIPASS)"""
-    static_dir: Path
-    templates_dir: Path
-    icon_file: Path
+import wsgi
 
-
-def prepare_environment():
-    """Chemins des modules et de l'interface, Git portable du .msi. Retourne (Resources, Git trouvé)"""
-    if getattr(sys, "frozen", False):
-        # Exécutable PyInstaller : modules intégrés, interface extraite dans sys._MEIPASS
-        base = Path(sys._MEIPASS)
-        resources = Resources(base / "static", base / "templates", base / "icon" / "logo.ico")
-        # Installé par le .msi : Git portable (MinGit) à côté de l'exécutable, si Git n'est pas sur le poste
-        bundled_git = Path(sys.executable).parent / "git" / "cmd"
-        if not shutil.which("git") and (bundled_git / "git.exe").exists():
-            os.environ["PATH"] = str(bundled_git) + os.pathsep + os.environ.get("PATH", "")
-    else:
-        web_dir = Path(__file__).resolve().parent
-        resources = Resources(web_dir / "static", web_dir / "templates", web_dir.parent / "icon" / "logo.ico")
-        sys.path.insert(0, str(web_dir.parent / "source"))
-
-    # Sans Git, GitPython refuse de s'importer : l'application démarre quand même et l'indique dans les logs
-    os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
-    return resources, shutil.which("git") is not None
+# Requêtes servies en même temps : certaines attendent longtemps (fenêtre « Choisir un dossier »,
+# clone, push, démarrage de l'aperçu) sans devoir bloquer le reste de l'interface
+THREADS = 8
 
 
 def main(host="127.0.0.1", port=5050, open_browser=True, tray=True):
     """Point d'entrée principal"""
-    resources, git_found = prepare_environment()
-    # Après prepare_environment : les modules de cms/source sont alors importables
-    from api import create_app
+    app = wsgi.create_application()
+    # Après create_application : les modules de cms/source sont alors importables
     from desktop import startup
     from desktop.tray import start_tray
 
-    app = create_app(resources, git_found)
     services = app.extensions["mycms"]
     logger = services.logger
     url = f"http://{host}:{port}"
@@ -72,13 +47,13 @@ def main(host="127.0.0.1", port=5050, open_browser=True, tray=True):
         logger.log("Pull automatique au démarrage...")
         threading.Thread(target=services.git.pull, args=(str(services.repo_path()),), daemon=True).start()
 
-    if not git_found:
+    if not services.git_found:
         logger.log("Attention: Git est introuvable, pull et push impossibles. "
                    "Installez MyCMS avec le .msi (Git inclus) ou Git depuis https://git-scm.com")
 
     logger.log(f"MyCMS disponible sur {url}")
     if tray:
-        services.tray = start_tray(url, resources.icon_file, logger)
+        services.tray = start_tray(url, services.resources.icon_file, logger)
     if services.tray is not None:
         logger.log("Icône MyCMS dans la zone de notification : Ouvrir MyCMS / Quitter MyCMS")
     else:
@@ -86,7 +61,7 @@ def main(host="127.0.0.1", port=5050, open_browser=True, tray=True):
     if open_browser:
         threading.Timer(1.0, webbrowser.open, args=(url,)).start()
     try:
-        app.run(host=host, port=port, threaded=True)
+        serve(app, host=host, port=port, threads=THREADS, ident="MyCMS")
     except Exception as e:
         startup.show_error(f"MyCMS s'est arrêté à cause d'une erreur :\n\n{e}", logger)
         sys.exit(1)

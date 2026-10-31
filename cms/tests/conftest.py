@@ -85,7 +85,7 @@ def git_site(site, tmp_path):
 @pytest.fixture
 def app(isolated_home):
     from api import create_app
-    from server import Resources
+    from wsgi import Resources
     web = CMS_DIR / "web"
     application = create_app(Resources(web / "static", web / "templates", CMS_DIR / "icon" / "logo.ico"), True)
     application.config["TESTING"] = True

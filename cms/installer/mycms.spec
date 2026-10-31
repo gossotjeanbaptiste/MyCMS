@@ -34,6 +34,8 @@ a = Analysis(
         'git',
         'bs4',
         'flask',
+        'wsgi',
+        'waitress',
         'pystray',
         'pystray._win32',
         'PIL.Image',
