@@ -342,7 +342,9 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - **Nouveau README**, sur le modèle de celui d'Echoing Void : logo centré (`cms/web/static/logo.png`), accroche, badges (Python, Flask, Waitress, Windows, version), puis « À propos », « Points forts », « Installation », « Pour les développeurs » et « Crédits & Licences ».
   - La documentation technique reste dans AGENTS.md, vers lequel le README renvoie.
-  - **Licence MIT** (`LICENSE`, copyright Jean-Baptiste GOSSOT). Le README l'indique par un badge et dans « Crédits & Licences », qui crédite aussi les dépendances, MinGit (GPLv2) et les logos Python et Git.
+  - **Licence PolyForm Noncommercial 1.0.0** (`LICENSE` : la ligne `Required Notice` avec le copyright de Jean-Baptiste GOSSOT, puis le texte officiel, inchangé). Les autres peuvent utiliser, modifier et partager MyCMS sans but commercial ; **seul l'auteur peut le vendre** ou accorder une licence commerciale. Ce n'est pas une licence open source au sens de l'OSI, et c'est voulu.
+  - Le README annonce la licence par un badge et dans « Crédits & Licences », qui crédite aussi les dépendances, MinGit (GPLv2 : en cas de vente du `.msi`, indiquer où trouver le code source de Git) et les logos Python et Git.
+  - Ne pas changer de licence sans l'accord de l'auteur, et ne jamais remettre une licence permissive (MIT…) dans l'historique : elle autoriserait la revente.
   - Le badge de version est vérifié par un test (`test_readme_version_badge`).
 
 ## Tests
