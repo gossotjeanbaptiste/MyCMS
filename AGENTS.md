@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.1 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.1.2 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -19,7 +19,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - `cms/web/server.py` : point d'entrée. `prepare_environment()` règle les chemins et le Git portable, `main()` gère l'instance unique, l'icône et le lancement. Options `--port`, `--no-browser` et `--no-tray`.
 - `cms/web/api/` : l'application Flask.
-  - `create_app()` (`__init__.py`) crée l'application et enregistre un blueprint par domaine : `auth` (connexion exigée avant chaque requête, `before_app_request`), `users` (gestion des comptes, administrateurs seulement), `pages`, `settings` (configuration, logs, choix d'un dossier), `repository` (Git), `editor`, `site` (sitemap, prévisualisation) et `shutdown` (Quitter).
+  - `create_app()` (`__init__.py`) crée l'application et enregistre un blueprint par domaine : `auth` (connexion exigée avant chaque requête, `before_app_request`), `users` (gestion des comptes, administrateurs seulement), `pages`, `settings` (configuration, logs, choix d'un dossier), `repository` (Git), `editor`, `structure` (dupliquer, supprimer), `media` (images), `site` (sitemap, prévisualisation) et `shutdown` (Quitter).
   - `services.py` : la classe `Services` regroupe les gestionnaires et l'état du processus (`boot_id`, prévisualisation, icône). Elle est rangée dans `app.extensions["mycms"]`, et les routes l'obtiennent avec `services()`.
 - `cms/web/templates/` : modèles Jinja.
   - `index.html` inclut `tabs/*.html` (un onglet par fichier ; `settings-users.html` est inclus par `settings.html`) et `dialogs/*.html` (guide, Quitter).
@@ -27,7 +27,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - `cms/web/static/` :
   - `scripts/` : modules ES, sans framework. `main.js` (l'interface) et `login.js` (la connexion) sont les points d'entrée.
     - `core/` : `dom.js` (`$`, `api`, `toast`…), `state.js` (état partagé) et `tabs.js`.
-    - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js`, `categories.js` (filtres par catégorie) et `format-bar.js`.
+    - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js`, `categories.js` (filtres par catégorie), `structure.js` (actions des cartes), `image-field.js` (carte d'une image) et `format-bar.js`.
     - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
     - `git/` : `git.js` et `browse.js` (« Parcourir… »).
     - `quit/` : `quit.js` et `quit-content.js`.
@@ -43,6 +43,8 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `html_manager.py` : extraction des `.editable`, `apply_editable_html`, extraits de code ;
     - `css_weights.py` : gras d'après le CSS du site (`<link>`, `@import`, variables, spécificité, héritage) ;
     - `categories.py` : catégorie de chaque élément éditable, déduite de la structure de la page ;
+    - `structure.py` : dupliquer ou supprimer un élément de liste ou une ligne de tableau ;
+    - `published.py` : version publiée de chaque élément, associée par le contenu ;
     - `page_finder.py` : détection des pages.
   - `publishing/` :
     - `git_manager.py` : pull, push, clone, `pending()` ;
@@ -198,6 +200,25 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - **Jeu de tests** : 354 tests Python et 61 tests de l'interface, dont l'aller-retour complet. Voir « Tests ».
   - Côté Python : 200 tests unitaires et fonctionnels, et 153 vérifications des règles du projet. Le dernier test lance l'aller-retour sur une copie du vrai site, et il est ignoré sans `MYCMS_SITE`.
 - **Destination par défaut d'un clone (corrigé)** : sans dossier choisi, le nom du dossier vient de l'adresse du repository. Un chemin Windows (`C:\…\site.git`) n'était pas découpé sur `\`, et le clone partait à côté de la source au lieu du dossier personnel. Les adresses GitHub n'étaient pas touchées.
+
+## Changements de la v2.1.2
+
+- **Boutons des cartes**, sous le numéro de l'élément (`cards.js`, `structure.js`). Ce sont des icônes, et le libellé complet est dans l'infobulle.
+  - **↺ Version en ligne** : visible quand la carte a un marqueur. Il remet le contenu publié dans l'éditeur, qu'il reste à sauvegarder.
+  - **＋ Dupliquer** et **✕ Supprimer** : pour un élément de liste ou une ligne de tableau (`content/structure.py`, `POST /api/structure/<page>` avec `hash`, `action` et `index`).
+    - Élément de liste : depuis un `<li>` éditable, ou un élément éditable placé dans un `<li>`.
+    - Ligne de tableau : seulement depuis une cellule éditable (`<td>`, `<th>`). Un paragraphe dans une cellule ne duplique pas la ligne.
+    - Le fichier est modifié tout de suite. Ce qui n'est pas sauvegardé l'est d'abord (après confirmation), puis la page est rechargée.
+    - La copie est placée sur sa propre ligne, avec la même indentation, et ses `id` reçoivent un suffixe (`-2`, `-3`…). On ne peut pas supprimer le dernier élément d'une liste ni la dernière ligne d'un tableau.
+    - Contrôle d'empreinte (409) comme pour la sauvegarde, et sitemap régénéré.
+  - Le texte des boutons est exclu de la recherche.
+- **Images éditables** (`<img class="editable">`) : traitées comme les iframes, seul l'attribut `src` change (`SRC_TAGS` dans `html_tree.py`). Le site de référence n'en a pas encore : il faut ajouter la classe dans le HTML.
+  - La carte montre une vignette (`GET /api/site-image`, limité aux images du site), l'adresse modifiable et un bouton « Choisir une image… ».
+  - `POST /api/images` (multipart : `page`, `file`) copie le fichier dans `images/` sous un nom libre (`photo-2.png`…) et renvoie son adresse relative à la page.
+  - Formats acceptés : PNG, JPG, GIF, WebP, AVIF ; pas de SVG, qui peut contenir du script. 10 Mo au plus.
+  - `api()` (`dom.js`) envoie un `FormData` tel quel.
+- **Version publiée associée par le contenu (corrigé)** (`content/published.py`) : elle était associée par la position. Après un ajout ou une suppression, tous les éléments suivants recevaient de faux marqueurs, et « Version en ligne » aurait remis le texte d'un autre élément.
+  - Maintenant : alignement `difflib` sur (balise, contenu). Dans un bloc modifié, les éléments les plus semblables sont associés, dans l'ordre (programmation dynamique, bornée à 2 500 comparaisons). Une copie fraîchement ajoutée est « nouvelle » (+).
 
 ## Tests
 
