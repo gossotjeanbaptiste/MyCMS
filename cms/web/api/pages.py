@@ -7,13 +7,15 @@ Pages de l'interface - Page principale et fichiers statiques (JS, CSS)
 from flask import Blueprint, render_template, send_file, send_from_directory
 
 from api.services import services
+from version import VERSION
 
 bp = Blueprint("pages", __name__)
 
 
 @bp.get("/")
 def index():
-    return render_template("index.html")
+    # Version affichée dans Paramètres > À propos
+    return render_template("index.html", version=VERSION)
 
 
 @bp.get("/favicon.ico")
