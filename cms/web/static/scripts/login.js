@@ -50,11 +50,11 @@ async function start() {
     }
     if (login.setupNeeded) {
         document.title = "MyCMS - Création des identifiants";
-        $("auth-intro").textContent = "Premier lancement : choisissez l'identifiant et le mot de passe (8 caractères minimum) qui seront demandés pour modifier le site. Notez-les bien.";
+        $("auth-intro").textContent = "Premier lancement : créez le compte administrateur, avec un identifiant et un mot de passe (8 caractères minimum). Notez-les bien. Vous pourrez ensuite créer un compte pour chaque personne dans les Paramètres.";
         $("password").autocomplete = "new-password";
         $("confirm-row").classList.replace("hidden", "flex");
         $("confirm").required = true;
-        $("auth-submit").textContent = "Créer les identifiants";
+        $("auth-submit").textContent = "Créer le compte administrateur";
     }
     $("username").focus();
 }
