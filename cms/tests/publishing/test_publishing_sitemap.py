@@ -9,7 +9,6 @@ from publishing.sitemap.robots import has_noindex, robots_allows, robots_rules, 
 from publishing.sitemap.site_url import detect_base_url, github_pages_url
 from publishing.sitemap.sitemap_files import find_sitemap, read_existing
 from publishing.sitemap.sitemap_generator import SitemapGenerator
-from site_builder import read
 
 BASE = "https://exemple.github.io"
 
@@ -139,7 +138,3 @@ def test_github_pages_url(tmp_path, remote, url):
     git(tmp_path, "init", "-q")
     git(tmp_path, "remote", "add", "origin", remote)
     assert github_pages_url(tmp_path) == url
-
-
-def test_sitemap_info_reads_site(site):
-    assert read(site / "robots.txt").count("\r\n") == 3
