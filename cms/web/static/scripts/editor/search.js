@@ -1,4 +1,5 @@
-// MyCMS - recherche dans les éléments de l'éditeur (sans accents ni majuscules), avec surlignage
+// MyCMS - recherche dans les éléments de l'éditeur (sans accents ni majuscules), avec surlignage,
+// limitée à la catégorie choisie (voir categories.js)
 
 import { $ } from "../core/dom.js";
 import { state } from "../core/state.js";
@@ -62,20 +63,44 @@ function updateSearchCount() {
         : `${search.matches.length} élément${search.matches.length > 1 ? "s" : ""}`;
 }
 
+// Intertitre de catégorie masqué quand aucune carte de son groupe n'est affichée
+function updateCategoryTitles() {
+    let title = null;
+    let visible = false;
+    for (const el of $("editable-list").children) {
+        if (el.classList.contains("category-title")) {
+            title?.classList.toggle("hidden", !visible);
+            title = el;
+            visible = false;
+        } else if (el.classList.contains("field") && !el.classList.contains("hidden")) {
+            visible = true;
+        }
+    }
+    title?.classList.toggle("hidden", !visible);
+}
+
+function emptyMessage() {
+    const category = state.editor.category ? ` dans « ${state.editor.category} »` : "";
+    return `Aucun élément${category} ne contient « ${$("search").value.trim()} »`;
+}
+
 // refilter = false pendant la saisie dans un éditeur : la carte en cours d'édition ne doit pas disparaître
 export function applySearch({ refilter = true } = {}) {
     const query = searchQuery();
+    const category = state.editor.category;
     const ranges = [];
     if (refilter) {
         search.matches = [];
         search.current = -1;
         document.querySelectorAll("#editable-list .field").forEach((card) => {
             const index = Number(card.id.slice("field-".length));
-            const match = !query || fold(cardText(state.editor.fields.get(index), card)).folded.includes(query);
+            const match = (!category || card.dataset.category === category)
+                && (!query || fold(cardText(state.editor.fields.get(index), card)).folded.includes(query));
             card.classList.toggle("hidden", !match);
             card.classList.remove("search-current");
             if (match && query) search.matches.push(card);
         });
+        updateCategoryTitles();
         let empty = $("search-empty");
         if (query && !search.matches.length && state.editor.fields.size) {
             if (!empty) {
@@ -84,7 +109,7 @@ export function applySearch({ refilter = true } = {}) {
                 empty.className = "py-10 text-center text-muted";
                 $("editable-list").append(empty);
             }
-            empty.textContent = `Aucun élément ne contient « ${$("search").value.trim()} »`;
+            empty.textContent = emptyMessage();
         } else {
             empty?.remove();
         }

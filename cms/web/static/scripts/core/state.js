@@ -12,6 +12,7 @@ export const state = {
         fields: new Map(),
         publishedKnown: false, // Version publiée connue (repository avec une branche distante)
         elementCount: 0,
+        category: "", // Catégorie affichée (vide : toutes)
     },
     preview: {
         running: false, // Serveur de prévisualisation

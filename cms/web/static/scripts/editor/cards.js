@@ -13,10 +13,20 @@ export function renderElements(elements) {
     const fields = new Map();
     state.editor.fields = fields;
     const fragment = document.createDocumentFragment();
+    let category = null;
     for (const elem of elements) {
+        // Intertitre à chaque changement de catégorie (voir categories.js)
+        if (elem.category !== category) {
+            category = elem.category;
+            const title = document.createElement("h3");
+            title.className = "category-title";
+            title.textContent = category;
+            fragment.appendChild(title);
+        }
         const card = document.createElement("div");
         card.className = "field";
         card.id = `field-${elem.index}`;
+        card.dataset.category = elem.category;
 
         const meta = document.createElement("div");
         meta.className = "font-mono text-xs [overflow-wrap:anywhere]";

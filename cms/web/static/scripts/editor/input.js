@@ -1,5 +1,6 @@
 // MyCMS - saisie dans les cartes de l'éditeur : verrous, retours à la ligne, collage, clics
 
+import { revealCard } from "./categories.js";
 import { $, toast } from "../core/dom.js";
 import { markDirty } from "./editor.js";
 import { applySearch } from "./search.js";
@@ -45,6 +46,7 @@ export function initEditorInput() {
         if (lock) {
             e.preventDefault();
             const field = state.editor.fields.get(Number(lock.dataset.locked));
+            revealCard(field?.card);
             field?.card.scrollIntoView({ behavior: "smooth", block: "center" });
             field?.el.focus();
             return;

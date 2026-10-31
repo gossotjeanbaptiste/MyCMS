@@ -2,6 +2,7 @@
 
 import { $, api, toast, withButton } from "../core/dom.js";
 import { renderElements } from "./cards.js";
+import { renderCategories, updateCategoryDirty } from "./categories.js";
 import { updateMarker } from "./markers.js";
 import { forgetPaneElement, refreshPane, schedulePaneUpdate } from "../preview/pane.js";
 import { applySiteBoldRules, fieldValue } from "./rich-editor.js";
@@ -54,13 +55,17 @@ export async function openFile(name, { keepScroll = false } = {}) {
         throw new Error("Le serveur MyCMS tourne sur une ancienne version : fermez la fenêtre de run.bat et relancez-le.");
     }
 
-    if (name !== editor.file) forgetPaneElement();
+    if (name !== editor.file) {
+        forgetPaneElement();
+        editor.category = "";
+    }
     editor.file = name;
     editor.hash = data.hash;
     editor.publishedKnown = Boolean(data.published_known);
     editor.elementCount = data.elements.length;
     applySiteBoldRules(data.bold_selectors || []);
 
+    renderCategories(data.elements);
     if (data.elements.length) {
         renderElements(data.elements);
     } else {
@@ -83,6 +88,7 @@ export function markDirty(index) {
     const field = editor.fields.get(index);
     if (field) field.card.classList.toggle("dirty", fieldValue(field) !== field.initial);
     updateMarker(field);
+    updateCategoryDirty();
     updateEditorState();
     schedulePaneUpdate();
 }

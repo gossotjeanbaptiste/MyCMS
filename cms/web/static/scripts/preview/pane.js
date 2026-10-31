@@ -4,7 +4,7 @@ import { $, api, toast } from "../core/dom.js";
 import { dirtyValues } from "../editor/editor.js";
 import { paneMessage, refreshSnippet, setPaneInfo } from "./pane-code.js";
 import { showPreview } from "./preview.js";
-import { clearSearch } from "../editor/search.js";
+import { revealCard } from "../editor/categories.js";
 import { state } from "../core/state.js";
 
 const pane = {
@@ -114,7 +114,7 @@ function onFrameMessage(e) {
         const field = state.editor.fields.get(e.data.index);
         const card = $(`field-${e.data.index}`);
         if (!card) return;
-        if (card.classList.contains("hidden")) clearSearch();
+        revealCard(card);
         pane.index = e.data.index; // Pas de défilement en retour dans la page
         card.scrollIntoView({ behavior: "smooth", block: "center" });
         field?.el.focus({ preventScroll: true });
