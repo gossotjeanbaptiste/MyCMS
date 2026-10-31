@@ -1,0 +1,3 @@
+# Tests (en plus des dépendances d'exécution) : python -m pytest
+-r requirements.txt
+pytest>=8.0,<9.0

@@ -1,0 +1,7 @@
+/* Occurrences de la recherche (CSS Custom Highlight API : le contenu éditable n'est pas modifié).
+   Hors de src/input.css : l'optimiseur de Tailwind ne connaît pas ::highlight et afficherait un avertissement.
+   --hl et --fg sont définis dans src/input.css */
+::highlight(mycms-search) {
+    background-color: var(--hl);
+    color: var(--fg);
+}

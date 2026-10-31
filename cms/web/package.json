@@ -1,0 +1,17 @@
+{
+  "name": "mycms-web",
+  "version": "2.2.3",
+  "private": true,
+  "type": "module",
+  "description": "Interface web de MyCMS (compilation du CSS Tailwind, tests de l'interface)",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./static/style.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./static/style.css --watch",
+    "test": "node --test \"tests/**/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "jsdom": "^26.1.0",
+    "tailwindcss": "^4.3.3"
+  }
+}

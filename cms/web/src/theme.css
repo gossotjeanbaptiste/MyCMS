@@ -1,0 +1,46 @@
+/* Couleurs sémantiques, redéfinies en mode sombre */
+:root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef0f3;
+    --line: #d9dde3;
+    --fg: #1d2129;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --tag: #0e7490;
+    --ok: #15803d;
+    --err: #b91c1c;
+    --warn: #c2410c;
+    --hl: #fde047;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #16181d;
+        --surface: #1f2228;
+        --surface-2: #2a2e36;
+        --line: #363b45;
+        --fg: #e6e8eb;
+        --muted: #9aa1ad;
+        --accent: #3b82f6;
+        --tag: #22d3ee;
+        --ok: #4ade80;
+        --err: #f87171;
+        --warn: #fb923c;
+        --hl: #854d0e;
+    }
+}
+
+@theme inline {
+    --color-bg: var(--bg);
+    --color-surface: var(--surface);
+    --color-surface-2: var(--surface-2);
+    --color-line: var(--line);
+    --color-fg: var(--fg);
+    --color-muted: var(--muted);
+    --color-accent: var(--accent);
+    --color-tag: var(--tag);
+    --color-ok: var(--ok);
+    --color-err: var(--err);
+    --color-warn: var(--warn);
+}

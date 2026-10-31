@@ -1,0 +1,15 @@
+<!-- Comptes : visible seulement par les administrateurs -->
+<div id="users-card" class="card hidden">
+    <span class="card-title">Utilisateurs</span>
+    <p class="text-muted">Chaque personne qui modifie le site a son propre compte. Les <strong>éditeurs</strong> modifient et publient le site ; les <strong>administrateurs</strong> peuvent en plus gérer les comptes.</p>
+    <ul id="users-list" class="flex flex-col gap-2"></ul>
+
+    <label for="user-new-name" class="card-title">Ajouter un compte</label>
+    <input id="user-new-name" type="text" class="input max-w-md" autocomplete="off" spellcheck="false" placeholder="Identifiant">
+    <input id="user-new-password" type="password" class="input max-w-md" autocomplete="new-password" placeholder="Mot de passe (8 caractères minimum)" aria-label="Mot de passe du nouveau compte">
+    <input id="user-new-confirm" type="password" class="input max-w-md" autocomplete="new-password" placeholder="Confirmer le mot de passe" aria-label="Confirmer le mot de passe du nouveau compte">
+    <label class="flex items-center gap-2"><input id="user-new-admin" type="checkbox" class="accent-accent"> Administrateur (peut gérer les comptes)</label>
+    <div class="mt-1 flex flex-wrap gap-2">
+        <button id="user-add" class="btn">Ajouter le compte</button>
+    </div>
+</div>

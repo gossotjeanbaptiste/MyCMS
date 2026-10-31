@@ -1,0 +1,28 @@
+/* Onglet Git : historique des modifications et leur détail */
+@layer components {
+    .history-entry {
+        @apply flex flex-col gap-2 rounded-lg border border-line px-3 py-2;
+    }
+    /* Toute la ligne est cliquable */
+    .history-summary {
+        @apply flex cursor-pointer flex-col gap-0.5 text-left text-fg;
+    }
+    /* Flèche : tournée quand le détail est déplié */
+    .history-arrow {
+        @apply inline-block text-muted transition-transform;
+    }
+    .history-summary[aria-expanded="true"] .history-arrow {
+        @apply rotate-90;
+    }
+    .history-entry:has(.history-summary:hover) {
+        @apply border-muted;
+    }
+
+    /* Mots et lignes de code supprimés ou ajoutés */
+    .diff-del {
+        @apply rounded-sm bg-err/15 text-err line-through decoration-err/60;
+    }
+    .diff-ins {
+        @apply rounded-sm bg-ok/15 text-ok;
+    }
+}

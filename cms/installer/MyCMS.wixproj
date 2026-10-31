@@ -1,0 +1,18 @@
+<!--
+    Installeur Windows (.msi) de MyCMS, compilé par cms/source/build_msi.py :
+    dotnet build MyCMS.wixproj -p:ProductVersion=... -p:ExeFile=... -p:GitDir=...
+-->
+<Project Sdk="WixToolset.Sdk/5.0.2">
+    <PropertyGroup>
+        <OutputName>MyCMS</OutputName>
+        <InstallerPlatform>x64</InstallerPlatform>
+        <Cultures>fr-FR</Cultures>
+        <!-- WIX1105 : validation ICE impossible sans droits administrateur (elle a lieu si le build est lancé en admin) -->
+        <SuppressSpecificWarnings>1105</SuppressSpecificWarnings>
+        <DefineConstants>ProductVersion=$(ProductVersion);ExeFile=$(ExeFile);GitDir=$(GitDir)</DefineConstants>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+        <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+    </ItemGroup>
+</Project>

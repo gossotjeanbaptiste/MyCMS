@@ -1,0 +1,3 @@
+# Compilation de l'exécutable et de l'installeur (en plus des dépendances d'exécution)
+-r requirements.txt
+pyinstaller>=6.0.0,<7.0.0

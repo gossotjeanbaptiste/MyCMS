@@ -1,0 +1,13 @@
+<!-- ======= Quitter : ce qui reste à faire, puis fermeture ======= -->
+<dialog id="quit-dialog" class="modal" aria-labelledby="quit-title">
+    <div class="modal-body">
+        <h2 id="quit-title" class="text-lg font-bold">Quitter MyCMS</h2>
+        <div id="quit-content" class="flex flex-col gap-3" aria-live="polite"></div>
+        <p id="quit-error" class="hidden rounded-md border border-err/40 bg-err/10 px-3 py-2 text-err" role="alert"></p>
+    </div>
+    <footer class="modal-footer">
+        <span id="quit-progress" class="mr-auto text-muted" aria-live="polite"></span>
+        <button id="quit-cancel" class="btn">Annuler</button>
+        <button id="quit-confirm" class="btn btn-primary">Quitter</button>
+    </footer>
+</dialog>

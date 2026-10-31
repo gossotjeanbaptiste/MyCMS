@@ -1,0 +1,17 @@
+<!-- ======= Prévisualisation ======= -->
+<section id="tab-preview" class="panel">
+    <div class="card">
+        <label for="preview-port" class="card-title">Serveur local HTTP</label>
+        <div class="flex flex-wrap items-center gap-2">
+            <span id="preview-state" class="badge-off">Arrêté</span>
+            <input id="preview-port" type="number" min="1" max="65535" class="input w-28">
+            <button id="preview-toggle" class="btn btn-primary">Démarrer</button>
+            <a id="preview-url" class="text-accent underline" target="_blank" rel="noopener"></a>
+        </div>
+        <p class="text-muted">Le serveur sert les fichiers du repository. Les modifications sauvegardées sont visibles en rafraîchissant la page.</p>
+    </div>
+    <div class="card min-h-40 flex-1">
+        <span class="card-title">Logs du serveur</span>
+        <pre id="preview-logs" class="output"></pre>
+    </div>
+</section>

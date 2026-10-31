@@ -1,8 +1,20 @@
 *.pyc
-cms/source/__pycache__
 __pycache__/
-cms/__pycache__
 build/
 dist/
 *.tmp
-~$mment_regler_les_soucis_du_CMS.docx
+# Interface web (Tailwind) - le CSS compilé cms/web/static/style.css reste versionné
+node_modules/
+npm-debug.log*
+
+# Environnements Python
+.venv/
+venv/
+
+# Installeur .msi : MinGit téléchargé et sorties de WiX
+cms/installer/cache/
+cms/installer/bin/
+cms/installer/obj/
+
+# Tests
+.pytest_cache/

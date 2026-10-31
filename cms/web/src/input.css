@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@source "../static";
+@source "../templates";
+
+@import "./theme.css";
+
+/* Composants réutilisés dans les modèles HTML et générés par les scripts */
+@import "./components/dialogs.css";
+@import "./components/markers.css";
+@import "./components/controls.css";
+@import "./components/editor.css";
+@import "./components/toasts.css";
+@import "./components/history.css";
