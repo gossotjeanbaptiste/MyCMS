@@ -16,7 +16,7 @@
   <img alt="Waitress" src="https://img.shields.io/badge/Serveur-Waitress-2e2e2e">
   <img alt="Windows" src="https://img.shields.io/badge/Windows-.msi-0078d4?logo=windows&logoColor=white">
   <img alt="Licence" src="https://img.shields.io/badge/Licence-PolyForm%20Noncommercial-blue">
-  <img alt="Version" src="https://img.shields.io/badge/Version-2.2.3-orange">
+  <img alt="Version" src="https://img.shields.io/badge/Version-2.2.4-orange">
 </p>
 
 ---
@@ -79,7 +79,7 @@ scripts\compile_msi.bat
 
 Les scripts `.bat` de `scripts/` trouvent seuls la racine du dépôt : ils marchent aussi copiés à la racine.
 
-Pousser un tag `v<version>` déclenche GitHub Actions, qui teste, compile et publie l'exe et le `.msi` dans une release.
+Pousser un tag `v<version>` déclenche GitHub Actions, qui teste, compile et publie le `.msi` dans une release.
 
 ## Contact
 
