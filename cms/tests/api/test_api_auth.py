@@ -20,7 +20,8 @@ def test_login_required(app):
     assert response.status_code == 401 and "reconnectez-vous" in response.get_json()["error"]
 
 
-@pytest.mark.parametrize("path", ["/login", "/static/scripts/login.js", "/static/style.css", "/api/auth/state"])
+@pytest.mark.parametrize("path", ["/login", "/static/scripts/login.js", "/static/style.css", "/static/logo.png",
+                                  "/api/auth/state"])
 def test_public_paths(app, path):
     assert app.test_client().get(path).status_code == 200
 

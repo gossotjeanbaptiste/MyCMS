@@ -65,3 +65,13 @@ def test_compiled_css_contains_the_classes_of_new_features():
     css = (CMS_DIR / "web" / "static" / "style.css").read_text(encoding="utf-8")
     for selector in (".chip", ".category-title", ".max-w-72", ".badge-on"):
         assert selector in css
+
+
+def test_interface_logo_matches_the_icon():
+    """static/logo.png est extrait de cms/icon/logo.ico : le régénérer quand l'icône change"""
+    from PIL import Image, ImageChops
+    icon = Image.open(CMS_DIR / "icon" / "logo.ico")
+    icon.size = (256, 256)
+    logo = Image.open(CMS_DIR / "web" / "static" / "logo.png")
+    assert logo.size == (256, 256)
+    assert ImageChops.difference(icon.convert("RGBA"), logo.convert("RGBA")).getbbox() is None
