@@ -19,7 +19,6 @@
             <button id="git-clone" class="btn btn-primary">Cloner</button>
         </div>
     </div>
-    {% include "tabs/git-branches.html" %}
     <div class="card">
         <span class="card-title">Actions Git</span>
         <div class="flex flex-wrap items-center gap-2">
@@ -60,4 +59,6 @@
         <p class="text-xs text-muted">Cliquez sur une modification pour voir ce qui a changé.</p>
         <ul id="git-history" class="flex flex-col gap-1.5"></ul>
     </div>
+    <!-- En dernier : rarement utile -->
+    {% include "tabs/git-branches.html" %}
 </section>
