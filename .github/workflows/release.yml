@@ -1,5 +1,5 @@
 # Publication d'une version : pousser un tag v<version> (ex. git tag v2.1.5 && git push origin v2.1.5).
-# Les tests passent, puis MyCMS.exe et MyCMS-<version>.msi sont compilés et joints à une release GitHub.
+# Les tests passent, puis MyCMS-<version>.msi est compilé et joint à une release GitHub.
 # MyCMS signale ensuite la nouvelle version à ses utilisateurs (voir publishing/updates.py).
 name: Release
 
@@ -44,22 +44,12 @@ jobs:
           python -m pytest -q
           npm test --prefix cms/web
 
-      # build_msi.py vide dist/ : l'exécutable est mis de côté avant de compiler l'installeur
-      - name: Exécutable
-        shell: pwsh
-        run: |
-          python cms/installer/build_exe.py
-          New-Item -ItemType Directory -Force release | Out-Null
-          Copy-Item dist/MyCMS.exe release/
-
+      # Seul le .msi est publié : build_msi.py compile l'exécutable dans un dossier temporaire
       - name: Installeur (.msi, avec Git portable)
-        shell: pwsh
-        run: |
-          python cms/installer/build_msi.py
-          Copy-Item dist/*.msi release/
+        run: python cms/installer/build_msi.py
 
       - uses: softprops/action-gh-release@v2
         with:
           name: MyCMS ${{ github.ref_name }}
-          files: release/*
+          files: dist/*.msi
           generate_release_notes: true
