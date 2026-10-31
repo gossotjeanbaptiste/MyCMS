@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.0 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.1.1 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -36,7 +36,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `highlight.css` : surlignage de la recherche, hors Tailwind.
 - `cms/web/src/` : sources Tailwind v4. `input.css` importe `theme.css` (couleurs) et `components/*.css` (une couche `@layer components` par fichier).
 - `cms/source/` : le code métier, importé par paquet (`from content.html_tree import parse`).
-  - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (comptes, empreinte scrypt), `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format) et `logger.py`.
+  - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (comptes ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant), `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format) et `logger.py`.
   - `content/` :
     - `html_tree.py` : arbre HTML avec les positions exactes dans le fichier ;
     - `hybrid_saver.py` et `node_diff.py` : la sauvegarde hybride ;
@@ -53,11 +53,13 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Un nouveau module Python doit être ajouté aux `hiddenimports` de `mycms.spec`, et un nouveau dossier de l'interface à ses `datas`.
 - `cms/icon/logo.ico` : l'icône de l'exe, de l'installeur et de la zone de notification.
 - `run.bat` : lancement depuis les sources, sur le port 5050.
+- `cms/tests/` (pytest) et `cms/web/tests/` (`node:test`) : les tests, lancés par `run_tests.bat` (voir « Tests »).
 
 ## Commandes
 
+- Tests : `run_tests.bat`, ou `python -m pytest` et `cd cms/web && npm test`.
 - Lancer : `python cms/web/server.py`, ou `python cms/web/server.py --port 5060 --no-browser --no-tray`.
-- Dépendances : `cms/requirements.txt` pour l'exécution, `cms/requirements-build.txt` (ajoute PyInstaller) pour compiler.
+- Dépendances : `cms/requirements.txt` pour l'exécution, `cms/requirements-build.txt` (ajoute PyInstaller) pour compiler, `cms/requirements-dev.txt` (ajoute pytest) pour les tests.
 - CSS, après toute modification de `src/` ou ajout de classes Tailwind dans les modèles ou les scripts : `cd cms/web && npm run build:css`. `style.css` est versionné, pour que l'application tourne sans Node.
 - Exécutable : `python cms/installer/build_exe.py`, qui produit `dist/MyCMS.exe`.
 - Installeur : `compile_msi.bat`, qui produit `dist/MyCMS-<version>.msi`. Nécessite le SDK .NET.
@@ -191,13 +193,34 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Un point bleu sur un filtre signale des modifications non sauvegardées dans cette catégorie.
   - Une carte masquée par le filtre ou la recherche est réaffichée quand on y va depuis l'aperçu ou un bloc verrouillé (`revealCard`).
 
+## Changements de la v2.1.1
+
+- **Jeu de tests** : 354 tests Python et 61 tests de l'interface, dont l'aller-retour complet. Voir « Tests ».
+  - Côté Python : 200 tests unitaires et fonctionnels, et 153 vérifications des règles du projet. Le dernier test lance l'aller-retour sur une copie du vrai site, et il est ignoré sans `MYCMS_SITE`.
+- **Destination par défaut d'un clone (corrigé)** : sans dossier choisi, le nom du dossier vient de l'adresse du repository. Un chemin Windows (`C:\…\site.git`) n'était pas découpé sur `\`, et le clone partait à côté de la source au lieu du dossier personnel. Les adresses GitHub n'étaient pas touchées.
+
 ## Tests
 
-Il n'y a pas de suite de tests dans le dépôt. Les vérifications faites jusqu'ici, à refaire selon ce qui est touché :
+**Lancer `run_tests.bat` avant chaque commit.** Il installe ce qui manque, puis lance les deux suites. Ses arguments sont passés à pytest (`run_tests.bat -q`, `run_tests.bat -k editor`).
 
-- **Tests unitaires Python** de `HybridSaver`, avec des entrées qui imitent le navigateur : `<b>`, attributs réécrits, fins de ligne `\n`, marqueurs de verrou.
-- **Aller-retour dans jsdom** sur toutes les pages du site : on utilise les vraies fonctions `buildRichEditor` et `serializeRich` de `static/scripts/editor/rich-editor.js`, et on vérifie que le fichier reste identique. Dans Chrome : `await import("/static/scripts/editor/rich-editor.js")`.
-- **Bout en bout dans Chrome** avec `puppeteer-core`.
+- **Python** : `python -m pytest`, depuis la racine (`pytest.ini`). Il dépend de `cms/requirements-dev.txt`.
+  - `cms/tests/` contient un dossier par paquet : `core/`, `content/`, `publishing/` et `desktop/` (dont `server.py`).
+  - `api/` contient les tests fonctionnels de chaque route, avec le client de test Flask.
+  - `test_project_rules.py` vérifie les règles de ce fichier : 200 lignes, pas de `global`, versions identiques, `hiddenimports` de `mycms.spec`, dépendances de `run.bat`, CSS recompilé.
+- **Site de test** : `site_builder.py` écrit en CRLF des pages qui reprennent les cas du vrai site (options de liste déroulante, sommaire, éléments imbriqués, iframe, gras du CSS, page `noindex`, page exclue par le robots.txt).
+  - Fixtures de `conftest.py` : `site`, `git_site` (dépôt avec un remote bare local), `client` (administrateur connecté) et `site_client`.
+- **Isolation, automatique pour chaque test** :
+  - `USERPROFILE` et `HOME` temporaires ;
+  - `GIT_CONFIG_GLOBAL` temporaire et `GIT_CONFIG_NOSYSTEM`, car `_ensure_git_config` écrit dans la config Git **globale** ;
+  - `show_error` remplacé, pour qu'aucune boîte de message ne s'ouvre.
+  - Garder cette isolation dans tout test qui lance Git ou le serveur.
+- **Interface** : `cd cms/web && npm test` (`node:test` et jsdom, devDependency).
+  - `tests/setup-dom.mjs`, à importer en premier, met le DOM de jsdom à la place de celui du navigateur.
+  - Fichiers testés : éditeur enrichi, marqueurs, catégories et recherche, utilitaires et fenêtre Quitter. `modules.test.mjs` charge tous les modules et vérifie les 200 lignes, `window` et les `init…()` appelées par `main.js`.
+- **Aller-retour complet** (`cms/tests/test_roundtrip.py`) : chaque page passe par l'API, par les vraies fonctions `buildRichEditor` et `serializeRich` (via `cms/web/tests/roundtrip-cli.mjs`), puis par la sauvegarde. Le fichier doit rester identique à l'octet près.
+  - Avec `set MYCMS_SITE=<chemin du vrai site>`, le test tourne aussi sur une **copie** du vrai site, dans un dossier temporaire.
+- Non couverts automatiquement : la vraie fenêtre « Choisir un dossier », la vraie icône de notification et le rendu dans un navigateur. Pour eux, voir ci-dessous.
+- **Bout en bout dans Chrome** avec `puppeteer-core` (pas dans le dépôt).
   - Chrome se trouve dans `C:\Program Files\Google\Chrome\Application\chrome.exe`.
   - Lancer le serveur avec `USERPROFILE` pointant vers un dossier temporaire, pour isoler la config et les identifiants. Seulement pour le serveur : Chrome ne démarre pas avec ce profil.
   - Arrêter le serveur de test par son PID : `POST /api/quit` exige une session ouverte.
