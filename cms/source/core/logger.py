@@ -5,16 +5,16 @@ Logger - Système de journalisation centralisé
 """
 
 from datetime import datetime
-from collections import deque
 
 from core.data_dir import data_dir
+from core.log_buffer import LogBuffer
 
 
 class Logger:
     """Système de logs simple et efficace"""
 
     def __init__(self, max_logs=500):
-        self.logs = deque(maxlen=max_logs)
+        self.logs = LogBuffer(max_logs)
         self.log_file = data_dir() / "app.log"
 
     def log(self, message, level="INFO"):
@@ -36,6 +36,10 @@ class Logger:
     def get_logs(self):
         """Récupérer tous les logs"""
         return list(self.logs)
+
+    def logs_since(self, seen):
+        """Lignes ajoutées depuis les seen premières (voir LogBuffer.since)"""
+        return self.logs.since(seen)
 
     def clear_logs(self):
         """Effacer les logs en mémoire"""

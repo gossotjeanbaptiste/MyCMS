@@ -39,7 +39,7 @@ def sitemap_generate():
 
 @bp.get("/api/preview")
 def preview_status():
-    return jsonify(services().preview_status())
+    return jsonify(services().preview_status(request.args.get("since", type=int)))
 
 
 @bp.post("/api/preview/start")

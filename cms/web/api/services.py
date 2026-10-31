@@ -7,7 +7,6 @@ Une seule instance, créée par create_app() et rangée dans app.extensions["myc
 
 import hashlib
 import secrets
-from collections import deque
 from pathlib import Path
 
 from flask import current_app, jsonify
@@ -16,6 +15,7 @@ from content.html_manager import HTMLManager
 from content.page_finder import find_html_pages
 from core.auth_manager import AuthManager
 from core.config_manager import ConfigManager
+from core.log_buffer import LogBuffer
 from core.logger import Logger
 from desktop.folder_picker import FolderPicker
 from desktop.server_manager import ServerManager
@@ -41,7 +41,7 @@ class Services:
         # les sessions ouvertes avant ne sont plus valides et il faut se reconnecter
         self.boot_id = secrets.token_hex(16)
         self.preview_port = None
-        self.preview_logs = deque(maxlen=200)
+        self.preview_logs = LogBuffer(200)
         self.tray = None  # Icône de la zone de notification (pystray), posée par server.main
         self.update = None  # Résultat de la recherche de mise à jour (une seule fois par lancement)
 
@@ -86,12 +86,13 @@ class Services:
 
     # ======= Prévisualisation =======
 
-    def preview_status(self):
-        return {
-            "running": self.preview.is_running(),
-            "port": self.preview_port,
-            "logs": list(self.preview_logs),
-        }
+    def preview_status(self, since=None):
+        """État de la prévisualisation. since : ne renvoyer que les lignes du journal reçues après les since premières"""
+        status = {"running": self.preview.is_running(), "port": self.preview_port}
+        if since is None:
+            return {**status, "logs": list(self.preview_logs), "total": self.preview_logs.total, "reset": True}
+        changes = self.preview_logs.since(since)
+        return {**status, "logs": changes["lines"], "total": changes["total"], "reset": changes["reset"]}
 
 
 def services():

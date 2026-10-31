@@ -66,7 +66,13 @@ def update_check():
 
 @bp.get("/api/logs")
 def get_logs():
-    return jsonify({"logs": services().logger.get_logs()})
+    """Journal ; since=n : seulement les lignes ajoutées après les n premières (l'onglet Logs interroge souvent)"""
+    logger = services().logger
+    since = request.args.get("since", type=int)
+    if since is None:
+        return jsonify({"logs": logger.get_logs(), "total": logger.logs.total, "reset": True})
+    changes = logger.logs_since(since)
+    return jsonify({"logs": changes["lines"], "total": changes["total"], "reset": changes["reset"]})
 
 
 @bp.delete("/api/logs")
