@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est la personne qui gère les textes du site. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.2.5 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.3.0 (la 2.0.9 a été sautée).
 - **Aucun nom de client dans le dépôt** : MyCMS est une version personnelle. Pas de nom de client ni d'organisation dans le code, les tests, la doc ou les messages de commit ; utiliser des noms neutres (`MyCMS`, `exemple`, `MonSite`).
   - La règle vaut pour les **fichiers actuels et les nouveaux commits**. L'historique existant (`main`, la branche `old`, les commits qui documentent la reprise et le renommage des dossiers) vient de la version d'origine, faite pour un client : il le nomme légitimement, et il ne faut pas le réécrire.
 - Site de référence pour les tests : un vrai site local, dont le chemin se passe aux tests par `MYCMS_SITE` (voir « Tests »). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
@@ -46,7 +46,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `auth/` : `auth_manager.py` (comptes, rôles, profil ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant) et `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format) ;
     - `storage/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers) et `config_manager.py` (`config.json`) ;
     - `logs/` : `logger.py` et `log_buffer.py` (journal numéroté) ;
-    - `updates.py` : nouvelle version sur GitHub.
+    - `updates.py` : nouvelle version sur GitHub, téléchargement vérifié de son `.msi`.
   - `content/` :
     - `html/` : `html_tree.py` (arbre HTML avec les positions exactes dans le fichier), `hybrid_saver.py` et `node_diff.py` (la sauvegarde hybride), `html_manager.py` (extraction des `.editable`, `apply_editable_html`, extraits de code) ;
     - `pages/` : `page_finder.py` (détection des pages), `css_weights.py` (gras d'après le CSS du site : `<link>`, `@import`, variables, spécificité, héritage), `categories.py` (catégorie de chaque élément éditable) et `structure.py` (dupliquer ou supprimer un élément de liste ou une ligne de tableau) ;
@@ -55,7 +55,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `git/` : `git_manager.py` (clone, `pending()`, `unpublished_pages()`, version publiée), `git_sync.py` (pull et push, conflits), `git_status.py` (rapport de l'onglet Git), `history.py` et `commit_details.py` (historique lisible et détail d'une modification) ;
     - `sitemap/` : `sitemap_generator.py`, `sitemap_files.py`, `robots.py` et `site_url.py` (sitemap, robots.txt, URL du site) ;
     - `verification/` : `checks.py` (vérification avant publication) et `online.py` (suivi de la mise en ligne).
-  - `desktop/` : `server_manager.py` (prévisualisation, `ThreadingHTTPServer` sur 127.0.0.1), `folder_picker.py` (classe `FolderPicker`), `tray.py` (icône de notification) et `startup.py` (instance unique, port libre, `show_error`).
+  - `desktop/` : `server_manager.py` (prévisualisation, `ThreadingHTTPServer` sur 127.0.0.1), `folder_picker.py` (classe `FolderPicker`), `tray.py` (icône de notification), `startup.py` (instance unique, port libre, `show_error`), `installer.py` (lance `msiexec`) et `auto_update.py` (mise à jour au démarrage).
 - `cms/installer/` : compilation. `build_exe.py` et `mycms.spec` (PyInstaller), `build_msi.py`, `MyCMS.wixproj` et `Package.wxs` (WiX, avec Git portable MinGit).
   - Un nouveau module Python doit être ajouté aux `hiddenimports` de `mycms.spec`, et un nouveau dossier de l'interface à ses `datas`.
 - `cms/icon/logo.ico` : l'icône de l'exe, de l'installeur et de la zone de notification.
@@ -372,6 +372,19 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - **Tests lancés une seule fois par commit** (`tests.yml`). Ils se déclenchaient sur `push` et sur `pull_request` : un commit de `web_v2` avec une PR ouverte était testé deux fois, et un tag une troisième fois, alors que `release.yml` lance déjà les tests.
   - Maintenant : `push` sur les branches seulement (`branches: ["**"]`). Une PR affiche le résultat du push de sa branche, et les tags sont testés par `release.yml`.
   - Une PR venant d'un fork n'est donc pas testée automatiquement.
+
+## Changements de la v2.3.0
+
+- **Mise à jour depuis MyCMS**, sans passer par GitHub.
+  - `core/updates.py` : la release donne aussi son `.msi` (`installer` : nom, adresse, taille, `sha256` tiré du champ `digest` de GitHub). `download()` l'enregistre dans `%TEMP%\MyCMS-update` et le supprime (`ValueError`) si sa taille ou son empreinte ne correspond pas.
+  - `desktop/installer.py` : `msiexec /i <msi> /passive LAUNCHAPP=1`, détaché de MyCMS. Mode passif : une barre de progression, sans questions ; Windows demande l'autorisation d'administrateur (installation par machine).
+  - `Package.wxs` : avec `LAUNCHAPP=1`, l'action `LaunchApplication` est aussi jouée après `InstallFinalize`, et relance MyCMS. L'assistant normal garde sa case « Lancer MyCMS ».
+  - **Bouton « Nouvelle version »** (`settings/update.js`) : pour un administrateur, dans l'application installée (`GET /api/update` renvoie `auto`), il demande confirmation, sauvegarde l'éditeur, puis appelle `POST /api/update/install` (`api/shutdown.py`) : téléchargement, installeur, puis fermeture comme Quitter, et l'écran « MyCMS est fermé ». Sinon (éditeur, lancement depuis les sources), il mène toujours à la page de la release.
+  - **Mise à jour automatique au démarrage** (`desktop/auto_update.py`, appelé par `server.main` après le contrôle d'instance unique) : réglage `auto_update`, **actif par défaut**, case « Mise à jour automatique au démarrage » dans les Paramètres. Si une version plus récente a un `.msi`, MyCMS le télécharge, lance l'installeur et ne démarre pas son serveur ; l'installeur le relance.
+  - **Une seule tentative automatique par version** (`update_tried` dans `config.json`) : si l'autorisation est refusée ou l'installation échoue, MyCMS démarre normalement au lancement suivant, au lieu de relancer l'installeur à chaque fois. Le bouton reste disponible. Un téléchargement raté n'est pas compté.
+  - Rien de tout ça depuis les sources (`sys.frozen` absent) : il n'y a pas d'exe à remplacer.
+  - Pendant le téléchargement au démarrage, rien n'est affiché (pas de console) : quelques secondes avant la barre de l'installeur.
+- **Avertissement WiX ICE61 supprimé** (`SuppressIces` dans `MyCMS.wixproj`) : il découle de `AllowSameVersionUpgrades`, voulu pour réinstaller la même version par-dessus elle-même.
 
 ## Tests
 
