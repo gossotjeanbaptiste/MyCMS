@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est la personne qui gère les textes du site. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.3.0 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.3.1 (la 2.0.9 a été sautée).
 - **Aucun nom de client dans le dépôt** : MyCMS est une version personnelle. Pas de nom de client ni d'organisation dans le code, les tests, la doc ou les messages de commit ; utiliser des noms neutres (`MyCMS`, `exemple`, `MonSite`).
   - La règle vaut pour les **fichiers actuels et les nouveaux commits**. L'historique existant (`main`, la branche `old`, les commits qui documentent la reprise et le renommage des dossiers) vient de la version d'origine, faite pour un client : il le nomme légitimement, et il ne faut pas le réécrire.
 - Site de référence pour les tests : un vrai site local, dont le chemin se passe aux tests par `MYCMS_SITE` (voir « Tests »). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
@@ -22,7 +22,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - `cms/web/wsgi.py` : point d'entrée WSGI. `prepare_environment()` règle les chemins et le Git portable, `create_application()` construit l'application Flask, et `wsgi.app` la fournit à la demande (rien n'est créé à l'import). Un autre serveur peut la servir : `waitress-serve --listen=127.0.0.1:5050 wsgi:app`, depuis `cms/web`.
 - `cms/web/server.py` : le lanceur, et le point d'entrée de l'exe. `main()` gère l'instance unique, l'icône et le navigateur, puis sert `wsgi.create_application()` avec **Waitress** (`THREADS = 8`). Options `--port`, `--no-browser` et `--no-tray`.
 - `cms/web/api/` : l'application Flask.
-  - `create_app()` (`__init__.py`) crée l'application et enregistre un blueprint par domaine : `auth` (connexion exigée avant chaque requête, `before_app_request`), `users` (gestion des comptes, administrateurs seulement), `pages`, `settings` (configuration, logs, choix d'un dossier), `repository` (Git), `publish` (vérification, mise en ligne, reprise de la version en ligne), `editor`, `structure` (dupliquer, supprimer), `media` (images), `site` (sitemap, prévisualisation) et `shutdown` (Quitter).
+  - `create_app()` (`__init__.py`) crée l'application et enregistre un blueprint par domaine : `auth` (connexion exigée avant chaque requête, `before_app_request`), `users` (gestion des comptes, administrateurs seulement), `pages`, `settings` (configuration, logs, choix d'un dossier), `repository` (Git), `branches` (branches du site), `publish` (vérification, mise en ligne, reprise de la version en ligne), `editor`, `structure` (dupliquer, supprimer), `media` (images), `site` (sitemap, prévisualisation) et `shutdown` (Quitter).
   - `services.py` : la classe `Services` regroupe les gestionnaires et l'état du processus (`boot_id`, prévisualisation, icône). Elle est rangée dans `app.extensions["mycms"]`, et les routes l'obtiennent avec `services()`.
 - `cms/web/templates/` : modèles Jinja.
   - `index.html` inclut `tabs/*.html` (un onglet par fichier ; `settings-users.html` est inclus par `settings.html`) et `dialogs/*.html` (guide, Quitter).
@@ -32,7 +32,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `core/` : `dom.js` (`$`, `api`, `toast`…), `state.js` (état partagé), `tabs.js` et `poller.js` (interrogation régulière du serveur).
     - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js`, `categories.js` (filtres par catégorie), `structure.js` (actions des cartes), `image-field.js` (carte d'une image) et `format-bar.js`.
     - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
-    - `git/` : `git.js`, `publish-checks.js` (vérification, mise en ligne, conflit), `history.js` et `history-details.js` (historique et détail d'une modification) et `browse.js` (« Parcourir… »).
+    - `git/` : `git.js`, `branches.js` (carte Branches), `publish-checks.js` (vérification, mise en ligne, conflit), `history.js` et `history-details.js` (historique et détail d'une modification) et `browse.js` (« Parcourir… »).
     - `quit/` : `quit.js` et `quit-content.js`.
     - `settings/` : `settings.js`, `account.js` (« Mon compte »), `users.js` (compte connecté, carte Utilisateurs), `update.js` (nouvelle version), `header.js` (guide, déconnexion) et `logs.js`.
   - `style.css` : généré par Tailwind, ne pas l'éditer à la main.
@@ -52,7 +52,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `pages/` : `page_finder.py` (détection des pages), `css_weights.py` (gras d'après le CSS du site : `<link>`, `@import`, variables, spécificité, héritage), `categories.py` (catégorie de chaque élément éditable) et `structure.py` (dupliquer ou supprimer un élément de liste ou une ligne de tableau) ;
     - `versions/` : `published.py` (version publiée de chaque élément, associée par le contenu) et `changes.py` (changements d'une page entre deux versions, pour l'historique).
   - `publishing/` :
-    - `git/` : `git_manager.py` (clone, `pending()`, `unpublished_pages()`, version publiée), `git_sync.py` (pull et push, conflits), `git_status.py` (rapport de l'onglet Git), `history.py` et `commit_details.py` (historique lisible et détail d'une modification) ;
+    - `git/` : `git_manager.py` (clone, `pending()`, `unpublished_pages()`, version publiée), `git_sync.py` (pull et push, conflits), `branches.py` (branches du site), `git_status.py` (rapport de l'onglet Git), `history.py` et `commit_details.py` (historique lisible et détail d'une modification) ;
     - `sitemap/` : `sitemap_generator.py`, `sitemap_files.py`, `robots.py` et `site_url.py` (sitemap, robots.txt, URL du site) ;
     - `verification/` : `checks.py` (vérification avant publication) et `online.py` (suivi de la mise en ligne).
   - `desktop/` : `server_manager.py` (prévisualisation, `ThreadingHTTPServer` sur 127.0.0.1), `folder_picker.py` (classe `FolderPicker`), `tray.py` (icône de notification), `startup.py` (instance unique, port libre, `show_error`), `installer.py` (lance `msiexec`) et `auto_update.py` (mise à jour au démarrage).
@@ -385,6 +385,21 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Rien de tout ça depuis les sources (`sys.frozen` absent) : il n'y a pas d'exe à remplacer.
   - Pendant le téléchargement au démarrage, rien n'est affiché (pas de console) : quelques secondes avant la barre de l'installeur.
 - **Avertissement WiX ICE61 supprimé** (`SuppressIces` dans `MyCMS.wixproj`) : il découle de `AllowSameVersionUpgrades`, voulu pour réinstaller la même version par-dessus elle-même.
+- La 2.2.5 (simple changement de CI) a été fusionnée sans tag : la 2.3.0 la contient. Dépôt GitHub protégé : `main` sans force-push ni suppression, test `tests` exigé pour fusionner ; tags `v*` impossibles à supprimer ou déplacer (ruleset « Tags de version ») ; alertes Dependabot et détection de secrets actives.
+
+## Changements de la v2.3.1
+
+- **Gestion des branches du site** : carte « Branches » de l'onglet Git (`tabs/git-branches.html`, `git/branches.js`), `publishing/git/branches.py`, `api/branches.py`.
+  - `GET /api/git/branches` : branches de cet ordinateur et de GitHub (dernier état connu), actuelle et **publiée**. `?fetch=1` demande d'abord la liste à GitHub (`fetch --prune`).
+  - Branche publiée : la branche par défaut de GitHub (`origin/HEAD`), sinon `main` ou `master`. C'est celle du site en ligne.
+  - `POST /api/git/branches` avec `action` et `name` :
+    - `create` : à partir de la branche actuelle, qui devient la branche actuelle. Les modifications non commitées la suivent. Nom vérifié par `git check-ref-format --branch`. Elle n'existe sur GitHub qu'après le premier push (`set_upstream`, déjà géré par le push) ;
+    - `switch` : refusé s'il reste des modifications non commitées. Une branche qui n'est que sur GitHub est récupérée et suivie ;
+    - `merge` : dans la branche actuelle, avec un commit de fusion (`--no-ff`). En cas de conflit, `merge --abort` : rien n'est changé (409, `conflict`). Il reste à faire un push ;
+    - `delete` : sur cet ordinateur seulement, ni la branche actuelle ni la publiée. Une branche jamais fusionnée répond 409 (`unmerged`) ; l'interface demande confirmation, puis renvoie `force`.
+  - Interface : changer ou fusionner exige un éditeur sans modification non sauvegardée. Après un changement, la liste des pages et la page ouverte sont rechargées.
+  - Sur une autre branche que la publiée, la carte indique que les push ne changent pas le site, et le suivi de la mise en ligne n'est pas lancé après un push (`state.branch`).
+  - Non changé : les marqueurs « pas encore publié » comparent toujours à la branche distante de la branche actuelle, et « Publier sur le site et quitter » envoie la branche actuelle.
 
 ## Tests
 
