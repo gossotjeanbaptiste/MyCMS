@@ -26,7 +26,12 @@
             <button id="git-push" class="btn btn-primary">Push (envoyer)</button>
             <button id="git-status" class="btn">Statut</button>
             <button id="git-add" class="btn">Ajouter les fichiers non suivis</button>
+            <button id="git-check" class="btn" title="Liens et images cassés, adresses e-mail, numéros de téléphone, éléments vides">Vérifier le site</button>
+            <!-- Après un conflit : abandonner les modifications locales et reprendre la version en ligne -->
+            <button id="git-reset-remote" class="btn btn-danger hidden">Reprendre la version en ligne</button>
         </div>
+        <!-- Suivi de la mise en ligne après un push (GitHub Pages republie en une à deux minutes) -->
+        <p id="online-status" class="hidden text-muted" aria-live="polite"></p>
         <label for="commit-message" class="card-title">Message de commit</label>
         <input id="commit-message" type="text" class="input" value="Mise à jour du contenu" placeholder="Exemple : Mise à jour des tarifs">
         <!-- Messages préfaits : un clic remplit le champ, qui reste modifiable -->

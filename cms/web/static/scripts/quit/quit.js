@@ -1,6 +1,7 @@
 // MyCMS - fenêtre Quitter : vérifier ce qui reste à faire, l'exécuter, puis fermer MyCMS
 
 import { $, api, element, toast } from "../core/dom.js";
+import { confirmPublication } from "../git/publish-checks.js";
 import { dirtyCount, saveCurrentFile, warnUnsaved } from "../editor/editor.js";
 import { stopLogsPolling } from "../settings/logs.js";
 import { stopPreviewPolling } from "../preview/preview.js";
@@ -98,10 +99,16 @@ async function runChoice(choice) {
         // Sans champ message : rien à commiter, seulement des commits en attente à envoyer
         const message = $("quit-message") ? $("quit-message").value.trim() : "Mise à jour du contenu";
         if (!message) throw new Error("Écrivez un message décrivant la modification (ou choisissez un message préfait), ou choisissez « Sauvegarder et quitter ».");
+        setQuitBusy(true, "Vérification des pages…");
+        if (!(await confirmPublication())) {
+            throw new Error("Publication annulée : corrigez les problèmes signalés (onglet Git), ou choisissez « Sauvegarder et quitter ».");
+        }
         setQuitBusy(true, "Commit et publication sur GitHub…");
         try {
             await api("POST", "/api/git/push", { message });
         } catch (e) {
+            // Conflit : le message dit déjà quoi faire ; sinon, c'est souvent la connexion
+            if (e.data?.conflict) throw e;
             throw new Error(`La publication a échoué. Vérifiez la connexion Internet puis réessayez, ou choisissez « Sauvegarder et quitter ».\nDétail : ${e.message}`);
         }
         summary = "Modifications publiées sur GitHub : le site en ligne sera mis à jour dans quelques minutes.";

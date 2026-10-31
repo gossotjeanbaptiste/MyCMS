@@ -2,6 +2,7 @@
 
 import { $, api, toast, withButton } from "../core/dom.js";
 import { loadFiles, refreshPublished } from "../editor/editor.js";
+import { bindPublishChecks, confirmPublication, showConflict, watchOnline } from "./publish-checks.js";
 import { loadConfig } from "../settings/settings.js";
 import { state } from "../core/state.js";
 import { onTabOpen } from "../core/tabs.js";
@@ -66,11 +67,19 @@ function initCommitPresets() {
     updateCommitPresets();
 }
 
-// Une action Git, puis le statut (et la version publiée, qui peut avoir changé) mis à jour
-function gitAction(id, url, { body, published = false } = {}) {
+// Une action Git, puis le statut (et la version publiée, qui peut avoir changé) mis à jour.
+// before : vérification préalable (faux : action abandonnée) ; after : suite donnée au résultat
+function gitAction(id, url, { body, published = false, before, after } = {}) {
     $(id).addEventListener("click", (e) => withButton(e.currentTarget, async () => {
+        if (before && !(await before())) return;
         try {
-            toast((await api("POST", url, body?.())).message);
+            const result = await api("POST", url, body?.());
+            showConflict(false);
+            toast(result.message);
+            after?.(result);
+        } catch (err) {
+            showConflict(Boolean(err.data?.conflict));
+            throw err;
         } finally {
             await refreshGitStatus();
             if (published) await refreshPublished().catch(() => {});
@@ -100,7 +109,19 @@ export function initGit() {
 
     initCommitPresets();
     gitAction("git-pull", "/api/git/pull", { published: true });
-    gitAction("git-push", "/api/git/push", { body: () => ({ message: $("commit-message").value }), published: true });
+    gitAction("git-push", "/api/git/push", {
+        body: () => ({ message: $("commit-message").value }),
+        published: true,
+        before: confirmPublication,
+        after: (result) => watchOnline(result.pages),
+    });
     gitAction("git-add", "/api/git/add");
     $("git-status").addEventListener("click", (e) => withButton(e.currentTarget, refreshGitStatus));
+    bindPublishChecks({
+        afterReset: async () => {
+            await refreshGitStatus();
+            await loadFiles();
+            await refreshPublished().catch(() => {});
+        },
+    });
 }
