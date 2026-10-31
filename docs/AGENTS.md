@@ -389,14 +389,15 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 ## Changements de la v2.3.1
 
-- **Gestion des branches du site** : carte « Branches » de l'onglet Git (`tabs/git-branches.html`, `git/branches.js`), `publishing/git/branches.py`, `api/branches.py`.
+- **Gestion des branches du site** : carte « Branches », en bas de l'onglet Git car rarement utile (`tabs/git-branches.html`, `git/branches.js`), `publishing/git/branches.py`, `api/branches.py`.
   - `GET /api/git/branches` : branches de cet ordinateur et de GitHub (dernier état connu), actuelle et **publiée**. `?fetch=1` demande d'abord la liste à GitHub (`fetch --prune`).
   - Branche publiée : la branche par défaut de GitHub (`origin/HEAD`), sinon `main` ou `master`. C'est celle du site en ligne.
   - `POST /api/git/branches` avec `action` et `name` :
     - `create` : à partir de la branche actuelle, qui devient la branche actuelle. Les modifications non commitées la suivent. Nom vérifié par `git check-ref-format --branch`. Elle n'existe sur GitHub qu'après le premier push (`set_upstream`, déjà géré par le push) ;
     - `switch` : refusé s'il reste des modifications non commitées. Une branche qui n'est que sur GitHub est récupérée et suivie ;
     - `merge` : dans la branche actuelle, avec un commit de fusion (`--no-ff`). En cas de conflit, `merge --abort` : rien n'est changé (409, `conflict`). Il reste à faire un push ;
-    - `delete` : sur cet ordinateur seulement, ni la branche actuelle ni la publiée. Une branche jamais fusionnée répond 409 (`unmerged`) ; l'interface demande confirmation, puis renvoie `force`.
+    - `delete` : ni la branche actuelle ni la publiée. Sur cet ordinateur, et avec `remote` (case « aussi sur GitHub ») sur GitHub aussi (`push origin --delete`). Une branche qui n'est que sur GitHub exige `remote`.
+    - Avant de supprimer, MyCMS vérifie lui-même que ses commits restent dans une branche gardée : l'actuelle, la publiée, ou sa copie sur GitHub si elle n'est pas supprimée. Git (`branch -d`) se contente de la copie sur GitHub, même quand on la supprime aussi. Sinon : 409 (`unmerged`), l'interface demande confirmation, puis renvoie `force`.
   - Interface : changer ou fusionner exige un éditeur sans modification non sauvegardée. Après un changement, la liste des pages et la page ouverte sont rechargées.
   - Sur une autre branche que la publiée, la carte indique que les push ne changent pas le site, et le suivi de la mise en ligne n'est pas lancé après un push (`state.branch`).
   - Non changé : les marqueurs « pas encore publié » comparent toujours à la branche distante de la branche actuelle, et « Publier sur le site et quitter » envoie la branche actuelle.
