@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.5 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.1.6 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -29,7 +29,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `core/` : `dom.js` (`$`, `api`, `toast`…), `state.js` (état partagé) et `tabs.js`.
     - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js`, `categories.js` (filtres par catégorie), `structure.js` (actions des cartes), `image-field.js` (carte d'une image) et `format-bar.js`.
     - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
-    - `git/` : `git.js`, `publish-checks.js` (vérification, mise en ligne, conflit), `history.js` (historique) et `browse.js` (« Parcourir… »).
+    - `git/` : `git.js`, `publish-checks.js` (vérification, mise en ligne, conflit), `history.js` et `history-details.js` (historique et détail d'une modification) et `browse.js` (« Parcourir… »).
     - `quit/` : `quit.js` et `quit-content.js`.
     - `settings/` : `settings.js`, `account.js` (« Mon compte »), `users.js` (compte connecté, carte Utilisateurs), `update.js` (nouvelle version), `header.js` (guide, déconnexion) et `logs.js`.
   - `style.css` : généré par Tailwind, ne pas l'éditer à la main.
@@ -46,10 +46,11 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `categories.py` : catégorie de chaque élément éditable, déduite de la structure de la page ;
     - `structure.py` : dupliquer ou supprimer un élément de liste ou une ligne de tableau ;
     - `published.py` : version publiée de chaque élément, associée par le contenu ;
+    - `changes.py` : changements d'une page entre deux versions, élément par élément (historique) ;
     - `page_finder.py` : détection des pages.
   - `publishing/` :
     - `git_manager.py` : clone, `pending()`, `unpublished_pages()`, version publiée ; le pull et le push sont dans `git_sync.py` (conflits) ;
-    - `checks.py` : vérification avant publication ; `online.py` : suivi de la mise en ligne ; `history.py` : historique lisible ;
+    - `checks.py` : vérification avant publication ; `online.py` : suivi de la mise en ligne ; `history.py` et `commit_details.py` : historique lisible et détail d'une modification ;
     - `git_status.py` : rapport de l'onglet Git ;
     - `sitemap_generator.py`, `sitemap_files.py`, `robots.py` et `site_url.py` : sitemap, robots.txt, URL du site.
   - `desktop/` : `server_manager.py` (prévisualisation, `ThreadingHTTPServer` sur 127.0.0.1), `folder_picker.py` (classe `FolderPicker`), `tray.py` (icône de notification) et `startup.py` (instance unique, port libre, `show_error`).
@@ -262,6 +263,18 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Flask 3 et Werkzeug 3 (`flask>=3.0.0` dans `requirements.txt`). Les nouveaux mots de passe sont en scrypt, et les anciens en pbkdf2 se connectent toujours (testé).
   - Favicon de l'interface (`/favicon.ico`, public : c'est `logo.ico`). Elle donnait un 404 à chaque page.
   - `git_status.py` : l'ancien code de secours est retiré, et le rapport est identique (vérifié en comparant avec l'ancienne version).
+
+## Changements de la v2.1.6
+
+- **Détail d'une modification de l'historique** : un clic sur une ligne de l'historique de l'onglet Git la déplie (`git/history-details.js`, `GET /api/git/commit/<hash>`, `publishing/commit_details.py`, `content/changes.py`). Le détail est chargé une seule fois.
+  - Pour chaque page modifiée, les éléments éditables sont associés entre les deux versions comme pour les marqueurs (`published.align`). Chaque changement est classé « Modifié », « Mise en forme » (même texte : gras, lien…), « Ajouté » ou « Supprimé », avec sa catégorie.
+  - Les mots supprimés sont barrés en rouge, les mots ajoutés surlignés en vert (`word_diff` : `difflib` sur les mots, chacun suivi de ses espaces, pour faire des blocs).
+  - Une page dont aucun texte modifiable n'a changé l'indique (modification du code). Le diff Git reste dans un volet repliable « Voir le code modifié » (300 lignes au plus), puis viennent les autres fichiers.
+  - Au plus 100 changements par page. Un premier commit, sans parent, montre toute la page comme ajoutée.
+  - Un hash au bon format mais inconnu fait lever `BadName` par gitdb : la réponse est « Modification introuvable » (404).
+- **Statut du repository** : la carte passe avant l'historique, et sa section « Historique récent » est retirée.
+- **« Vérifier le site »** : les problèmes s'affichent dans un encadré rouge sous les boutons (`#check-results`, `.check-results.error`), avec la page, la ligne et une phrase sur quoi faire. Le message en bas de l'écran est rouge. Sans problème, l'encadré est vert. Avant, la liste allait dans le statut, plus bas, et le message était vert.
+- **« ↺ Version en ligne »** : le message dit « sauvegardez » seulement s'il reste quelque chose à sauvegarder. Si le fichier enregistré était déjà la version en ligne, il dit « Texte revenu à la version en ligne : rien à sauvegarder ».
 
 ## Tests
 
