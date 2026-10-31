@@ -10,6 +10,7 @@ from pathlib import Path
 
 from flask import Blueprint, jsonify, request
 
+from api.auth import current_user
 from api.services import error, services
 
 bp = Blueprint("repository", __name__)
@@ -59,7 +60,17 @@ def git_push():
     message = (request.get_json(force=True).get("message") or "").strip()
     if not message:
         return error("Veuillez entrer un message de commit")
-    return jsonify(s.git.push(str(s.repo_path()), message))
+    # Le commit est signé du nom de la personne connectée (voir « Mon compte » dans les paramètres)
+    return jsonify(s.git.push(str(s.repo_path()), message, s.auth.author(current_user())))
+
+
+@bp.get("/api/git/history")
+def git_history():
+    """Dernières modifications : auteur, date, pages, déjà publiées ou non"""
+    s = services()
+    if not s.has_repository():
+        return jsonify({"success": True, "entries": []})
+    return jsonify(s.git.history(str(s.repo_path()), int(request.args.get("limit", 20))))
 
 
 @bp.get("/api/git/status")

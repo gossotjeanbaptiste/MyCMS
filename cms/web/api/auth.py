@@ -106,6 +106,25 @@ def auth_logout():
     return jsonify({"success": True})
 
 
+@bp.get("/api/auth/profile")
+def get_profile():
+    """Nom et e-mail du compte connecté : auteur de ses commits"""
+    s = services()
+    username = current_user()
+    name, email = s.auth.author(username)
+    return jsonify({**s.auth.profile(username), "author": f"{name} <{email}>"})
+
+
+@bp.post("/api/auth/profile")
+def save_profile():
+    s = services()
+    data = request.get_json(force=True)
+    message = s.auth.set_profile(current_user(), data.get("name"), data.get("email"))
+    if message:
+        return error(message)
+    return jsonify({"success": True, "message": "Profil enregistré"})
+
+
 @bp.post("/api/auth/password")
 def auth_password():
     """Changer son mot de passe : ses autres sessions ouvertes sont fermées"""
