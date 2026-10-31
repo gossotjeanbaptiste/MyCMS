@@ -2,6 +2,7 @@
 
 import { $, api, toast, withButton } from "../core/dom.js";
 import { loadFiles, refreshPublished } from "../editor/editor.js";
+import { refreshBranches } from "./branches.js";
 import { refreshHistory } from "./history.js";
 import { bindPublishChecks, confirmPublication, showConflict, watchOnline } from "./publish-checks.js";
 import { loadConfig } from "../settings/settings.js";
@@ -32,6 +33,7 @@ export async function refreshGitStatus() {
     }
     showGitOutput(status.output);
     showCloneCard(status.has_git !== false);
+    await refreshBranches();
     await refreshHistory();
 }
 
@@ -89,6 +91,11 @@ function gitAction(id, url, { body, published = false, before, after } = {}) {
     }));
 }
 
+function onPublishedBranch() {
+    const { current, published } = state.branch;
+    return !published || current === published;
+}
+
 export function initGit() {
     onTabOpen("git", refreshGitStatus);
     $("git-verify").addEventListener("click", (e) => withButton(e.currentTarget, useRepoPath));
@@ -115,7 +122,8 @@ export function initGit() {
         body: () => ({ message: $("commit-message").value }),
         published: true,
         before: confirmPublication,
-        after: (result) => watchOnline(result.pages),
+        // Sur une autre branche que la branche publiée, le site en ligne ne change pas : rien à suivre
+        after: (result) => watchOnline(onPublishedBranch() ? result.pages : []),
     });
     gitAction("git-add", "/api/git/add");
     $("git-status").addEventListener("click", (e) => withButton(e.currentTarget, refreshGitStatus));

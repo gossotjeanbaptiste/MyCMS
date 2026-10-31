@@ -17,7 +17,7 @@ a = Analysis(
     # Interface web (modèles HTML, JS, CSS Tailwind compilé) et icône
     datas=[('../web/static', 'static'), ('../web/templates', 'templates'), ('../icon', 'icon')],
     hiddenimports=[
-        'api', 'api.auth', 'api.editor', 'api.pages', 'api.repository', 'api.services',
+        'api', 'api.auth', 'api.branches', 'api.editor', 'api.pages', 'api.repository', 'api.services',
         'api.media', 'api.publish', 'api.settings', 'api.shutdown', 'api.site', 'api.structure', 'api.users',
         'version', 'core.updates',
         'core.auth.auth_file', 'core.auth.auth_manager', 'core.logs.log_buffer', 'core.logs.logger',
@@ -25,7 +25,7 @@ a = Analysis(
         'content.html.html_manager', 'content.html.html_tree', 'content.html.hybrid_saver', 'content.html.node_diff',
         'content.pages.categories', 'content.pages.css_weights', 'content.pages.page_finder', 'content.pages.structure',
         'content.versions.changes', 'content.versions.published',
-        'publishing.git.commit_details', 'publishing.git.git_manager', 'publishing.git.git_status',
+        'publishing.git.branches', 'publishing.git.commit_details', 'publishing.git.git_manager', 'publishing.git.git_status',
         'publishing.git.git_sync', 'publishing.git.history',
         'publishing.sitemap.robots', 'publishing.sitemap.site_url', 'publishing.sitemap.sitemap_files',
         'publishing.sitemap.sitemap_generator',

@@ -16,7 +16,7 @@
   <img alt="Waitress" src="https://img.shields.io/badge/Serveur-Waitress-2e2e2e">
   <img alt="Windows" src="https://img.shields.io/badge/Windows-.msi-0078d4?logo=windows&logoColor=white">
   <img alt="Licence" src="https://img.shields.io/badge/Licence-PolyForm%20Noncommercial-blue">
-  <img alt="Version" src="https://img.shields.io/badge/Version-2.3.0-orange">
+  <img alt="Version" src="https://img.shields.io/badge/Version-2.3.1-orange">
 </p>
 
 ---
@@ -34,6 +34,7 @@ Le développeur du site garde la main sur ce qui est modifiable : seuls les él�
 - **Listes, tableaux et images** : ajouter ou supprimer un élément de liste ou une ligne de tableau, remplacer une image, revenir à la version en ligne d'un texte.
 - **Un aperçu en direct** : la page s'affiche avec les modifications pas encore sauvegardées, et un clic dans la page ouvre la fiche correspondante.
 - **Une publication sûre** : avant chaque envoi, MyCMS vérifie les liens, les images, les adresses e-mail et les numéros de téléphone. Après, il indique quand la modification est visible en ligne. Les conflits avec GitHub sont expliqués simplement, et rien n'est jamais laissé à moitié fusionné.
+- **Des branches** : préparer des modifications sur une branche « brouillon » sans toucher au site en ligne, puis la fusionner dans la branche publiée.
 - **Des marqueurs « pas encore publié »** : chaque fiche signale ce qui diffère de la version en ligne.
 - **Plusieurs utilisateurs** : un compte par personne, des rôles éditeur et administrateur, et des publications signées du nom de leur auteur.
 - **Un historique lisible** : « Marie a modifié page/tarifs.html », avec le détail texte par texte, mots ajoutés et supprimés surlignés.
