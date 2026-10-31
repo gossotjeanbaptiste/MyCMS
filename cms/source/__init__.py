@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-MyCMS - Package principal
+MyCMS - Code métier (core, content, publishing, desktop). La version est dans version.py
 """
 
-__version__ = "2.1.4"
 __author__ = "Jean-Baptiste (POGGIO) GOSSOT"

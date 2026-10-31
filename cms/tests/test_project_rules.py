@@ -39,8 +39,8 @@ def test_no_global_statement(path):
 
 def test_versions_match():
     package = json.loads((CMS_DIR / "web" / "package.json").read_text(encoding="utf-8"))["version"]
-    python = re.search(r'__version__ = "([^"]+)"', (CMS_DIR / "source" / "__init__.py").read_text(encoding="utf-8"))
-    assert package == python.group(1)
+    from version import VERSION
+    assert package == VERSION
 
 
 @pytest.mark.parametrize("path", PYTHON_MODULES, ids=name)
