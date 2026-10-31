@@ -92,7 +92,10 @@ def test_readme_version_badge():
     assert f"badge/Version-{VERSION}-" in readme
 
 
-def test_mit_license():
-    """Licence MIT : le fichier LICENSE existe, et le README l'annonce"""
-    assert (ROOT / "LICENSE").read_text(encoding="utf-8").startswith("MIT License")
-    assert "badge/Licence-MIT-" in (ROOT / "README.md").read_text(encoding="utf-8")
+def test_noncommercial_license():
+    """Licence PolyForm Noncommercial : seul l'auteur peut vendre MyCMS. Le fichier LICENSE porte la mention
+    de copyright exigée (Required Notice), et le README annonce la licence"""
+    license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
+    assert license_text.startswith("Required Notice: Copyright")
+    assert "# PolyForm Noncommercial License 1.0.0" in license_text
+    assert "badge/Licence-PolyForm%20Noncommercial-" in (ROOT / "README.md").read_text(encoding="utf-8")
