@@ -56,12 +56,12 @@ def test_page_without_editable_elements(site_client, git_site):
 def test_save_writes_only_the_change_and_updates_sitemap(site_client, git_site):
     before = read(git_site / "index.html")
     data = load(site_client)
-    response = save(site_client, "index.html", data, {"1": "Bienvenue chez Rout'Art"})
+    response = save(site_client, "index.html", data, {"1": "Bienvenue chez MyCMS"})
     result = response.get_json()
     assert result["message"] == "Fichier sauvegardé: index.html (1 élément(s) modifié(s))"
     assert result["sitemap"] == "Sitemap créé à la racine : 3 pages, 2 exclues (page/mentions.html, page/prive/secret.html)"
     after = read(git_site / "index.html")
-    assert after == before.replace("Bienvenue à l'auto-école</h1>", "Bienvenue chez Rout'Art</h1>")
+    assert after == before.replace("Bienvenue à l'auto-école</h1>", "Bienvenue chez MyCMS</h1>")
     assert result["hash"] == load(site_client)["hash"]
 
 

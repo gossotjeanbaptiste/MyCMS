@@ -6,7 +6,7 @@ de l'éditeur (buildRichEditor puis serializeRich, dans Node avec jsdom), renvoy
 le fichier doit rester identique à l'octet près.
 
 Sur le site de test, et sur une copie du vrai site si MYCMS_SITE donne son chemin :
-    set MYCMS_SITE=C:\\Users\\jbgos\\Documents\\Tek\\Rout'Art
+    set MYCMS_SITE=C:\\chemin\\du\\site
 Le vrai site n'est jamais modifié : il est copié dans un dossier temporaire.
 """
 

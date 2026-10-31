@@ -104,7 +104,7 @@ MENTIONS = """<!DOCTYPE html>
     <main>
         <section>
             <h2 class="editable">Mentions légales</h2>
-            <div><h3 class="editable">1. Éditeur du site</h3><p class="editable">Rout'Art</p></div>
+            <div><h3 class="editable">1. Éditeur du site</h3><p class="editable">MyCMS</p></div>
             <div><h3 class="editable">2. Hébergeur</h3><p class="editable">GitHub</p></div>
             <div data-category="Contact"><p class="editable">contact@exemple.fr</p></div>
         </section>

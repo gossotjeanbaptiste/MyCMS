@@ -21,7 +21,8 @@ from publishing.git.git_manager import GitManager
 def served(monkeypatch):
     """Appels au serveur Waitress, sans le lancer vraiment (il bloquerait le test)"""
     calls = []
-    monkeypatch.setattr(server, "serve", lambda app, **options: calls.append((app, options)))
+    monkeypatch.setattr(server, "serve", lambda app, **
+                        options: calls.append((app, options)))
     return calls
 
 
@@ -37,7 +38,8 @@ def opened(monkeypatch):
 
 def test_prepare_environment():
     resources, git_found = wsgi.prepare_environment()
-    assert resources.static_dir.is_dir() and resources.templates_dir.is_dir() and resources.icon_file.is_file()
+    assert resources.static_dir.is_dir(
+    ) and resources.templates_dir.is_dir() and resources.icon_file.is_file()
     assert git_found is True and os.environ["GIT_PYTHON_REFRESH"]
 
 
@@ -50,7 +52,8 @@ def test_wsgi_app_is_built_on_demand():
 
 def test_waitress_serves_the_application():
     """Le vrai serveur de production, sur un port libre : page de connexion, API, fichiers statiques"""
-    waitress_server = create_server(wsgi.create_application(), host="127.0.0.1", port=0, threads=2)
+    waitress_server = create_server(
+        wsgi.create_application(), host="127.0.0.1", port=0, threads=2)
     threading.Thread(target=waitress_server.run, daemon=True).start()
     base = f"http://127.0.0.1:{waitress_server.effective_port}"
     try:
@@ -73,13 +76,15 @@ def test_normal_launch_serves_with_waitress(monkeypatch, opened, served, isolate
     pulls = []
     monkeypatch.setattr(startup, "running_instance", lambda url: False)
     monkeypatch.setattr(startup, "port_free", lambda host, port: True)
-    monkeypatch.setattr(GitManager, "pull", lambda self, path: pulls.append(path))
+    monkeypatch.setattr(GitManager, "pull", lambda self,
+                        path: pulls.append(path))
     server.main(port=5098, open_browser=False, tray=False)
     app, options = served[0]
     assert isinstance(app, flask.Flask)
-    assert options == {"host": "127.0.0.1", "port": 5098, "threads": server.THREADS, "ident": "MyCMS"}
+    assert options == {"host": "127.0.0.1", "port": 5098,
+                       "threads": server.THREADS, "ident": "MyCMS"}
     assert server.THREADS >= 8
-    assert pulls == [str(isolated_home / "Rout-Art")]
+    assert pulls == [str(isolated_home / "mycms")]
     assert opened == []
 
 
@@ -92,20 +97,24 @@ def test_second_launch_opens_the_running_instance(monkeypatch, opened, served):
 def test_port_used_by_another_program(monkeypatch, opened, served):
     errors = []
     monkeypatch.setattr(startup, "running_instance", lambda url: False)
-    monkeypatch.setattr(startup, "show_error", lambda message, logger: errors.append(message))
+    monkeypatch.setattr(startup, "show_error", lambda message,
+                        logger: errors.append(message))
     with socket.socket() as busy:
         busy.bind(("127.0.0.1", 0))
         busy.listen()
         with pytest.raises(SystemExit) as stopped:
-            server.main(port=busy.getsockname()[1], open_browser=False, tray=False)
-    assert stopped.value.code == 1 and "déjà utilisé" in errors[0] and served == []
+            server.main(port=busy.getsockname()[
+                        1], open_browser=False, tray=False)
+    assert stopped.value.code == 1 and "déjà utilisé" in errors[0] and served == [
+    ]
 
 
 def test_server_error_is_shown(monkeypatch, opened):
     errors = []
     monkeypatch.setattr(startup, "running_instance", lambda url: False)
     monkeypatch.setattr(startup, "port_free", lambda host, port: True)
-    monkeypatch.setattr(startup, "show_error", lambda message, logger: errors.append(message))
+    monkeypatch.setattr(startup, "show_error", lambda message,
+                        logger: errors.append(message))
 
     def crash(app, **options):
         raise RuntimeError("panne")

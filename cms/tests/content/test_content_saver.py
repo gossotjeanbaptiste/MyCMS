@@ -75,10 +75,10 @@ def test_browser_rewrites_are_not_changes(index):
 # ======= Sauvegarde : modifications =======
 
 def test_only_the_changed_element_is_rewritten(index):
-    content, changed = save(index, {1: "Bienvenue chez Rout'Art"})
+    content, changed = save(index, {1: "Bienvenue chez MyCMS"})
     assert changed == 1
-    assert '<h1 class="editable" id="titre">Bienvenue chez Rout\'Art</h1>' in content
-    assert content.replace("Bienvenue chez Rout'Art", "Bienvenue à l'auto-école") == index
+    assert '<h1 class="editable" id="titre">Bienvenue chez MyCMS</h1>' in content
+    assert content.replace("Bienvenue chez MyCMS", "Bienvenue à l'auto-école") == index
     assert content.count("\r\n") == index.count("\r\n")
 
 

@@ -13,10 +13,10 @@ from publishing.verification.online import fetch, online_status, page_url
 PAGE = """<html><body id="haut">
 <a href="../style/style.css">ok</a> <a href="/index.html">ok</a> <a href="../index.html#titre">ok</a>
 <a href="#haut">ok</a> <a href="#">ok</a> <a href="#top">ok</a> <a href="https://exemple.fr/absent">externe</a>
-<a href="mailto:contact@rout-art.fr">ok</a> <a href="tel:+33 3 89 00 00 00">ok</a> <a href="javascript:void(0)">js</a>
+<a href="mailto:contact@mycms.fr">ok</a> <a href="tel:+33 3 89 00 00 00">ok</a> <a href="javascript:void(0)">js</a>
 <a href="../files/absent.pdf">cassé</a>
 <a href="#inconnue">ancre</a>
-<a href="mailto:contact.rout-art.fr">mail</a>
+<a href="mailto:contact.mycms.fr">mail</a>
 <a href="tel:appelez-nous">tel</a>
 <img src="../images/absente.png">
 <p class="editable">  </p>
@@ -33,7 +33,7 @@ def test_check_page(site):
     assert messages(check_page(site, "page/test.html", PAGE)) == [
         (5, "Fichier introuvable : ../files/absent.pdf"),
         (6, "Ancre introuvable dans la page : #inconnue"),
-        (7, "Adresse e-mail incorrecte : mailto:contact.rout-art.fr"),
+        (7, "Adresse e-mail incorrecte : mailto:contact.mycms.fr"),
         (8, "Numéro de téléphone incorrect : tel:appelez-nous"),
         (9, "Fichier introuvable : ../images/absente.png"),
         (10, "Élément vide (élément [0])"),
@@ -44,11 +44,13 @@ def test_check_page(site):
 def test_links_are_resolved_like_a_browser(site):
     # Depuis la racine, ../ ne remonte pas au-dessus du site ; un dossier vise son index.html
     content = '<a href="../style/style.css">a</a> <a href="./">b</a> <a href="page/">c</a>'
-    assert messages(check_page(site, "index.html", content)) == [(1, "Fichier introuvable : page/")]
+    assert messages(check_page(site, "index.html", content)) == [
+        (1, "Fichier introuvable : page/")]
 
 
 def test_test_site_has_no_problem(site):
-    pages = ["index.html", "page/formations.html", "page/financement.html", "page/mentions.html"]
+    pages = ["index.html", "page/formations.html",
+             "page/financement.html", "page/mentions.html"]
     assert check_pages(site, pages + ["absente.html"]) == []
 
 
@@ -56,7 +58,8 @@ def test_test_site_has_no_problem(site):
 
 def test_page_url():
     assert page_url("https://site.fr", "index.html") == "https://site.fr/"
-    assert page_url("https://site.fr", "page/a.html") == "https://site.fr/page/a.html"
+    assert page_url("https://site.fr",
+                    "page/a.html") == "https://site.fr/page/a.html"
 
 
 def test_online_status(site):
@@ -65,7 +68,8 @@ def test_online_status(site):
               "https://site.fr/page/formations.html": b"ancienne version"}
     status = online_status("https://site.fr", site, ["index.html", "page/formations.html",
                                                      "page/financement.html", "page/supprimee.html"], served.get)
-    assert status == {"online": ["index.html"], "waiting": ["page/formations.html", "page/financement.html"]}
+    assert status == {"online": ["index.html"], "waiting": [
+        "page/formations.html", "page/financement.html"]}
 
 
 def test_fetch_without_cache():
@@ -84,12 +88,15 @@ def test_fetch_without_cache():
     server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     try:
-        assert fetch(f"http://127.0.0.1:{server.server_port}/page.html") == b"contenu"
+        assert fetch(
+            f"http://127.0.0.1:{server.server_port}/page.html") == b"contenu"
     finally:
         server.shutdown()
         server.server_close()
-    assert seen[0][0].startswith("/page.html?mycms=") and seen[0][1] == "no-cache"
-    assert fetch(f"http://127.0.0.1:{server.server_port}/page.html") is None  # Serveur arrêté
+    assert seen[0][0].startswith(
+        "/page.html?mycms=") and seen[0][1] == "no-cache"
+    # Serveur arrêté
+    assert fetch(f"http://127.0.0.1:{server.server_port}/page.html") is None
 
 
 @pytest.mark.parametrize("url", ["http://127.0.0.1:1/x", "pas une adresse"])

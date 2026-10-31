@@ -53,8 +53,8 @@ test("« Mon compte » : chargement à l'ouverture des paramètres, puis enregis
     await flush();
     assert.equal($("account-name").value, "Marie Dupont");
     assert.equal($("account-author").textContent, "Vos publications sont signées : Marie Dupont <Marie@mycms.local>");
-    $("account-email").value = "marie@rout-art.fr";
+    $("account-email").value = "marie@mycms.fr";
     $("account-save").click();
     await flush();
-    assert.deepEqual(sent, [{ name: "Marie Dupont", email: "marie@rout-art.fr" }]);
+    assert.deepEqual(sent, [{ name: "Marie Dupont", email: "marie@mycms.fr" }]);
 });
