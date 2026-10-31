@@ -11,6 +11,8 @@ from flask import Blueprint, jsonify, request
 from api.services import content_hash, error, read_page, services
 from content.categories import editable_categories
 from content.css_weights import bold_info
+from content.published import published_versions
+from content.structure import repeatable
 
 bp = Blueprint("editor", __name__)
 
@@ -26,13 +28,14 @@ def _published_versions(s, name, elements):
         return False
     published_known, published_content = s.git.published_file(str(s.repo_path()), name)
     if published_known:
-        published = [source["html"] for source in s.html.extract_editable_sources(published_content or "")]
-        # value : texte, ou src d'une iframe (qui n'est pas dans le contenu)
-        values = [e["editable_value"] for e in
-                  s.html.extract_editable_elements(published_content or "").get("elements", [])]
-        for i, element in enumerate(elements):
-            element["published_html"] = published[i] if i < len(published) else None
-            element["published_value"] = values[i] if i < len(values) else None
+        content = published_content or ""
+        # value : texte, ou src d'une iframe ou d'une image (qui n'est pas dans le contenu)
+        published = [{"tag": e["tag"], "html": source["html"], "value": e["editable_value"]} for e, source in
+                     zip(s.html.extract_editable_elements(content).get("elements", []),
+                         s.html.extract_editable_sources(content))]
+        # Associés par leur contenu : un élément ajouté ou supprimé ne décale pas les suivants
+        for element, (html, value) in zip(elements, published_versions(elements, published)):
+            element["published_html"], element["published_value"] = html, value
     return published_known
 
 
@@ -49,24 +52,28 @@ def load_file(name):
     sources = s.html.extract_editable_sources(content)
     bold_flags, bold_selectors = bold_info(s.repo_path(), name, content)
     categories = editable_categories(content)
+    repeats = repeatable(content)
     elapsed_ms = (time.perf_counter() - start) * 1000
-    if not len(sources) == len(bold_flags) == len(categories) == len(result["elements"]):
+    if not len(sources) == len(bold_flags) == len(categories) == len(repeats) == len(result["elements"]):
         return error("Structure HTML non reconnue : le nombre d'éléments éditables ne correspond pas", 500)
 
-    # value : texte (ou src d'une iframe) ; html : contenu source exact, édité en texte enrichi
+    # value : texte (ou src d'une iframe, d'une image) ; html : contenu source exact, édité en texte enrichi
+    # repeat : "li" ou "tr" si l'élément de liste ou la ligne de tableau peut être dupliqué ou supprimé
     elements = [
         {
             "index": e["index"],
             "id": e["id"],
             "tag": e["tag"],
             "is_iframe": e["is_iframe"],
+            "is_image": e["is_image"],
             "value": e["editable_value"],
             "html": source["html"],
             "nested": source["nested"],
             "bold": bold,
             "category": category,
+            "repeat": repeat,
         }
-        for e, source, bold, category in zip(result["elements"], sources, bold_flags, categories)
+        for e, source, bold, category, repeat in zip(result["elements"], sources, bold_flags, categories, repeats)
     ]
     published_known = _published_versions(s, name, elements)
 
