@@ -1,0 +1,17 @@
+<!-- Branches du site : préparer des modifications à part (brouillon), puis les fusionner dans la branche publiée -->
+<div id="branches-card" class="card hidden">
+    <span class="card-title">Branches</span>
+    <p class="text-muted">Une branche est une copie de travail du site. Sur une branche « brouillon », vos push ne changent pas le site en ligne : fusionnez-la ensuite dans la branche publiée, puis faites un push.</p>
+    <p id="branch-current" class="[overflow-wrap:anywhere]" aria-live="polite"></p>
+    <div class="flex flex-wrap items-center gap-2">
+        <select id="branch-select" class="input min-w-56 flex-1 max-sm:min-w-0" aria-label="Branche"></select>
+        <button id="branch-switch" class="btn" title="Passer sur cette branche : l'éditeur montre alors ses pages">Changer de branche</button>
+        <button id="branch-merge" class="btn" title="Ajouter les modifications de cette branche à la branche actuelle">Fusionner dans la branche actuelle</button>
+        <button id="branch-delete" class="btn btn-danger" title="Supprimer cette branche de cet ordinateur">Supprimer</button>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+        <input id="branch-name" type="text" class="input min-w-56 flex-1 max-sm:min-w-0" spellcheck="false" placeholder="Nouvelle branche, ex. brouillon-tarifs" aria-label="Nom de la nouvelle branche">
+        <button id="branch-create" class="btn">Créer à partir de la branche actuelle</button>
+        <button id="branch-fetch" class="btn" title="Demander à GitHub la liste de ses branches">Actualiser depuis GitHub</button>
+    </div>
+</div>

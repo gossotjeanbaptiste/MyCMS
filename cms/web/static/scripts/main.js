@@ -7,6 +7,7 @@ import { toast } from "./core/dom.js";
 import { initEditorInput } from "./editor/input.js";
 import { initEditor, loadFiles } from "./editor/editor.js";
 import { initFormatBar } from "./editor/format-bar.js";
+import { initBranches } from "./git/branches.js";
 import { initGit, refreshGitStatus } from "./git/git.js";
 import { initHeader, openGuide } from "./settings/header.js";
 import { initLogs } from "./settings/logs.js";
@@ -48,6 +49,6 @@ async function start() {
 }
 
 [initTabs, initSettings, initAccount, initUsers, initEditor, initEditorInput, initSearch, initCategories, initStructure, initPane, initFormatBar,
-    initGit, initBrowse, initPreview, initLogs, initHeader, initQuit].forEach((init) => init());
+    initGit, initBranches, initBrowse, initPreview, initLogs, initHeader, initQuit].forEach((init) => init());
 
 start().catch((e) => toast(e.message, true));

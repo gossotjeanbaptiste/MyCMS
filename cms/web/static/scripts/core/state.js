@@ -14,6 +14,8 @@ export const state = {
         elementCount: 0,
         category: "", // Catégorie affichée (vide : toutes)
     },
+    // Branche du site (onglet Git) : actuelle, et publiée (celle du site en ligne)
+    branch: { current: "", published: "" },
     preview: {
         running: false, // Serveur de prévisualisation
     },
