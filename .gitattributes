@@ -1,0 +1,8 @@
+# Fins de ligne fixées, quel que soit le réglage core.autocrlf du poste
+
+# Généré par Tailwind (npm run build:css), qui l'écrit en LF : sans cette règle, Git le prend pour un fichier
+# binaire (lignes très longues) et chaque recompilation apparaît comme une modification
+cms/web/static/style.css text eol=lf
+
+# Scripts Windows : cmd gère mal les fins de ligne LF (étiquettes goto)
+*.bat text eol=crlf
