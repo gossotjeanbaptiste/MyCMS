@@ -1,6 +1,6 @@
 {
   "name": "mycms-web",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "private": true,
   "type": "module",
   "description": "Interface web de MyCMS (compilation du CSS Tailwind, tests de l'interface)",
