@@ -95,6 +95,12 @@ def test_update_check_is_done_once(client, monkeypatch):
     assert client.get("/api/update").get_json() == first and calls == [1]
 
 
+def test_settings_show_the_version(client):
+    from version import VERSION
+    page = client.get("/").get_data(as_text=True)
+    assert f'<strong id="app-version">{VERSION}</strong>' in page and f"/releases/tag/v{VERSION}" in page
+
+
 def test_favicon_is_public(app):
     response = app.test_client().get("/favicon.ico")
     assert response.status_code == 200 and response.mimetype == "image/x-icon" and response.data[
