@@ -9,6 +9,7 @@ import time
 from flask import Blueprint, jsonify, request
 
 from api.services import content_hash, error, read_page, services
+from content.categories import editable_categories
 from content.css_weights import bold_info
 
 bp = Blueprint("editor", __name__)
@@ -47,8 +48,9 @@ def load_file(name):
     result = s.html.extract_editable_elements(content)
     sources = s.html.extract_editable_sources(content)
     bold_flags, bold_selectors = bold_info(s.repo_path(), name, content)
+    categories = editable_categories(content)
     elapsed_ms = (time.perf_counter() - start) * 1000
-    if not len(sources) == len(bold_flags) == len(result["elements"]):
+    if not len(sources) == len(bold_flags) == len(categories) == len(result["elements"]):
         return error("Structure HTML non reconnue : le nombre d'éléments éditables ne correspond pas", 500)
 
     # value : texte (ou src d'une iframe) ; html : contenu source exact, édité en texte enrichi
@@ -62,8 +64,9 @@ def load_file(name):
             "html": source["html"],
             "nested": source["nested"],
             "bold": bold,
+            "category": category,
         }
-        for e, source, bold in zip(result["elements"], sources, bold_flags)
+        for e, source, bold, category in zip(result["elements"], sources, bold_flags, categories)
     ]
     published_known = _published_versions(s, name, elements)
 
