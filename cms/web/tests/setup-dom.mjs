@@ -17,7 +17,7 @@ const dom = new JSDOM(`<!DOCTYPE html><html><head></head><body>
     <ul id="git-history"></ul><a id="update-link" class="hidden"></a>
     <input id="account-name"><input id="account-email"><p id="account-author"></p><button id="account-save"></button>
     <div id="toasts"></div>
-</body></html>`, { url: "http://127.0.0.1:5050/" });
+</body></html>`, { url: "http://127.0.0.1:5050/", pretendToBeVisual: true });
 
 const { window } = dom;
 for (const name of ["window", "document", "Node", "NodeFilter", "Range", "Event", "HTMLElement", "Element"]) {

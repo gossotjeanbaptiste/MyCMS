@@ -104,3 +104,12 @@ def test_quit(site_client, services, monkeypatch):
     delay, function, args = timers[0]
     function(*args)  # Fin du processus, une fois la réponse envoyée
     assert delay == 0.5 and trays == ["icône"] and exits == [0]
+
+
+def test_preview_status_since(site_client, services):
+    services.preview_logs.append("GET /index.html")
+    full = site_client.get("/api/preview").get_json()
+    assert full["reset"] is True and full["logs"] == ["GET /index.html"] and full["total"] == 1
+    services.preview_logs.append("GET /style.css")
+    delta = site_client.get("/api/preview?since=1").get_json()
+    assert delta == {"running": False, "port": None, "logs": ["GET /style.css"], "total": 2, "reset": False}

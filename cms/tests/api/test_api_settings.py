@@ -85,3 +85,11 @@ def test_update_check_is_done_once(client, monkeypatch):
 def test_favicon_is_public(app):
     response = app.test_client().get("/favicon.ico")
     assert response.status_code == 200 and response.mimetype == "image/x-icon" and response.data[:4] == b"\x00\x00\x01\x00"
+
+
+def test_logs_since(client, services):
+    total = client.get("/api/logs").get_json()["total"]
+    services.logger.log("Nouvelle ligne")
+    data = client.get(f"/api/logs?since={total}").get_json()
+    assert data["reset"] is False and len(data["logs"]) == 1 and data["logs"][0].endswith("Nouvelle ligne")
+    assert client.get(f"/api/logs?since={data['total']}").get_json()["logs"] == []
