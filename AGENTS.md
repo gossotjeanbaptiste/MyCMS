@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.8 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.1.9 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -34,7 +34,8 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `settings/` : `settings.js`, `account.js` (« Mon compte »), `users.js` (compte connecté, carte Utilisateurs), `update.js` (nouvelle version), `header.js` (guide, déconnexion) et `logs.js`.
   - `style.css` : généré par Tailwind, ne pas l'éditer à la main.
   - `highlight.css` : surlignage de la recherche, hors Tailwind.
-  - `logo.png` : le logo de l'en-tête et de la page de connexion, l'image 256 px de `cms/icon/logo.ico`.
+  - `logo.png` : le logo carré de la page de connexion, l'image 256 px de `cms/icon/logo.ico`.
+  - `logo-wide.png` : le logo horizontal de l'en-tête (logos à gauche, « MyCMS » à droite), généré par `cms/icon/make_wide_logo.py`.
 - `cms/web/src/` : sources Tailwind v4. `input.css` importe `theme.css` (couleurs) et `components/*.css` (une couche `@layer components` par fichier).
 - `cms/source/` : le code métier, importé par paquet (`from content.html_tree import parse`).
   - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (comptes ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant), `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format), `updates.py` (nouvelle version sur GitHub), `log_buffer.py` (journal numéroté) et `logger.py`.
@@ -57,7 +58,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `desktop/` : `server_manager.py` (prévisualisation, `ThreadingHTTPServer` sur 127.0.0.1), `folder_picker.py` (classe `FolderPicker`), `tray.py` (icône de notification) et `startup.py` (instance unique, port libre, `show_error`).
 - `cms/installer/` : compilation. `build_exe.py` et `mycms.spec` (PyInstaller), `build_msi.py`, `MyCMS.wixproj` et `Package.wxs` (WiX, avec Git portable MinGit).
   - Un nouveau module Python doit être ajouté aux `hiddenimports` de `mycms.spec`, et un nouveau dossier de l'interface à ses `datas`.
-- `cms/icon/logo.ico` : l'icône de l'exe, de l'installeur et de la zone de notification.
+- `cms/icon/logo.ico` : l'icône de l'exe, de l'installeur et de la zone de notification. `make_wide_logo.py` en tire le logo horizontal de l'en-tête.
 - `run.bat` : lancement depuis les sources, sur le port 5050.
 - `.github/workflows/` : `tests.yml` (tests à chaque push) et `release.yml` (exe et `.msi` joints à une release, sur un tag `v<version>`).
 - `cms/tests/` (pytest) et `cms/web/tests/` (`node:test`) : les tests, lancés par `run_tests.bat` (voir « Tests »).
@@ -292,6 +293,13 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `static/logo.png` est l'image 256 px extraite de `cms/icon/logo.ico`, avec Pillow : `im = Image.open(ico); im.size = (256, 256); im.save(png)`.
   - **À régénérer quand l'icône change** : un test (`test_project_rules.py`) vérifie qu'ils sont identiques.
   - `/static/logo.png` fait partie des adresses publiques (`PUBLIC_PATHS`), car la page de connexion l'affiche.
+
+## Changements de la v2.1.9
+
+- **Logo horizontal dans l'en-tête** (`static/logo-wide.png`, 393 × 128, affiché en 40 px de haut). Les logos Python et Git de l'icône 256 px sont à gauche, sans son texte. À droite, « My » est en jaune Python (`#FFD43B`) et « CMS » en orange Git (`#F05133`), en Segoe UI Black, sur la tuile bleu nuit (`#1E293B`) aux coins arrondis.
+  - La tuile garde le texte lisible dans les deux thèmes : le jaune serait illisible sur l'en-tête blanc du thème clair.
+  - Généré par `python cms/icon/make_wide_logo.py`, à relancer après un changement de `logo.ico`. Il faut Windows, pour la police `seguibl.ttf`.
+  - La page de connexion garde le logo carré (`logo.png`).
 
 ## Tests
 
