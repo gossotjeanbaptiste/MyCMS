@@ -108,22 +108,43 @@ def merge(repo, name):
                                          "Faites un push pour l'envoyer sur GitHub.")}
 
 
-def delete(repo, name, force=False):
-    """Supprimer une branche de cet ordinateur (pas la branche actuelle ni la branche publiée).
-    Sans force, refusé si ses modifications n'ont pas été fusionnées : elles seraient perdues"""
+def _ref(info):
+    return info["name"] if info["local"] else f"origin/{info['name']}"
+
+
+def _would_lose_work(repo, info, published, remote):
+    """Ses commits ne sont dans aucune branche qui reste : la branche actuelle, la publiée, ou sa copie
+    sur GitHub si celle-ci est gardée (Git, lui, se contente de cette copie, même quand on la supprime aussi)"""
+    keep = [repo.head.commit] + ([repo.commit(_ref(published))] if published else [])
+    if info["local"] and info["remote"] and not remote:
+        keep.append(repo.commit(f"origin/{info['name']}"))
+    tip = repo.commit(_ref(info))
+    return not any(repo.is_ancestor(tip, commit) for commit in keep)
+
+
+def delete(repo, name, force=False, remote=False):
+    """Supprimer une branche de cet ordinateur et, si remote, de GitHub (ni l'actuelle ni la publiée).
+    Sans force, refusé si ses modifications n'ont été fusionnées nulle part : elles seraient perdues"""
     listing = list_branches(repo)
+    found = {b["name"]: b for b in listing["branches"]}
     if name == listing["current"]:
         raise ValueError("Impossible de supprimer la branche actuelle : passez d'abord sur une autre branche")
     if name == listing["published"]:
         raise ValueError("Impossible de supprimer la branche publiée")
-    if name not in {b.name for b in repo.branches}:
-        raise ValueError(f"La branche « {name} » n'est pas sur cet ordinateur")
-    try:
-        repo.git.branch("-D" if force else "-d", name)
-    except GitCommandError as error:
-        if "not fully merged" in str(error):
-            return {"success": False, "unmerged": True, "message": (
-                f"La branche « {name} » contient des modifications qui n'ont été fusionnées nulle part : "
-                "elles seront perdues.")}
-        raise
-    return {"success": True, "message": f"✓ Branche « {name} » supprimée de cet ordinateur"}
+    info = found.get(name)
+    if info is None:
+        raise ValueError(f"La branche « {name} » est introuvable")
+    if not info["local"] and not remote:
+        raise ValueError(f"La branche « {name} » n'est que sur GitHub : cochez « aussi sur GitHub » pour la supprimer")
+    if not force and _would_lose_work(repo, info, found.get(listing["published"]), remote):
+        return {"success": False, "unmerged": True, "message": (
+            f"La branche « {name} » contient des modifications qui n'ont été fusionnées nulle part : "
+            "elles seront perdues.")}
+    places = []
+    if remote and info["remote"]:
+        repo.git.push("origin", "--delete", name)  # Retire aussi origin/<nom> de cet ordinateur
+        places.append("de GitHub")
+    if info["local"]:
+        repo.git.branch("-D", name)
+        places.insert(0, "de cet ordinateur")
+    return {"success": True, "message": f"✓ Branche « {name} » supprimée {' et '.join(places)}"}

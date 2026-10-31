@@ -7,7 +7,8 @@
         <select id="branch-select" class="input min-w-56 flex-1 max-sm:min-w-0" aria-label="Branche"></select>
         <button id="branch-switch" class="btn" title="Passer sur cette branche : l'éditeur montre alors ses pages">Changer de branche</button>
         <button id="branch-merge" class="btn" title="Ajouter les modifications de cette branche à la branche actuelle">Fusionner dans la branche actuelle</button>
-        <button id="branch-delete" class="btn btn-danger" title="Supprimer cette branche de cet ordinateur">Supprimer</button>
+        <button id="branch-delete" class="btn btn-danger" title="Supprimer cette branche de cet ordinateur (et de GitHub si la case est cochée)">Supprimer</button>
+        <label class="flex items-center gap-2 text-sm"><input id="branch-delete-remote" type="checkbox" class="accent-accent"> aussi sur GitHub</label>
     </div>
     <div class="flex flex-wrap items-center gap-2">
         <input id="branch-name" type="text" class="input min-w-56 flex-1 max-sm:min-w-0" spellcheck="false" placeholder="Nouvelle branche, ex. brouillon-tarifs" aria-label="Nom de la nouvelle branche">

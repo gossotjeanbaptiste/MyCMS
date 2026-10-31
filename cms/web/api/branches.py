@@ -44,7 +44,8 @@ def list_branches():
 
 @bp.post("/api/git/branches")
 def branch_action():
-    """action : create, switch, merge ou delete (force : supprimer même si elle n'a pas été fusionnée)"""
+    """action : create, switch, merge ou delete (remote : aussi sur GitHub ; force : même si elle n'a pas
+    été fusionnée)"""
     s = services()
     data = request.get_json(force=True, silent=True) or {}
     action, name = data.get("action"), str(data.get("name") or "").strip()
@@ -55,7 +56,7 @@ def branch_action():
     try:
         repo = _repo()
         if action == "delete":
-            result = branches.delete(repo, name, bool(data.get("force")))
+            result = branches.delete(repo, name, bool(data.get("force")), bool(data.get("remote")))
         else:
             result = ACTIONS[action](repo, name)
     except ValueError as e:

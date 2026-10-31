@@ -51,7 +51,9 @@ async function act(action, name, extra = {}) {
         toast(result.message);
         render(result);
     } catch (err) {
-        if (err.data?.unmerged && confirm(`${err.message}\n\nSupprimer quand même ?`)) return act(action, name, { force: true });
+        if (err.data?.unmerged && confirm(`${err.message}\n\nSupprimer quand même ?`)) {
+            return act(action, name, { ...extra, force: true });
+        }
         throw err;
     }
     await afterChange();
@@ -70,8 +72,10 @@ function bind(id, action) {
         if (action === "switch" && !editorSaved()) return;
         if (action === "merge" && (!editorSaved() || !confirm(
             `Fusionner « ${name} » dans « ${state.branch.current} » ? Ses modifications seront ajoutées à la branche actuelle.`))) return;
-        if (action === "delete" && !confirm(`Supprimer la branche « ${name} » de cet ordinateur ?`)) return;
-        await act(action, name);
+        const remote = action === "delete" && $("branch-delete-remote").checked;
+        const where = remote ? "de cet ordinateur et de GitHub (pour tout le monde)" : "de cet ordinateur";
+        if (action === "delete" && !confirm(`Supprimer la branche « ${name} » ${where} ?`)) return;
+        await act(action, name, remote ? { remote } : {});
     }));
 }
 

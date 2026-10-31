@@ -111,6 +111,37 @@ def test_delete(repo, git_site):
     assert "brouillon" not in [b.name for b in repo.branches]
 
 
+def remote_branches(tmp_path):
+    return git(tmp_path / "remote.git", "branch", "--format=%(refname:short)").split()
+
+
+def test_delete_on_github_too(repo, git_site, tmp_path):
+    branches.create(repo, "brouillon")
+    edit_and_commit(git_site, "Poussé, jamais fusionné", "Brouillon")
+    git(git_site, "push", "-q", "-u", "origin", "brouillon")
+    branches.switch(repo, "main")
+    # Copie gardée sur GitHub : rien n'est perdu en la supprimant d'ici seulement
+    assert branches.delete(repo, "brouillon")["success"] and "brouillon" in remote_branches(tmp_path)
+    # Seulement sur GitHub : il faut cocher « aussi sur GitHub »
+    with pytest.raises(ValueError, match="aussi sur GitHub"):
+        branches.delete(repo, "brouillon")
+    # La supprimer aussi de GitHub perdrait ses modifications : confirmation demandée
+    assert branches.delete(repo, "brouillon", remote=True)["unmerged"] and "brouillon" in remote_branches(tmp_path)
+    result = branches.delete(repo, "brouillon", force=True, remote=True)
+    assert result["message"].endswith("supprimée de GitHub") and remote_branches(tmp_path) == ["main"]
+    assert "brouillon" not in [b["name"] for b in branches.list_branches(repo)["branches"]]
+
+
+def test_delete_merged_branch_everywhere(repo, git_site, tmp_path):
+    branches.create(repo, "fini")
+    edit_and_commit(git_site, "Fini", "Fini")
+    git(git_site, "push", "-q", "-u", "origin", "fini")
+    branches.switch(repo, "main")
+    branches.merge(repo, "fini")
+    result = branches.delete(repo, "fini", remote=True)  # Fusionnée : pas de confirmation
+    assert result["message"].endswith("supprimée de cet ordinateur et de GitHub") and remote_branches(tmp_path) == ["main"]
+
+
 def test_api(site_client, git_site):
     data = site_client.get("/api/git/branches").get_json()
     assert data["current"] == "main" and data["published"] == "main"
