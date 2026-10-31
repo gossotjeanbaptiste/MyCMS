@@ -48,6 +48,8 @@ def isolated_home(tmp_path, monkeypatch):
     gitconfig.write_text("[user]\n\tname = MyCMS Tests\n\temail = tests@mycms.local\n"
                          "[init]\n\tdefaultBranch = main\n[core]\n\tautocrlf = false\n", encoding="utf-8")
     monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(gitconfig))
+    # GitPython lit l'identité du poste dans ~/.gitconfig (pas GIT_CONFIG_GLOBAL) : la même, comme en vrai
+    (home / ".gitconfig").write_text(gitconfig.read_text(encoding="utf-8"), encoding="utf-8")
     monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
     # Sinon une vraie boîte de message Windows bloquerait le test
     import desktop.startup
