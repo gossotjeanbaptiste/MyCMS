@@ -19,7 +19,8 @@ SOURCES = sorted(
 PYTHON_MODULES = sorted(path for path in SOURCES if path.suffix == ".py" and path.name != "__init__.py"
                         and path.parent.name != "web")
 # Nom du paquet (requirements.txt) -> nom du module importé
-MODULE_OF = {"flask": "flask", "beautifulsoup4": "bs4", "gitpython": "git", "pystray": "pystray", "pillow": "PIL"}
+MODULE_OF = {"flask": "flask", "waitress": "waitress", "beautifulsoup4": "bs4", "gitpython": "git", "pystray": "pystray",
+             "pillow": "PIL"}
 
 
 def name(path):
