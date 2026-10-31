@@ -4,7 +4,7 @@ Petit CMS local en Python, avec une interface web, pour mettre à jour le conten
 
 ## 🎯 Ce que fait l'application
 
-- **Édition du contenu** : sélection d'une page HTML du site, affichage des éléments modifiables (textes, prix…) sous forme de champs, puis sauvegarde dans le fichier (via BeautifulSoup).
+- **Édition du contenu** : sélection d'une page HTML du site, affichage des éléments modifiables (textes, prix…) sous forme de champs, puis sauvegarde dans le fichier, sans réécrire ce qui n'a pas changé.
 - **Synchronisation Git** : pull, statut du dépôt, ajout des fichiers non suivis, commit et push vers GitHub (via GitPython), pour publier les modifications sur le site.
 - **Prévisualisation locale** : serveur HTTP intégré (port configurable) pour vérifier le rendu dans le navigateur avant de publier.
 - **Génération du sitemap** : mise à jour automatique de `sitemap.xml` avec les vraies dates de modification des pages.
