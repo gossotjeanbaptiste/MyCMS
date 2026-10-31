@@ -87,6 +87,8 @@ Pour une question, un retour ou une **licence commerciale** (payante ou gratuite
 - Téléphone : [06 38 40 44 06](tel:+33638404406)
 - Portfolio : [gossotjeanbaptiste.github.io](https://gossotjeanbaptiste.github.io)
 
+Un [**exemple de contrat de licence commerciale**](https://app.notion.com/p/Contrat-de-licence-commerciale-pour-l-application-MyCMS-40a70d189d2e8004a11df69f58701cf3) montre ce qu'une licence d'usage interne permet et interdit.
+
 ## Crédits & Licences
 
 - MyCMS est publié sous licence **[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)** (voir [LICENSE](LICENSE)). Vous pouvez l'utiliser, le modifier et le partager **sans but commercial**, en gardant la mention de copyright. **Toute vente ou tout usage commercial est réservé à son auteur**, Jean-Baptiste GOSSOT : pour une licence commerciale, voir [Contact](#contact).
