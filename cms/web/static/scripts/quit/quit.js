@@ -59,7 +59,7 @@ function setQuitBusy(busy, progress = "") {
     $("quit-progress").textContent = progress;
 }
 
-function showClosedScreen(summary) {
+export function showClosedScreen(summary) {
     window.removeEventListener("beforeunload", warnUnsaved);
     stopPreviewPolling();
     stopLogsPolling();
