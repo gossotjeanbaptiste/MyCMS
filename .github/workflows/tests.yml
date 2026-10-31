@@ -1,10 +1,12 @@
-# Tests de MyCMS à chaque push et pull request : Python (pytest) et interface (node --test).
-# Sous Windows, comme les postes de l'auto-école (verrou NTFS d'auth.json, fins de ligne CRLF).
+# Tests de MyCMS à chaque push sur une branche : Python (pytest) et interface (node --test).
+# Sous Windows, comme les postes des utilisateurs (verrou NTFS d'auth.json, fins de ligne CRLF).
+# Une seule exécution par commit : une pull request affiche le résultat du push de sa branche, et
+# les tags sont testés par release.yml.
 name: Tests
 
 on:
   push:
-  pull_request:
+    branches: ["**"]
 
 jobs:
   tests:
