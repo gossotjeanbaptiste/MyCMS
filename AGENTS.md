@@ -7,10 +7,11 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.0.7.
-- Site de référence pour les tests : `C:\Users\jbgos\Documents\autoecoleroutart.github.io`. Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
-  - **Ne jamais modifier ce dépôt ni pousser dessus pendant les tests.** Travailler sur une copie.
-  - La copie hérite de l'URL GitHub réelle : avant tout test de publication, faire pointer son `origin` (fetch **et** push) vers un dépôt bare local.
+- Branche de travail : `web_v2`. Version courante : 2.0.8.
+- Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
+  - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
+  - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
+  - Le push passe par SSH : lancer le serveur de test avec `USERPROFILE` temporaire mais le vrai `HOME`, sinon la clé SSH n'est pas trouvée.
 
 ## Arborescence
 
@@ -18,10 +19,10 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - `cms/web/server.py` : point d'entrée. `prepare_environment()` règle les chemins et le Git portable, `main()` gère l'instance unique, l'icône et le lancement. Options `--port`, `--no-browser` et `--no-tray`.
 - `cms/web/api/` : l'application Flask.
-  - `create_app()` (`__init__.py`) crée l'application et enregistre un blueprint par domaine : `auth` (connexion exigée avant chaque requête, `before_app_request`), `pages`, `settings` (configuration, logs, choix d'un dossier), `repository` (Git), `editor`, `site` (sitemap, prévisualisation) et `shutdown` (Quitter).
+  - `create_app()` (`__init__.py`) crée l'application et enregistre un blueprint par domaine : `auth` (connexion exigée avant chaque requête, `before_app_request`), `users` (gestion des comptes, administrateurs seulement), `pages`, `settings` (configuration, logs, choix d'un dossier), `repository` (Git), `editor`, `site` (sitemap, prévisualisation) et `shutdown` (Quitter).
   - `services.py` : la classe `Services` regroupe les gestionnaires et l'état du processus (`boot_id`, prévisualisation, icône). Elle est rangée dans `app.extensions["mycms"]`, et les routes l'obtiennent avec `services()`.
 - `cms/web/templates/` : modèles Jinja.
-  - `index.html` inclut `tabs/*.html` (un onglet par fichier) et `dialogs/*.html` (guide, Quitter).
+  - `index.html` inclut `tabs/*.html` (un onglet par fichier ; `settings-users.html` est inclus par `settings.html`) et `dialogs/*.html` (guide, Quitter).
   - `login.html` : la connexion.
 - `cms/web/static/` :
   - `scripts/` : modules ES, sans framework. `main.js` (l'interface) et `login.js` (la connexion) sont les points d'entrée.
@@ -30,12 +31,12 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
     - `git/` : `git.js` et `browse.js` (« Parcourir… »).
     - `quit/` : `quit.js` et `quit-content.js`.
-    - `settings/` : `settings.js`, `header.js` (guide, déconnexion) et `logs.js`.
+    - `settings/` : `settings.js`, `users.js` (compte connecté, carte Utilisateurs), `header.js` (guide, déconnexion) et `logs.js`.
   - `style.css` : généré par Tailwind, ne pas l'éditer à la main.
   - `highlight.css` : surlignage de la recherche, hors Tailwind.
 - `cms/web/src/` : sources Tailwind v4. `input.css` importe `theme.css` (couleurs) et `components/*.css` (une couche `@layer components` par fichier).
 - `cms/source/` : le code métier, importé par paquet (`from content.html_tree import parse`).
-  - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (`auth.json`, empreinte scrypt, fichier verrouillé) et `logger.py`.
+  - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (comptes, empreinte scrypt), `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format) et `logger.py`.
   - `content/` :
     - `html_tree.py` : arbre HTML avec les positions exactes dans le fichier ;
     - `hybrid_saver.py` et `node_diff.py` : la sauvegarde hybride ;
@@ -159,6 +160,19 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Les scripts de compilation passent dans `cms/installer/`.
 - **Vérifié** : les sorties du code métier (sauvegarde, extraction, gras, extraits, sitemap, statut Git) sont identiques avant et après le découpage, sur les 17 pages du site. Le CSS compilé est identique à l'octet près.
 - **Configuration incomplète au premier lancement (corrigé)** : sans `config.json`, le cache de `ConfigManager` restait vide, puis ne contenait que le premier réglage enregistré. `get_all_config()` renvoyait alors seulement `repo_path`, et l'aperçu refusait de démarrer (« Le port doit être un nombre valide ») jusqu'au relancement. `get_all_config()` renvoie maintenant `self.config`, qui est toujours complet.
+
+## Changements de la v2.0.8
+
+- **Plusieurs utilisateurs**, chacun avec son identifiant et son mot de passe.
+  - `auth.json` : `{"secret_key", "users": {"identifiant": {"password_hash", "session_id", "admin", "owner"}}}`. L'ancien format à un seul compte (`username`, `password_hash`, `session_id`) est converti au démarrage, et ce compte devient administrateur principal.
+  - Deux rôles : **éditeur** (modifier et publier le site, changer son mot de passe) et **administrateur** (gérer les comptes, en plus).
+  - **Administrateur principal** (`owner`) : le compte créé au premier lancement. Personne, pas même lui, ne peut le rétrograder ni le supprimer, et lui seul peut changer son mot de passe. Un fichier sans `owner` en reçoit un au démarrage : le premier administrateur.
+  - L'identifiant est reconnu sans tenir compte des majuscules, à la connexion comme pour les doublons.
+  - La session contient l'identifiant (`session["user"]`) et le `session_id` du compte. Supprimer un compte, ou changer ou réinitialiser son mot de passe, ferme donc ses sessions ouvertes.
+  - API `users` (403 pour un éditeur) : `GET /api/users`, `POST /api/users`, `POST /api/users/<nom>/password`, `POST /api/users/<nom>/role` et `DELETE /api/users/<nom>`. `GET /api/auth/state` renvoie aussi `admin`.
+  - Il reste toujours au moins un administrateur : on ne peut ni supprimer ni rétrograder le dernier. On ne peut pas supprimer son propre compte, et son propre mot de passe se change avec « Changer le mot de passe ».
+  - Onglet Paramètres, carte **Utilisateurs** (administrateurs seulement) : liste, ajout, nouveau mot de passe, rôle, suppression.
+  - Les connexions, déconnexions et changements de comptes sont écrits dans les logs avec le nom de l'utilisateur.
 
 ## Tests
 
