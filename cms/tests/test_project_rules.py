@@ -75,3 +75,10 @@ def test_interface_logo_matches_the_icon():
     logo = Image.open(CMS_DIR / "web" / "static" / "logo.png")
     assert logo.size == (256, 256)
     assert ImageChops.difference(icon.convert("RGBA"), logo.convert("RGBA")).getbbox() is None
+
+
+def test_wide_logo_for_the_header():
+    """static/logo-wide.png (cms/icon/make_wide_logo.py) : bannière horizontale, net à 40 px de haut"""
+    from PIL import Image
+    width, height = Image.open(CMS_DIR / "web" / "static" / "logo-wide.png").size
+    assert height == 128 and width > 2 * height

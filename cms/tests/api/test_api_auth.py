@@ -84,7 +84,8 @@ def test_change_password(client, app):
 def test_index_contains_every_tab_and_dialog(client):
     page = client.get("/").get_data(as_text=True)
     for element in ('id="tab-git"', 'id="tab-editor"', 'id="tab-preview"', 'id="tab-settings"', 'id="tab-logs"',
-                    'id="guide-dialog"', 'id="quit-dialog"', 'id="category-bar"', 'id="users-card"'):
+                    'id="guide-dialog"', 'id="quit-dialog"', 'id="category-bar"', 'id="users-card"',
+                    'src="/static/logo-wide.png"'):
         assert element in page
 
 
