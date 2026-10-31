@@ -7,7 +7,7 @@ Gestionnaire HTML - Édition et manipulation des fichiers HTML
 from bs4 import BeautifulSoup
 from pathlib import Path
 
-from content.html_tree import editable_sources, parse
+from content.html_tree import SRC_TAGS, editable_sources, parse
 from content.hybrid_saver import HybridSaver
 
 
@@ -44,7 +44,7 @@ class HTMLManager:
                 elem_content = str(elem)
                 editable_value = None
                 is_iframe = elem_tag == 'iframe'
-                if is_iframe:
+                if elem_tag in SRC_TAGS:  # iframe ou image : on modifie l'adresse
                     editable_value = elem.get('src', '')
                 else:
                     editable_value = elem.get_text().strip()
@@ -55,6 +55,7 @@ class HTMLManager:
                     "class": elem_class,
                     "content": elem_content,
                     "is_iframe": is_iframe,
+                    "is_image": elem_tag == 'img',
                     "editable_value": editable_value
                 })
             return {"success": True, "count": len(elements_data), "elements": elements_data}

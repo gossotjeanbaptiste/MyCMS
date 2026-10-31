@@ -8,7 +8,7 @@ tels quels depuis le fichier, seuls les écarts sont réécrits (et nettoyés).
 import html
 import re
 
-from content.html_tree import LOCK_TAG, parse
+from content.html_tree import LOCK_TAG, SRC_TAGS, parse
 from content.node_diff import NodeDiff
 
 
@@ -24,7 +24,7 @@ class HybridSaver(NodeDiff):
             if not 0 <= index < len(self.editables):
                 continue
             node = self.editables[index]
-            if node.tag == "iframe":
+            if node.tag in SRC_TAGS:
                 if value != (node.attr("src") or ""):
                     self.values[index] = value
             else:
@@ -59,7 +59,7 @@ class HybridSaver(NodeDiff):
             return self.src(node)
         start_tag = self.content[node.start:node.inner_start]
         end_tag = self.content[node.inner_end:node.end]
-        if node.tag == "iframe":
+        if node.tag in SRC_TAGS:
             if node.editable_index in self.values:
                 start_tag = set_attribute(start_tag, "src", self.values[node.editable_index])
             return start_tag + self.content[node.inner_start:node.end]

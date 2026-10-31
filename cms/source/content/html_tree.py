@@ -14,6 +14,9 @@ VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input",
 # Marqueur envoyé par l'éditeur à la place d'un élément éditable imbriqué (verrouillé)
 LOCK_TAG = "mycms-lock"
 
+# Éléments éditables dont on modifie l'attribut src (adresse), pas le contenu
+SRC_TAGS = {"iframe", "img"}
+
 
 class Node:
     """Nœud de l'arbre : positions [start, end) dans la source, [inner_start, inner_end) pour le contenu"""
