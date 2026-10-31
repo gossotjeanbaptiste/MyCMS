@@ -64,9 +64,9 @@ def test_config_is_saved_and_reloaded(isolated_home):
     config.set_show_guide(False)
     config.set_default_port(8123)
     reloaded = ConfigManager()
-    assert reloaded.get_site_url() == "https://exemple.fr/"
-    assert reloaded.get_auto_pull() is True and reloaded.get_show_guide() is False
-    assert reloaded.get_default_port() == 8123
+    assert reloaded.get_site_url() == "https://exemple.fr/" and reloaded.get_auto_pull() is True
+    values = reloaded.get_all_config()
+    assert values["show_guide"] is False and values["default_port"] == 8123
 
 
 @pytest.mark.parametrize("port", [0, 70000])
@@ -79,8 +79,19 @@ def test_invalid_and_obsolete_keys_are_dropped(isolated_home):
     config_file = data_dir() / "config.json"
     config_file.write_text(json.dumps({"default_port": "abc", "theme": "dark", "auto_pull": True}), encoding="utf-8")
     config = ConfigManager()
-    assert config.get_default_port() == 8000 and config.get_auto_pull() is True
+    assert config.get_all_config()["default_port"] == 8000 and config.get_auto_pull() is True
     assert "theme" not in json.loads(config_file.read_text(encoding="utf-8"))
+
+
+def test_invalid_value_on_a_non_utf8_console_keeps_the_other_settings(isolated_home, monkeypatch):
+    """Le message d'une valeur invalide contenait un emoji : sur une console non UTF-8 (run.bat), son affichage
+    plantait et toute la configuration repartait des valeurs par défaut"""
+    def cp1252_print(text):
+        text.encode("cp1252")  # Comme une console Windows non UTF-8
+
+    monkeypatch.setattr("builtins.print", cp1252_print)
+    (data_dir() / "config.json").write_text(json.dumps({"default_port": "abc", "auto_pull": True}), encoding="utf-8")
+    assert ConfigManager().get_auto_pull() is True
 
 
 def test_corrupted_config_falls_back_to_defaults(isolated_home):
@@ -92,7 +103,7 @@ def test_reset_to_defaults(isolated_home):
     config = ConfigManager()
     config.set_default_port(9000)
     config.reset_to_defaults()
-    assert config.get_default_port() == 8000 and ConfigManager().get_default_port() == 8000
+    assert config.get_all_config()["default_port"] == 8000 and ConfigManager().get_all_config()["default_port"] == 8000
 
 
 # ======= Journal =======
