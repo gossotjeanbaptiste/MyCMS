@@ -64,10 +64,7 @@ def status_report(repo_path, logger):
         tracking = repo.active_branch.tracking_branch()
         if tracking:
             status += f"\n🔗 Suivi: {tracking.name}\n"
-
-        status += "\n📜 Historique récent:\n"
-        for i, commit in enumerate(repo.iter_commits(max_count=5)):
-            status += f"   {i + 1}. [{commit.hexsha[:7]}] {commit.message.strip()}\n"
+        # L'historique a sa propre carte dans l'onglet Git (publishing/history.py)
         return {"success": True, "output": status}
     except Exception as e:
         logger.log(f"Erreur lors du statut: {e}")
