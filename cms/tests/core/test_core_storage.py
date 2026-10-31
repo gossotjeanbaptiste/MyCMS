@@ -27,14 +27,6 @@ def test_data_dir_is_hidden(isolated_home):
     assert attributes & data_dir_module.FILE_ATTRIBUTE_HIDDEN
 
 
-def test_legacy_data_dir_is_renamed(isolated_home):
-    legacy = isolated_home / ".rout_art_cms"
-    legacy.mkdir()
-    (legacy / "config.json").write_text("{}", encoding="utf-8")
-    path = data_dir()
-    assert (path / "config.json").exists() and not legacy.exists()
-
-
 def test_lock_file_refuses_writes_but_allows_reading_and_deleting(tmp_path):
     target = tmp_path / "auth.json"
     target.write_text("secret", encoding="utf-8")

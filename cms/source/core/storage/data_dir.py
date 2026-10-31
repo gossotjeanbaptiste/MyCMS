@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Dossier de données de MyCMS (~/.mycms) : configuration, identifiants et journal.
-Créé caché ; repris de l'ancien dossier ~/.rout_art_cms s'il existe.
+Dossier de données de MyCMS (~/.mycms) : configuration, identifiants et journal. Créé caché.
 """
 
 import os
-import shutil
 import subprocess
 from pathlib import Path
 
 DATA_DIR_NAME = ".mycms"
-LEGACY_DIR_NAME = ".rout_art_cms"
 
 FILE_ATTRIBUTE_HIDDEN = 0x2
 INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
@@ -22,13 +19,6 @@ EVERYONE_SID = "*S-1-1-0"
 def data_dir():
     """Dossier de données, créé si besoin, et caché"""
     path = Path.home() / DATA_DIR_NAME
-    legacy = Path.home() / LEGACY_DIR_NAME
-    if not path.exists() and legacy.is_dir():
-        # Ancien nom : on garde la configuration et les identifiants existants
-        try:
-            legacy.rename(path)
-        except OSError:
-            shutil.copytree(legacy, path)
     path.mkdir(parents=True, exist_ok=True)
     hide(path)
     return path
