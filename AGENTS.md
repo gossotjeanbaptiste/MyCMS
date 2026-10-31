@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.2 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.1.3 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -19,7 +19,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - `cms/web/server.py` : point d'entrée. `prepare_environment()` règle les chemins et le Git portable, `main()` gère l'instance unique, l'icône et le lancement. Options `--port`, `--no-browser` et `--no-tray`.
 - `cms/web/api/` : l'application Flask.
-  - `create_app()` (`__init__.py`) crée l'application et enregistre un blueprint par domaine : `auth` (connexion exigée avant chaque requête, `before_app_request`), `users` (gestion des comptes, administrateurs seulement), `pages`, `settings` (configuration, logs, choix d'un dossier), `repository` (Git), `editor`, `structure` (dupliquer, supprimer), `media` (images), `site` (sitemap, prévisualisation) et `shutdown` (Quitter).
+  - `create_app()` (`__init__.py`) crée l'application et enregistre un blueprint par domaine : `auth` (connexion exigée avant chaque requête, `before_app_request`), `users` (gestion des comptes, administrateurs seulement), `pages`, `settings` (configuration, logs, choix d'un dossier), `repository` (Git), `publish` (vérification, mise en ligne, reprise de la version en ligne), `editor`, `structure` (dupliquer, supprimer), `media` (images), `site` (sitemap, prévisualisation) et `shutdown` (Quitter).
   - `services.py` : la classe `Services` regroupe les gestionnaires et l'état du processus (`boot_id`, prévisualisation, icône). Elle est rangée dans `app.extensions["mycms"]`, et les routes l'obtiennent avec `services()`.
 - `cms/web/templates/` : modèles Jinja.
   - `index.html` inclut `tabs/*.html` (un onglet par fichier ; `settings-users.html` est inclus par `settings.html`) et `dialogs/*.html` (guide, Quitter).
@@ -29,7 +29,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `core/` : `dom.js` (`$`, `api`, `toast`…), `state.js` (état partagé) et `tabs.js`.
     - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js`, `categories.js` (filtres par catégorie), `structure.js` (actions des cartes), `image-field.js` (carte d'une image) et `format-bar.js`.
     - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
-    - `git/` : `git.js` et `browse.js` (« Parcourir… »).
+    - `git/` : `git.js`, `publish-checks.js` (vérification, mise en ligne, conflit) et `browse.js` (« Parcourir… »).
     - `quit/` : `quit.js` et `quit-content.js`.
     - `settings/` : `settings.js`, `users.js` (compte connecté, carte Utilisateurs), `header.js` (guide, déconnexion) et `logs.js`.
   - `style.css` : généré par Tailwind, ne pas l'éditer à la main.
@@ -47,7 +47,8 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `published.py` : version publiée de chaque élément, associée par le contenu ;
     - `page_finder.py` : détection des pages.
   - `publishing/` :
-    - `git_manager.py` : pull, push, clone, `pending()` ;
+    - `git_manager.py` : clone, `pending()`, `unpublished_pages()`, version publiée ; le pull et le push sont dans `git_sync.py` (conflits) ;
+    - `checks.py` : vérification avant publication ; `online.py` : suivi de la mise en ligne ;
     - `git_status.py` : rapport de l'onglet Git ;
     - `sitemap_generator.py`, `sitemap_files.py`, `robots.py` et `site_url.py` : sitemap, robots.txt, URL du site.
   - `desktop/` : `server_manager.py` (prévisualisation, `ThreadingHTTPServer` sur 127.0.0.1), `folder_picker.py` (classe `FolderPicker`), `tray.py` (icône de notification) et `startup.py` (instance unique, port libre, `show_error`).
@@ -219,6 +220,20 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `api()` (`dom.js`) envoie un `FormData` tel quel.
 - **Version publiée associée par le contenu (corrigé)** (`content/published.py`) : elle était associée par la position. Après un ajout ou une suppression, tous les éléments suivants recevaient de faux marqueurs, et « Version en ligne » aurait remis le texte d'un autre élément.
   - Maintenant : alignement `difflib` sur (balise, contenu). Dans un bloc modifié, les éléments les plus semblables sont associés, dans l'ordre (programmation dynamique, bornée à 2 500 comparaisons). Une copie fraîchement ajoutée est « nouvelle » (+).
+
+## Changements de la v2.1.3
+
+- **Vérification avant publication** (`publishing/checks.py`, `GET /api/checks`). Avant chaque push (onglet Git et fenêtre Quitter), les pages pas encore publiées sont vérifiées. S'il y a des problèmes, ils s'affichent et l'utilisateur choisit de publier quand même ou non. Le bouton « Vérifier le site » (`?scope=all`) vérifie tout le site.
+  - Vérifié : liens et images vers des fichiers absents (adresses résolues comme le navigateur, sans remonter au-dessus de la racine), ancres `#…` introuvables, `mailto:` et `tel:` mal formés, éléments éditables vides, `src` vide.
+  - Les adresses externes ne sont pas vérifiées : pas de réseau.
+  - Le site de référence a 2 vrais liens cassés dans `page/financement.html` (lignes 352 et 358) : `../files/…pdf` au lieu de `../files/voiture/…pdf`.
+- **Suivi de la mise en ligne** (`publishing/online.py`, `GET /api/online?page=…`). Le push renvoie `pages`, les pages HTML envoyées. L'onglet Git interroge le site en ligne toutes les 10 s, pendant 10 min au plus, jusqu'à ce qu'il renvoie le même contenu que les fichiers locaux, fins de ligne mises à part.
+- **Conflits** (`publishing/git_sync.py`) : le repository n'est jamais laissé à moitié fusionné.
+  - **Push refusé** parce que GitHub a reçu d'autres commits : MyCMS rejoue les commits locaux par-dessus (rebase), puis renvoie. En cas de vrai conflit, le rebase est annulé, le commit local est gardé, et la réponse contient `conflict: true` avec un message clair.
+  - Le refus se détecte avec les drapeaux de `PushInfo` : Git écrit « rejected » dans la sortie, pas dans l'erreur (`_send`).
+  - **Pull** : en cas de conflit, la fusion est annulée (`merge --abort`) et rien n'est récupéré. Si des modifications non commitées touchent les mêmes fichiers, un message demande de les publier ou de les annuler.
+  - Après un conflit, le bouton rouge « Reprendre la version en ligne » (`POST /api/git/reset-to-remote`, `reset --hard` sur la branche distante) abandonne les modifications et commits locaux, après confirmation.
+- **Pull avec des commits des deux côtés (corrigé)** : Git refusait avec « Need to specify how to reconcile divergent branches », sa configuration par défaut n'indiquant pas comment fusionner. Le pull passe maintenant `--no-rebase --no-edit`.
 
 ## Tests
 
