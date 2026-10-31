@@ -7,9 +7,9 @@ import json
 import pytest
 from werkzeug.security import generate_password_hash
 
-from core import auth_manager
-from core.auth_manager import AuthManager
-from core.data_dir import unlock_file
+from core.auth import auth_manager
+from core.auth.auth_manager import AuthManager
+from core.storage.data_dir import unlock_file
 
 
 def write_auth(directory, data):

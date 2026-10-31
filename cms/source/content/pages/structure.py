@@ -10,7 +10,7 @@ Structure de la page - Dupliquer ou supprimer un élément de liste (<li>) ou un
 
 import re
 
-from content.html_tree import parse
+from content.html.html_tree import parse
 
 # Ce qu'on ne peut pas supprimer
 LAST = {"li": "le dernier élément de la liste", "tr": "la dernière ligne du tableau"}

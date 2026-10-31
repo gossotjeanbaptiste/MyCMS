@@ -11,7 +11,7 @@ import json
 import secrets
 from pathlib import Path
 
-from core.data_dir import lock_file, unlock_file
+from core.storage.data_dir import lock_file, unlock_file
 
 
 class AuthFile:

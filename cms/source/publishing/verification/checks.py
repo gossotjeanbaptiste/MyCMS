@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 from urllib.parse import unquote, urljoin, urlsplit
 
-from content.html_tree import SRC_TAGS, parse
+from content.html.html_tree import SRC_TAGS, parse
 
 # Attributs qui pointent vers un fichier du site
 LINK_ATTRIBUTES = {"a": "href", "link": "href", "img": "src", "script": "src", "iframe": "src", "source": "src"}

@@ -7,8 +7,8 @@ Gestionnaire HTML - Édition et manipulation des fichiers HTML
 from bs4 import BeautifulSoup
 from pathlib import Path
 
-from content.html_tree import SRC_TAGS, editable_sources, parse
-from content.hybrid_saver import HybridSaver
+from content.html.html_tree import SRC_TAGS, editable_sources, parse
+from content.html.hybrid_saver import HybridSaver
 
 
 class HTMLManager:

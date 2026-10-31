@@ -8,7 +8,7 @@ import shutil
 import pytest
 
 from conftest import git
-from publishing.git_manager import GitManager
+from publishing.git.git_manager import GitManager
 
 
 @pytest.fixture

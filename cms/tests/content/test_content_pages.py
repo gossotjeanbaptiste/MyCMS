@@ -4,11 +4,11 @@
 
 import pytest
 
-from content import css_weights
-from content.categories import editable_categories
-from content.css_weights import bold_info
-from content.html_manager import HTMLManager
-from content.page_finder import find_html_pages
+from content.pages import css_weights
+from content.pages.categories import editable_categories
+from content.pages.css_weights import bold_info
+from content.html.html_manager import HTMLManager
+from content.pages.page_finder import find_html_pages
 from site_builder import PAGES, read
 
 

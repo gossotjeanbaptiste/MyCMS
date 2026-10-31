@@ -7,10 +7,10 @@ import os
 
 import pytest
 
-from core import data_dir as data_dir_module
-from core.config_manager import ConfigManager
-from core.data_dir import data_dir, lock_file, unlock_file
-from core.logger import Logger
+from core.storage import data_dir as data_dir_module
+from core.storage.config_manager import ConfigManager
+from core.storage.data_dir import data_dir, lock_file, unlock_file
+from core.logs.logger import Logger
 
 
 # ======= Dossier de données =======

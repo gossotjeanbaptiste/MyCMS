@@ -10,7 +10,7 @@ import pytest
 
 import server
 from desktop import startup
-from publishing.git_manager import GitManager
+from publishing.git.git_manager import GitManager
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def test_port_used_by_another_program(monkeypatch, opened):
 
 
 def test_normal_launch_with_auto_pull(monkeypatch, opened, isolated_home):
-    from core.config_manager import ConfigManager
+    from core.storage.config_manager import ConfigManager
     ConfigManager().set_auto_pull(True)
     pulls, runs = [], []
     monkeypatch.setattr(startup, "running_instance", lambda url: False)

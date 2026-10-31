@@ -59,7 +59,7 @@ def isolated_home(tmp_path, monkeypatch):
 
 @pytest.fixture
 def logger(isolated_home):
-    from core.logger import Logger
+    from core.logs.logger import Logger
     return Logger()
 
 

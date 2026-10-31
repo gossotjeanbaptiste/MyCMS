@@ -64,7 +64,7 @@ def status_report(repo_path, logger):
         tracking = repo.active_branch.tracking_branch()
         if tracking:
             status += f"\n🔗 Suivi: {tracking.name}\n"
-        # L'historique a sa propre carte dans l'onglet Git (publishing/history.py)
+        # L'historique a sa propre carte dans l'onglet Git (publishing/git/history.py)
         return {"success": True, "output": status}
     except Exception as e:
         logger.log(f"Erreur lors du statut: {e}")

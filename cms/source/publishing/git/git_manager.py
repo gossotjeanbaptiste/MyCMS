@@ -9,9 +9,9 @@ from pathlib import Path
 
 from git import GitCommandError, Repo
 
-from publishing import git_sync, history
-from publishing.commit_details import commit_details
-from publishing.git_status import status_report
+from publishing.git import git_sync, history
+from publishing.git.commit_details import commit_details
+from publishing.git.git_status import status_report
 
 
 class GitManager:
@@ -66,7 +66,7 @@ class GitManager:
             return self._failure(e)
 
     def _sync(self, repo_path, operation, *args):
-        """Pull, push ou reprise de la version en ligne (publishing/git_sync), avec le journal"""
+        """Pull, push ou reprise de la version en ligne (publishing/git/git_sync), avec le journal"""
         try:
             self._ensure_git_config(repo_path)
             result = operation(Repo(repo_path), *args)
@@ -86,7 +86,7 @@ class GitManager:
         return self._sync(repo_path, git_sync.push, commit_message, author)
 
     def commit_details(self, repo_path, ref):
-        """Détail d'une modification : textes changés page par page (publishing/commit_details)"""
+        """Détail d'une modification : textes changés page par page (publishing/git/commit_details)"""
         try:
             return {"success": True, **commit_details(Repo(repo_path), ref)}
         except Exception as e:
@@ -95,7 +95,7 @@ class GitManager:
             return {"success": False, "message": message}
 
     def history(self, repo_path, limit=20):
-        """Dernières modifications, lisibles (publishing/history)"""
+        """Dernières modifications, lisibles (publishing/git/history)"""
         try:
             return {"success": True, "entries": history.entries(Repo(repo_path), limit)}
         except Exception as e:

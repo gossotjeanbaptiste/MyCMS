@@ -7,8 +7,8 @@ import threading
 
 import pytest
 
-from publishing.checks import check_page, check_pages
-from publishing.online import fetch, online_status, page_url
+from publishing.verification.checks import check_page, check_pages
+from publishing.verification.online import fetch, online_status, page_url
 
 PAGE = """<html><body id="haut">
 <a href="../style/style.css">ok</a> <a href="/index.html">ok</a> <a href="../index.html#titre">ok</a>

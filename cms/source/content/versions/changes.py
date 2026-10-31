@@ -9,9 +9,9 @@ import html
 import re
 from difflib import SequenceMatcher
 
-from content.categories import editable_categories
-from content.html_tree import SRC_TAGS, editable_sources, parse
-from content.published import align
+from content.pages.categories import editable_categories
+from content.html.html_tree import SRC_TAGS, editable_sources, parse
+from content.versions.published import align
 
 TAG_RE = re.compile(r"<[^>]*>")
 SPACES_RE = re.compile(r"\s+")

@@ -6,8 +6,8 @@ Logger - Système de journalisation centralisé
 
 from datetime import datetime
 
-from core.data_dir import data_dir
-from core.log_buffer import LogBuffer
+from core.storage.data_dir import data_dir
+from core.logs.log_buffer import LogBuffer
 
 
 class Logger:

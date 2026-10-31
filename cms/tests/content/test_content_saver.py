@@ -4,8 +4,8 @@
 
 import pytest
 
-from content.html_tree import editable_sources, norm, parse
-from content.hybrid_saver import HybridSaver, set_attribute
+from content.html.html_tree import editable_sources, norm, parse
+from content.html.hybrid_saver import HybridSaver, set_attribute
 from site_builder import read
 
 LOCK = '<mycms-lock data-index="4"></mycms-lock>'

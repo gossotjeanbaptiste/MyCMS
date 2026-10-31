@@ -9,7 +9,7 @@ import re
 
 from git import GitCommandError
 
-from content.changes import element_changes
+from content.versions.changes import element_changes
 
 HASH_RE = re.compile(r"[0-9a-fA-F]{4,40}")
 PAGE_SUFFIXES = (".html", ".htm")

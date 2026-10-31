@@ -12,7 +12,7 @@ import time
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from core.auth_file import AuthFile
+from core.auth.auth_file import AuthFile
 
 MIN_PASSWORD_LENGTH = 8
 MAX_FAILURES = 5  # Tentatives avant blocage temporaire

@@ -7,7 +7,7 @@ Fichier sitemap.xml - Emplacement dans le site et réglages déjà présents
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from content.page_finder import find_files
+from content.pages.page_finder import find_files
 
 
 def find_sitemap(repo_path):

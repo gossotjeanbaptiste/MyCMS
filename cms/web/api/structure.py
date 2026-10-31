@@ -7,7 +7,7 @@ Structure - Dupliquer ou supprimer un élément de liste ou une ligne de tableau
 from flask import Blueprint, jsonify, request
 
 from api.services import content_hash, error, read_page, services
-from content import structure
+from content.pages import structure
 
 bp = Blueprint("structure", __name__)
 

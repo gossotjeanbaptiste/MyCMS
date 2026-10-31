@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from core.data_dir import data_dir
+from core.storage.data_dir import data_dir
 
 
 class ConfigManager:

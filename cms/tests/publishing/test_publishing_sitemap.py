@@ -5,10 +5,10 @@
 import pytest
 
 from conftest import git
-from publishing.robots import has_noindex, robots_allows, robots_rules, update_sitemap_line
-from publishing.site_url import detect_base_url, github_pages_url
-from publishing.sitemap_files import find_sitemap, read_existing
-from publishing.sitemap_generator import SitemapGenerator
+from publishing.sitemap.robots import has_noindex, robots_allows, robots_rules, update_sitemap_line
+from publishing.sitemap.site_url import detect_base_url, github_pages_url
+from publishing.sitemap.sitemap_files import find_sitemap, read_existing
+from publishing.sitemap.sitemap_generator import SitemapGenerator
 from site_builder import read
 
 BASE = "https://exemple.github.io"

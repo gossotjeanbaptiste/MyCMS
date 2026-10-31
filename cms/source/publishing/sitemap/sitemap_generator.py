@@ -11,10 +11,10 @@ from datetime import datetime
 from pathlib import Path
 from xml.dom import minidom
 
-from content.page_finder import find_html_pages
-from publishing.robots import has_noindex, robots_allows, robots_rules, update_sitemap_line
-from publishing.site_url import detect_base_url
-from publishing.sitemap_files import find_sitemap, read_existing
+from content.pages.page_finder import find_html_pages
+from publishing.sitemap.robots import has_noindex, robots_allows, robots_rules, update_sitemap_line
+from publishing.sitemap.site_url import detect_base_url
+from publishing.sitemap.sitemap_files import find_sitemap, read_existing
 
 SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
 

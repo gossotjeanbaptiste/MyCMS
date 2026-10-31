@@ -5,9 +5,9 @@
 from git import Repo
 
 from conftest import git
-from core.auth_manager import AuthManager
-from publishing.git_manager import GitManager
-from publishing.history import entries
+from core.auth.auth_manager import AuthManager
+from publishing.git.git_manager import GitManager
+from publishing.git.history import entries
 
 
 def edit(git_site, page="index.html", old="Offre spéciale", new="Offre du mois"):

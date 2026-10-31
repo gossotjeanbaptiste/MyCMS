@@ -17,7 +17,7 @@ Pour chaque élément, dans cet ordre :
 import html
 import re
 
-from content.html_tree import parse
+from content.html.html_tree import parse
 
 LANDMARKS = {"header": "En-tête", "nav": "Menu", "footer": "Pied de page"}
 HEADINGS = {"h1", "h2", "h3"}

@@ -6,9 +6,9 @@ import pytest
 from git import Repo
 
 from conftest import git
-from content.changes import element_changes, word_diff
-from publishing.commit_details import commit_details
-from publishing.git_manager import GitManager
+from content.versions.changes import element_changes, word_diff
+from publishing.git.commit_details import commit_details
+from publishing.git.git_manager import GitManager
 
 BEFORE = """<h2>Tarifs</h2><ul><li class="editable">Code : 30 €</li><li class="editable">Livre</li>
 <li class="editable">Ancienne ligne</li></ul><p class="editable">Le <b>permis</b></p>"""

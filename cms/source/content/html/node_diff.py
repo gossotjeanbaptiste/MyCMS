@@ -9,7 +9,7 @@ import html
 import re
 from difflib import SequenceMatcher
 
-from content.html_tree import LOCK_TAG, norm
+from content.html.html_tree import LOCK_TAG, norm
 
 # Balises que l'éditeur peut créer ; tout autre balisage nouveau est retiré (son texte est gardé)
 NEW_TAGS = {"b": "strong", "strong": "strong", "i": "em", "em": "em", "a": "a", "br": "br"}

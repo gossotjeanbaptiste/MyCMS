@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests de core : tampon de journal numéroté (l'interface ne redemande que les nouvelles lignes)"""
 
-from core.log_buffer import LogBuffer
+from core.logs.log_buffer import LogBuffer
 
 
 def test_since_returns_only_new_lines():

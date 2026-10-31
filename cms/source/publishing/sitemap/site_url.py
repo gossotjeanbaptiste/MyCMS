@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from publishing.sitemap_files import find_sitemap, read_existing
+from publishing.sitemap.sitemap_files import find_sitemap, read_existing
 
 
 def detect_base_url(repo_path, logger, configured="", sitemap_relative="sitemap.xml"):

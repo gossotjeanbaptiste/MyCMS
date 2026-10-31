@@ -3,7 +3,7 @@
 """Tests fonctionnels : vérification avant publication, suivi de la mise en ligne, conflits"""
 
 from conftest import git
-from publishing import online
+from publishing.verification import online
 
 
 def test_checks_of_pages_to_publish(site_client, git_site):

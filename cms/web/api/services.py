@@ -11,16 +11,16 @@ from pathlib import Path
 
 from flask import current_app, jsonify
 
-from content.html_manager import HTMLManager
-from content.page_finder import find_html_pages
-from core.auth_manager import AuthManager
-from core.config_manager import ConfigManager
-from core.log_buffer import LogBuffer
-from core.logger import Logger
+from content.html.html_manager import HTMLManager
+from content.pages.page_finder import find_html_pages
+from core.auth.auth_manager import AuthManager
+from core.storage.config_manager import ConfigManager
+from core.logs.log_buffer import LogBuffer
+from core.logs.logger import Logger
 from desktop.folder_picker import FolderPicker
 from desktop.server_manager import ServerManager
-from publishing.git_manager import GitManager
-from publishing.sitemap_generator import SitemapGenerator
+from publishing.git.git_manager import GitManager
+from publishing.sitemap.sitemap_generator import SitemapGenerator
 
 
 class Services:

@@ -9,10 +9,10 @@ import time
 from flask import Blueprint, jsonify, request
 
 from api.services import content_hash, error, read_page, services
-from content.categories import editable_categories
-from content.css_weights import bold_info
-from content.published import published_versions
-from content.structure import repeatable
+from content.pages.categories import editable_categories
+from content.pages.css_weights import bold_info
+from content.versions.published import published_versions
+from content.pages.structure import repeatable
 
 bp = Blueprint("editor", __name__)
 

@@ -8,8 +8,8 @@ tels quels depuis le fichier, seuls les écarts sont réécrits (et nettoyés).
 import html
 import re
 
-from content.html_tree import LOCK_TAG, SRC_TAGS, parse
-from content.node_diff import NodeDiff
+from content.html.html_tree import LOCK_TAG, SRC_TAGS, parse
+from content.html.node_diff import NodeDiff
 
 
 class HybridSaver(NodeDiff):

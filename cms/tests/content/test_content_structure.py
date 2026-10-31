@@ -4,9 +4,9 @@
 
 import pytest
 
-from content.html_manager import HTMLManager
-from content.hybrid_saver import HybridSaver
-from content.structure import duplicate, remove, repeatable
+from content.html.html_manager import HTMLManager
+from content.html.hybrid_saver import HybridSaver
+from content.pages.structure import duplicate, remove, repeatable
 
 LIST = """<ul>
     <li class="editable" id="photo">Photo d'identité</li>
@@ -98,7 +98,7 @@ def test_image_src_is_saved():
 # ======= Version publiée associée par le contenu =======
 
 def test_published_versions_follow_the_content():
-    from content.published import align, published_versions
+    from content.versions.published import align, published_versions
     published = [{"tag": "li", "html": h, "value": h} for h in ("a", "b", "c")]
     current = [{"tag": "li", "html": h, "value": h} for h in ("a", "b", "b", "c modifié")]
     # La copie de b est nouvelle ; c (modifié) garde sa version publiée malgré le décalage
@@ -108,7 +108,7 @@ def test_published_versions_follow_the_content():
 
 
 def test_alignment_of_a_changed_block():
-    from content.published import align
+    from content.versions.published import align
     # Publié [c, d] ; actuel [copie de b, c modifié, x] : c modifié retrouve c, d devient x (même position relative)
     assert align(["b", "c", "d"], ["b", "b", "c!", "d?"]) == [0, None, 1, 2]
     assert align(["b", "zzz", "ccc"], ["b", "ccc!"]) == [0, 2]  # zzz supprimé, ccc modifié

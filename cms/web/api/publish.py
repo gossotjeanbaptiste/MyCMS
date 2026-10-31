@@ -7,8 +7,8 @@ Publication - Vérification avant d'envoyer, suivi de la mise en ligne, reprise 
 from flask import Blueprint, jsonify, request
 
 from api.services import error, services
-from publishing.checks import check_pages
-from publishing.online import online_status
+from publishing.verification.checks import check_pages
+from publishing.verification.online import online_status
 
 bp = Blueprint("publish", __name__)
 
