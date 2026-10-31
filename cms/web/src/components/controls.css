@@ -67,6 +67,17 @@
         @apply sticky top-0 z-[1] -mb-1 bg-bg pt-2 pb-1 text-xs font-semibold tracking-wide text-muted uppercase;
     }
 
+    /* Résultat de la vérification du site : rouge s'il y a des problèmes, vert sinon */
+    .check-results {
+        @apply flex flex-col gap-1.5 rounded-lg border px-3 py-2;
+    }
+    .check-results.error {
+        @apply border-err bg-err/10 text-err;
+    }
+    .check-results.ok {
+        @apply border-ok bg-ok/10 text-ok;
+    }
+
     .badge-on {
         @apply rounded-full bg-ok/15 px-2.5 py-1 text-xs font-semibold text-ok;
     }

@@ -1,6 +1,6 @@
 // MyCMS - publication plus sûre : vérification avant d'envoyer, suivi de la mise en ligne, conflits
 
-import { $, api, plural, toast, withButton } from "../core/dom.js";
+import { $, api, element, plural, toast, withButton } from "../core/dom.js";
 
 const POLL_MS = 10000;
 const MAX_WAIT_MS = 10 * 60 * 1000;
@@ -11,13 +11,31 @@ export function formatProblems(problems) {
     return problems.map((p) => `• ${p.page}, ligne ${p.line} : ${p.message}`).join("\n");
 }
 
+const found = (count) => plural(count, "problème trouvé", "problèmes trouvés");
+
+// Encadré sous les boutons : rouge avec la liste des problèmes, vert s'il n'y en a pas
+export function showCheckResults(title, problems, okText) {
+    const box = $("check-results");
+    box.className = problems.length ? "check-results error" : "check-results ok";
+    if (!problems.length) {
+        box.replaceChildren(element("p", "font-semibold", okText));
+        return;
+    }
+    const list = element("ul", "flex list-disc flex-col gap-0.5 pl-5");
+    problems.forEach((p) => list.append(element("li", "[overflow-wrap:anywhere]",
+        `${p.page}, ligne ${p.line} : ${p.message}`)));
+    box.replaceChildren(element("p", "font-semibold", `${title} : ${found(problems.length)}`), list,
+        element("p", "text-xs", "Ces erreurs sont dans le code des pages (liens vers des fichiers absents, adresses "
+            + "mal écrites…). Si vous ne savez pas les corriger, transmettez cette liste à un développeur."));
+}
+
 // Avant un push : problèmes des pages pas encore publiées. Retourne faux si l'utilisateur préfère corriger
 export async function confirmPublication() {
     const { problems } = await api("GET", "/api/checks");
     if (!problems.length) return true;
-    $("git-output").textContent = `Problèmes trouvés avant la publication :\n${formatProblems(problems)}`;
-    return confirm(`${plural(problems.length, "problème trouvé", "problèmes trouvés")} dans les pages à publier `
-        + `(détail dans l'onglet Git) :\n\n${formatProblems(problems.slice(0, 8))}\n\nPublier quand même ?`);
+    showCheckResults("Avant la publication", problems);
+    return confirm(`${found(problems.length)} dans les pages à publier (liste dans l'onglet Git) :\n\n`
+        + `${formatProblems(problems.slice(0, 8))}\n\nPublier quand même ?`);
 }
 
 function showOnline(text) {
@@ -68,10 +86,10 @@ export function showConflict(isConflict) {
 export function bindPublishChecks({ afterReset }) {
     $("git-check").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
         const { pages, problems } = await api("GET", "/api/checks?scope=all");
-        $("git-output").textContent = problems.length
-            ? `${plural(problems.length, "problème trouvé", "problèmes trouvés")} :\n${formatProblems(problems)}`
-            : `✓ Aucun problème trouvé (${plural(pages.length, "page vérifiée", "pages vérifiées")}).`;
-        toast(problems.length ? `${plural(problems.length, "problème trouvé", "problèmes trouvés")}` : "Aucun problème trouvé");
+        showCheckResults("Vérification du site", problems,
+            `✓ Aucun problème trouvé (${plural(pages.length, "page vérifiée", "pages vérifiées")}).`);
+        if (problems.length) toast(`${found(problems.length)} : la liste est sous les boutons de l'onglet Git.`, true);
+        else toast("Aucun problème trouvé");
     }));
 
     $("git-reset-remote").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
