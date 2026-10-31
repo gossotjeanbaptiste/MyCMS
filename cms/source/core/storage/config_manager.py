@@ -27,7 +27,8 @@ class ConfigManager:
         self.config_dir = data_dir()
         self.config_file = self.config_dir / "config.json"
         self.default_config = {
-            "repo_path": str(Path.home() / "Rout-Art"),
+            # Un dossier dédié : le dossier personnel entier serait parcouru à la recherche de pages
+            "repo_path": str(Path.home() / "mycms"),
             "site_url": "",
             "auto_pull": False,
             "show_guide": True,
