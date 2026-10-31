@@ -32,6 +32,8 @@
         </div>
         <!-- Suivi de la mise en ligne après un push (GitHub Pages republie en une à deux minutes) -->
         <p id="online-status" class="hidden text-muted" aria-live="polite"></p>
+        <!-- Résultat de « Vérifier le site » et de la vérification avant un push : rouge s'il y a des problèmes -->
+        <div id="check-results" class="hidden" role="status"></div>
         <label for="commit-message" class="card-title">Message de commit</label>
         <input id="commit-message" type="text" class="input" value="Mise à jour du contenu" placeholder="Exemple : Mise à jour des tarifs">
         <!-- Messages préfaits : un clic remplit le champ, qui reste modifiable -->
@@ -48,12 +50,13 @@
         </div>
     </div>
     <div class="card">
-        <span class="card-title">Historique des modifications</span>
-        <ul id="git-history" class="flex flex-col gap-1.5"></ul>
-    </div>
-    <div class="card">
         <span class="card-title">Statut du repository</span>
         <!-- Texte intégré à la carte : c'est l'onglet qui défile, pas une zone à part -->
         <pre id="git-output" class="m-0 font-mono text-[13px] whitespace-pre-wrap [overflow-wrap:anywhere]"></pre>
+    </div>
+    <div class="card">
+        <span class="card-title">Historique des modifications</span>
+        <p class="text-xs text-muted">Cliquez sur une modification pour voir ce qui a changé.</p>
+        <ul id="git-history" class="flex flex-col gap-1.5"></ul>
     </div>
 </section>

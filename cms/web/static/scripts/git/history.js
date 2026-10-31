@@ -1,6 +1,7 @@
 // MyCMS - onglet Git : historique lisible (« Marie a modifié page/tarifs.html le 12 novembre à 14:03 »)
 
-import { $, api, element, plural } from "../core/dom.js";
+import { $, api, element, plural, toast } from "../core/dom.js";
+import { buildDetails } from "./history-details.js";
 
 const DATE = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" });
 const MAX_PAGES = 3;
@@ -17,13 +18,39 @@ export function describe(entry) {
     return `${entry.author} a modifié ${what}${rest}`;
 }
 
+// Clic sur une modification : détail chargé une seule fois, puis déplié ou replié
+async function toggleDetails(item, button, hash) {
+    const open = button.getAttribute("aria-expanded") !== "true";
+    button.setAttribute("aria-expanded", String(open));
+    let box = item.querySelector(".history-details");
+    if (open && !box) {
+        box = element("div", "history-details text-muted", "Chargement…");
+        item.append(box);
+        try {
+            box.replaceChildren(buildDetails(await api("GET", `/api/git/commit/${encodeURIComponent(hash)}`)));
+        } catch (e) {
+            box.remove();
+            button.setAttribute("aria-expanded", "false");
+            toast(e.message, true);
+            return;
+        }
+    }
+    box?.classList.toggle("hidden", !open);
+}
+
 function historyItem(entry) {
-    const item = element("li", "flex flex-col gap-0.5 rounded-lg border border-line px-3 py-2");
-    const top = element("div", "flex flex-wrap items-center gap-2");
-    top.append(element("span", "font-semibold [overflow-wrap:anywhere]", describe(entry)),
+    const item = element("li", "history-entry");
+    const button = element("button", "history-summary");
+    button.type = "button";
+    button.setAttribute("aria-expanded", "false");
+    button.title = "Voir ce qui a changé";
+    const top = element("span", "flex flex-wrap items-center gap-2");
+    top.append(element("span", "history-arrow", "▸"), element("span", "font-semibold [overflow-wrap:anywhere]", describe(entry)),
         element("span", entry.published ? "badge-on" : "badge-off", entry.published ? "Publié" : "Pas encore publié"));
     const details = `le ${DATE.format(new Date(entry.date))} · « ${entry.message} » · ${entry.hash}`;
-    item.append(top, element("span", "text-xs text-muted [overflow-wrap:anywhere]", details));
+    button.append(top, element("span", "text-xs text-muted [overflow-wrap:anywhere]", details));
+    button.addEventListener("click", () => toggleDetails(item, button, entry.hash));
+    item.append(button);
     return item;
 }
 
