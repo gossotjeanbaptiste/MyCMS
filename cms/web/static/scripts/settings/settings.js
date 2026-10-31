@@ -13,6 +13,7 @@ export async function loadConfig() {
     $("set-port").value = config.default_port;
     $("set-site-url").value = config.site_url || "";
     $("set-auto-pull").checked = config.auto_pull;
+    $("set-auto-update").checked = config.auto_update;
     if (!state.preview.running) $("preview-port").value = config.default_port;
 }
 
@@ -32,6 +33,7 @@ export function initSettings() {
             site_url: $("set-site-url").value.trim(),
             default_port: Number($("set-port").value),
             auto_pull: $("set-auto-pull").checked,
+            auto_update: $("set-auto-update").checked,
         });
         await loadConfig();
         await loadFiles();
