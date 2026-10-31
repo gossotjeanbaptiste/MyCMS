@@ -43,6 +43,7 @@ class Services:
         self.preview_port = None
         self.preview_logs = deque(maxlen=200)
         self.tray = None  # Icône de la zone de notification (pystray), posée par server.main
+        self.update = None  # Résultat de la recherche de mise à jour (une seule fois par lancement)
 
     # ======= Repository et pages =======
 

@@ -19,7 +19,8 @@ a = Analysis(
     hiddenimports=[
         'api', 'api.auth', 'api.editor', 'api.pages', 'api.repository', 'api.services',
         'api.media', 'api.publish', 'api.settings', 'api.shutdown', 'api.site', 'api.structure', 'api.users',
-        'core.auth_file', 'core.auth_manager', 'core.config_manager', 'core.data_dir', 'core.logger',
+        'version',
+        'core.auth_file', 'core.auth_manager', 'core.config_manager', 'core.data_dir', 'core.logger', 'core.updates',
         'content.categories', 'content.css_weights', 'content.html_manager', 'content.html_tree', 'content.hybrid_saver',
         'content.node_diff', 'content.page_finder', 'content.published', 'content.structure',
         'publishing.checks', 'publishing.git_manager', 'publishing.git_status', 'publishing.git_sync', 'publishing.history', 'publishing.online', 'publishing.robots', 'publishing.site_url',

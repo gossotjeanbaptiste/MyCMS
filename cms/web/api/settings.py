@@ -7,6 +7,8 @@ Paramètres et logs - Configuration, choix d'un dossier, journal de l'applicatio
 from flask import Blueprint, jsonify, request
 
 from api.services import error, services
+from core import updates
+from version import VERSION
 
 bp = Blueprint("settings", __name__)
 
@@ -51,6 +53,15 @@ def reset_config():
     config = services().config
     config.reset_to_defaults()
     return jsonify({"success": True, "config": config.get_all_config()})
+
+
+@bp.get("/api/update")
+def update_check():
+    """Nouvelle version de MyCMS publiée sur GitHub ? (vérifié une fois par lancement)"""
+    s = services()
+    if s.update is None:
+        s.update = updates.update_info(VERSION, updates.fetch_latest())
+    return jsonify(s.update)
 
 
 @bp.get("/api/logs")
