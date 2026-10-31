@@ -54,7 +54,7 @@ def test_module_declared_for_the_executable(path):
 
 def test_run_bat_checks_every_dependency():
     """Une dépendance de requirements.txt doit aussi être vérifiée par run.bat (nom du module)"""
-    run_bat = (ROOT / "run.bat").read_text(encoding="utf-8", errors="replace")
+    run_bat = (ROOT / "scripts" / "run.bat").read_text(encoding="utf-8", errors="replace")
     for line in (CMS_DIR / "requirements.txt").read_text(encoding="utf-8").splitlines():
         package = re.match(r"[A-Za-z0-9_-]+", line.strip())
         if package and not line.startswith("#"):

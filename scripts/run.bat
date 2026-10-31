@@ -1,6 +1,14 @@
 @echo off
 REM Script de lancement pour Windows - MyCMS
 setlocal enabledelayedexpansion
+REM Racine du depot : le dossier du script, ou son parent (script range dans scripts\ ou remis a la racine)
+cd /d "%~dp0"
+if not exist "cms\web\server.py" cd ..
+if not exist "cms\web\server.py" (
+    echo Erreur: racine de MyCMS introuvable. Placez ce script a la racine du depot ou dans scripts\
+    pause
+    exit /b 1
+)
 
 echo.
 echo MyCMS
