@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est la personne qui gère les textes du site. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.3.1 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.3.2 (la 2.0.9 a été sautée).
 - **Aucun nom de client dans le dépôt** : MyCMS est une version personnelle. Pas de nom de client ni d'organisation dans le code, les tests, la doc ou les messages de commit ; utiliser des noms neutres (`MyCMS`, `exemple`, `MonSite`).
   - La règle vaut pour les **fichiers actuels et les nouveaux commits**. L'historique existant (`main`, la branche `old`, les commits qui documentent la reprise et le renommage des dossiers) vient de la version d'origine, faite pour un client : il le nomme légitimement, et il ne faut pas le réécrire.
 - Site de référence pour les tests : un vrai site local, dont le chemin se passe aux tests par `MYCMS_SITE` (voir « Tests »). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
@@ -401,6 +401,10 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Interface : changer ou fusionner exige un éditeur sans modification non sauvegardée. Après un changement, la liste des pages et la page ouverte sont rechargées.
   - Sur une autre branche que la publiée, la carte indique que les push ne changent pas le site, et le suivi de la mise en ligne n'est pas lancé après un push (`state.branch`).
   - Non changé : les marqueurs « pas encore publié » comparent toujours à la branche distante de la branche actuelle, et « Publier sur le site et quitter » envoie la branche actuelle.
+
+## Changements de la v2.3.2
+
+- **Numéro de version dans les Paramètres** : carte « À propos » en bas de l'onglet, avec un lien vers la release de cette version. `pages.index` passe `VERSION` au modèle (`{{ version }}`).
 
 ## Tests
 
