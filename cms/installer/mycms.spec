@@ -18,11 +18,11 @@ a = Analysis(
     datas=[('../web/static', 'static'), ('../web/templates', 'templates'), ('../icon', 'icon')],
     hiddenimports=[
         'api', 'api.auth', 'api.editor', 'api.pages', 'api.repository', 'api.services',
-        'api.media', 'api.settings', 'api.shutdown', 'api.site', 'api.structure', 'api.users',
+        'api.media', 'api.publish', 'api.settings', 'api.shutdown', 'api.site', 'api.structure', 'api.users',
         'core.auth_file', 'core.auth_manager', 'core.config_manager', 'core.data_dir', 'core.logger',
         'content.categories', 'content.css_weights', 'content.html_manager', 'content.html_tree', 'content.hybrid_saver',
         'content.node_diff', 'content.page_finder', 'content.published', 'content.structure',
-        'publishing.git_manager', 'publishing.git_status', 'publishing.robots', 'publishing.site_url',
+        'publishing.checks', 'publishing.git_manager', 'publishing.git_status', 'publishing.git_sync', 'publishing.online', 'publishing.robots', 'publishing.site_url',
         'publishing.sitemap_files', 'publishing.sitemap_generator',
         'desktop.folder_picker', 'desktop.server_manager', 'desktop.startup', 'desktop.tray',
         'git',
