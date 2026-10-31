@@ -6,6 +6,7 @@ Le mot de passe n'est jamais stocké : seulement son empreinte (méthode par dé
 Les administrateurs gèrent les comptes ; il en reste toujours au moins un.
 """
 
+import re
 import secrets
 import time
 
@@ -16,6 +17,8 @@ from core.auth_file import AuthFile
 MIN_PASSWORD_LENGTH = 8
 MAX_FAILURES = 5  # Tentatives avant blocage temporaire
 LOCK_SECONDS = 30
+MAX_NAME_LENGTH = 100
+EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[A-Za-z]{2,}")
 
 
 class AuthManager:
@@ -58,6 +61,32 @@ class AuthManager:
     def list_users(self):
         return [{"username": name, "admin": bool(user.get("admin")), "owner": bool(user.get("owner"))}
                 for name, user in sorted(self._users.items(), key=lambda item: item[0].casefold())]
+
+    # ======= Profil : auteur des commits =======
+
+    def profile(self, username):
+        """Nom complet et e-mail du compte (vides si non renseignés)"""
+        user = self._users.get(username) or {}
+        return {"name": user.get("name", ""), "email": user.get("email", "")}
+
+    def set_profile(self, username, name, email):
+        """Renseigner son nom et son e-mail. Retourne un message d'erreur ou None"""
+        if username not in self._users:
+            return "Compte introuvable"
+        name, email = str(name or "").strip(), str(email or "").strip()
+        if len(name) > MAX_NAME_LENGTH:
+            return f"Le nom doit faire au plus {MAX_NAME_LENGTH} caractères"
+        if email and not EMAIL_RE.fullmatch(email):
+            return "Adresse e-mail incorrecte"
+        self._users[username].update(name=name, email=email)
+        self._file.save()
+        return None
+
+    def author(self, username):
+        """(nom, e-mail) de l'auteur des commits : le profil, sinon l'identifiant et identifiant@mycms.local"""
+        profile = self.profile(username)
+        local_part = re.sub(r"[^A-Za-z0-9._-]", "-", username) or "mycms"
+        return profile["name"] or username, profile["email"] or f"{local_part}@mycms.local"
 
     # ======= Création et connexion =======
 
