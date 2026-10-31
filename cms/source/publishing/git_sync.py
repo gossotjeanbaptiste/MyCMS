@@ -9,7 +9,7 @@ et un message dit quoi faire. Les commits locaux sont toujours conservés.
 
 import datetime
 
-from git import GitCommandError, PushInfo
+from git import Actor, GitCommandError, PushInfo
 
 # Push refusé parce que GitHub a reçu d'autres commits entre-temps
 REJECTED = ("rejected", "fetch first", "non-fast-forward")
@@ -92,13 +92,14 @@ def _rebase_on_remote(repo, tracking):
     return []
 
 
-def push(repo, commit_message):
-    """Commit des modifications (s'il y en a) puis push de tout ce qui n'est pas encore envoyé"""
+def push(repo, commit_message, author=None):
+    """Commit des modifications (s'il y en a) puis push de tout ce qui n'est pas encore envoyé.
+    author : (nom, e-mail) de la personne connectée, auteur du commit (l'identité Git du poste l'envoie)"""
     branch = repo.active_branch
     committed = repo.is_dirty(untracked_files=True)
     if committed:
         repo.git.add(A=True)
-        repo.index.commit(commit_message)
+        repo.index.commit(commit_message, author=Actor(*author) if author else None)
     waiting = ahead(repo)
     if not committed and waiting == 0:
         return {"success": True, "message": "ℹ️  Aucune modification à pousser", "pages": []}

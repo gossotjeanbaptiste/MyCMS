@@ -9,7 +9,7 @@ from pathlib import Path
 
 from git import GitCommandError, Repo
 
-from publishing import git_sync
+from publishing import git_sync, history
 from publishing.git_status import status_report
 
 
@@ -78,10 +78,18 @@ class GitManager:
         """Récupérer les modifications de GitHub (conflit : rien n'est changé, et c'est expliqué)"""
         return self._sync(repo_path, git_sync.pull)
 
-    def push(self, repo_path, commit_message):
+    def push(self, repo_path, commit_message, author=None):
         """Commit des modifications (s'il y en a) puis push de tout ce qui n'est pas encore envoyé.
-        GitHub a reçu d'autres commits entre-temps : ils sont récupérés, puis l'envoi est refait."""
-        return self._sync(repo_path, git_sync.push, commit_message)
+        GitHub a reçu d'autres commits entre-temps : ils sont récupérés, puis l'envoi est refait.
+        author : (nom, e-mail) de l'auteur du commit, la personne connectée"""
+        return self._sync(repo_path, git_sync.push, commit_message, author)
+
+    def history(self, repo_path, limit=20):
+        """Dernières modifications, lisibles (publishing/history)"""
+        try:
+            return {"success": True, "entries": history.entries(Repo(repo_path), limit)}
+        except Exception as e:
+            return {"success": False, "entries": [], "message": f"✗ Erreur: {str(e)}"}
 
     def reset_to_remote(self, repo_path):
         """Abandonner les modifications et commits locaux : reprendre la version en ligne"""
