@@ -59,20 +59,20 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - `cms/installer/` : compilation. `build_exe.py` et `mycms.spec` (PyInstaller), `build_msi.py`, `MyCMS.wixproj` et `Package.wxs` (WiX, avec Git portable MinGit).
   - Un nouveau module Python doit être ajouté aux `hiddenimports` de `mycms.spec`, et un nouveau dossier de l'interface à ses `datas`.
 - `cms/icon/logo.ico` : l'icône de l'exe, de l'installeur et de la zone de notification.
-- `run.bat` : lancement depuis les sources, sur le port 5050.
+- `scripts/` : `run.bat` (lancement depuis les sources, sur le port 5050), `run_tests.bat` (les tests) et `compile_msi.bat` (l'installeur). Chacun cherche seul la racine du dépôt (son dossier, ou le dossier parent) : ils marchent dans `scripts/` comme copiés à la racine. Dans la suite de ce fichier, `run.bat`, `run_tests.bat` et `compile_msi.bat` désignent ces scripts.
 - `.github/workflows/` : `tests.yml` (tests à chaque push) et `release.yml` (exe et `.msi` joints à une release, sur un tag `v<version>`).
-- `cms/tests/` (pytest) et `cms/web/tests/` (`node:test`) : les tests, lancés par `run_tests.bat` (voir « Tests »).
+- `cms/tests/` (pytest) et `cms/web/tests/` (`node:test`) : les tests, lancés par `scripts/run_tests.bat` (voir « Tests »).
 - `docs/` : `AGENTS.md` (ce fichier), `CLAUDE.md` (qui l'importe) et `contrat-licence-commerciale-MyCMS.md` (modèle de contrat de licence d'usage interne, aussi publié sur Notion et lié depuis le README).
   - À la racine, `CLAUDE.md` tient en une ligne, `@docs/AGENTS.md` : Claude Code ne charge automatiquement que le `CLAUDE.md` de la racine. Ne pas le supprimer, sinon les règles de ce fichier ne sont plus chargées en début de session.
 
 ## Commandes
 
-- Tests : `run_tests.bat`, ou `python -m pytest` et `cd cms/web && npm test`.
+- Tests : `scripts\run_tests.bat`, ou `python -m pytest` et `cd cms/web && npm test`.
 - Lancer : `python cms/web/server.py`, ou `python cms/web/server.py --port 5060 --no-browser --no-tray`.
 - Dépendances : `cms/requirements.txt` pour l'exécution, `cms/requirements-build.txt` (ajoute PyInstaller) pour compiler, `cms/requirements-dev.txt` (ajoute pytest) pour les tests.
 - CSS, après toute modification de `src/` ou ajout de classes Tailwind dans les modèles ou les scripts : `cd cms/web && npm run build:css`. `style.css` est versionné, pour que l'application tourne sans Node.
 - Exécutable : `python cms/installer/build_exe.py`, qui produit `dist/MyCMS.exe`.
-- Installeur : `compile_msi.bat`, qui produit `dist/MyCMS-<version>.msi`. Nécessite le SDK .NET.
+- Installeur : `scripts\compile_msi.bat`, qui produit `dist/MyCMS-<version>.msi`. Nécessite le SDK .NET.
 - Version : la changer **à la fois** dans `cms/web/package.json` (lue par le `.msi`) et dans `cms/source/version.py` (lue par l'application), ainsi que dans le badge « Version » du `README.md`. Un test vérifie que les trois sont identiques.
 - Publier une version : `git tag v<version>` puis `git push origin v<version>`. Le workflow `release.yml` vérifie que le tag correspond à la version, lance les tests, compile et crée la release.
 
@@ -353,13 +353,14 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   1. pousser `web_v2` ;
   2. ouvrir une PR de `web_v2` vers `main` (la branche par défaut sur GitHub, qui contient encore la version d'origine) et la fusionner ;
   3. taguer `v2.2.3` sur le résultat.
+- **Scripts `.bat` rangés dans `scripts/`** (`run.bat`, `run_tests.bat`, `compile_msi.bat`), pour alléger la racine. Ils cherchent seuls la racine du dépôt, donc marchent aussi copiés ailleurs dans le dépôt (racine ou `scripts/`). `run.bat` et `compile_msi.bat` comptaient avant sur le dossier courant, ce qui ne marchait que par double-clic. `test_project_rules.py` lit la liste des dépendances dans `scripts/run.bat`.
 - **Documentation rangée dans `docs/`** : `AGENTS.md`, `CLAUDE.md` et le modèle de contrat de licence d'usage interne. Un `CLAUDE.md` d'une ligne reste à la racine, et les liens (README, `pytest.ini`, `test_project_rules.py`) pointent vers `docs/AGENTS.md`.
   - Le contrat : usage interne seulement, à partir de l'installeur `.msi`, versions 2.2.3 et suivantes pendant la durée du contrat, commercialisation réservée à l'auteur, et clause d'interopérabilité (code source public sur GitHub). Le README renvoie à sa version Notion.
   - Pourquoi : ce contrat affirme que le code source de chaque version couverte (à partir de la 2.2.3) est publié sur https://github.com/gossotjeanbaptiste/MyCMS, ce qui écarte la décompilation au titre de l'interopérabilité (article L. 122-6-1, IV, du Code de la propriété intellectuelle). Le dépôt doit donc rester public, et chaque version doit être retrouvable par son tag.
 
 ## Tests
 
-**Lancer `run_tests.bat` avant chaque commit.** Il installe ce qui manque, puis lance les deux suites. GitHub Actions (`tests.yml`) les relance à chaque push, sous Windows. Ses arguments sont passés à pytest (`run_tests.bat -q`, `run_tests.bat -k editor`).
+**Lancer `scripts\run_tests.bat` avant chaque commit.** Il installe ce qui manque, puis lance les deux suites. GitHub Actions (`tests.yml`) les relance à chaque push, sous Windows. Ses arguments sont passés à pytest (`run_tests.bat -q`, `run_tests.bat -k editor`).
 
 - **Python** : `python -m pytest`, depuis la racine (`pytest.ini`). Il dépend de `cms/requirements-dev.txt`.
   - `cms/tests/` contient un dossier par paquet : `core/`, `content/`, `publishing/` et `desktop/` (dont `wsgi.py` et `server.py`, avec un vrai serveur Waitress).
