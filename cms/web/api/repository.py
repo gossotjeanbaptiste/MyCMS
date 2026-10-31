@@ -4,6 +4,7 @@
 Repository Git - Vérification, clone, pull, push, statut, annulation des modifications
 """
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -33,8 +34,8 @@ def git_clone():
     if destination:
         path = Path(destination).expanduser()
     else:
-        # Par défaut : dossier personnel / nom du repository
-        name = url.rstrip("/").rsplit("/", 1)[-1].rsplit(":", 1)[-1].removesuffix(".git")
+        # Par défaut : dossier personnel / nom du repository (adresse web, SSH ou chemin Windows)
+        name = re.split(r"[/\\:]", url.rstrip("/\\"))[-1].removesuffix(".git")
         path = Path.home() / (name or "site")
     if path.exists() and (not path.is_dir() or any(path.iterdir())):
         return error(f"Le dossier existe déjà et n'est pas vide: {path}")
