@@ -5,7 +5,7 @@ API et pages de MyCMS : create_app() construit l'application Flask, ses services
 
 from flask import Flask
 
-from api import auth, editor, pages, repository, settings, shutdown, site
+from api import auth, editor, pages, repository, settings, shutdown, site, users
 from api.services import Services
 
 
@@ -23,6 +23,6 @@ def create_app(resources, git_found):
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Strict",
     )
-    for module in (auth, pages, settings, repository, editor, site, shutdown):
+    for module in (auth, users, pages, settings, repository, editor, site, shutdown):
         app.register_blueprint(module.bp)
     return app

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Authentification - Connexion exigée avant chaque requête, création des identifiants au premier lancement
+Authentification - Connexion exigée avant chaque requête, création du premier compte au premier lancement
 """
 
 from flask import Blueprint, jsonify, redirect, render_template, request, session
@@ -17,17 +17,25 @@ PUBLIC_PATHS = {
 }
 
 
-def logged_in():
+def current_user():
+    """Identifiant du compte connecté, ou None (session fermée, compte supprimé, mot de passe changé)"""
     s = services()
-    return (s.auth.has_credentials()
-            and session.get("auth") == s.auth.session_id()
-            and session.get("boot") == s.boot_id)
+    username = session.get("user")
+    if (username and session.get("boot") == s.boot_id
+            and session.get("auth") == s.auth.session_id(username)):
+        return username
+    return None
 
 
-def open_session():
+def logged_in():
+    return current_user() is not None
+
+
+def open_session(username):
     s = services()
     session.clear()
-    session["auth"] = s.auth.session_id()
+    session["user"] = username
+    session["auth"] = s.auth.session_id(username)
     session["boot"] = s.boot_id
 
 
@@ -49,18 +57,19 @@ def login_page():
 
 @bp.get("/api/auth/state")
 def auth_state():
-    is_logged_in = logged_in()
+    username = current_user()
     auth = services().auth
     return jsonify({
         "setup_needed": not auth.has_credentials(),
-        "logged_in": is_logged_in,
-        "username": auth.username() if is_logged_in else None,
+        "logged_in": username is not None,
+        "username": username,
+        "admin": auth.is_admin(username),
     })
 
 
 @bp.post("/api/auth/setup")
 def auth_setup():
-    """Premier lancement : créer les identifiants"""
+    """Premier lancement : créer le premier compte, administrateur"""
     s = services()
     data = request.get_json(force=True)
     password = str(data.get("password") or "")
@@ -69,8 +78,9 @@ def auth_setup():
     message = s.auth.create(str(data.get("username") or ""), password)
     if message:
         return error(message)
-    s.logger.log(f"Identifiants créés pour {s.auth.username()}")
-    open_session()
+    username = s.auth.find(data.get("username"))
+    s.logger.log(f"Compte administrateur créé pour {username}")
+    open_session(username)
     return jsonify({"success": True})
 
 
@@ -78,32 +88,36 @@ def auth_setup():
 def auth_login():
     s = services()
     data = request.get_json(force=True)
-    message = s.auth.verify(str(data.get("username") or ""), str(data.get("password") or ""))
+    username, message = s.auth.verify(str(data.get("username") or ""), str(data.get("password") or ""))
     if message:
         s.logger.log(f"Échec de connexion: {message}")
         return error(message, 401)
-    s.logger.log(f"Connexion de {s.auth.username()}")
-    open_session()
+    s.logger.log(f"Connexion de {username}")
+    open_session(username)
     return jsonify({"success": True})
 
 
 @bp.post("/api/auth/logout")
 def auth_logout():
+    username = current_user()
+    if username:
+        services().logger.log(f"Déconnexion de {username}")
     session.clear()
     return jsonify({"success": True})
 
 
 @bp.post("/api/auth/password")
 def auth_password():
-    """Changer le mot de passe : les autres sessions ouvertes sont fermées"""
+    """Changer son mot de passe : ses autres sessions ouvertes sont fermées"""
     s = services()
     data = request.get_json(force=True)
     new = str(data.get("new") or "")
     if new != str(data.get("confirm") or ""):
         return error("Les deux nouveaux mots de passe ne correspondent pas")
-    message = s.auth.change_password(str(data.get("current") or ""), new)
+    username = current_user()
+    message = s.auth.change_password(username, str(data.get("current") or ""), new)
     if message:
         return error(message)
-    s.logger.log("Mot de passe modifié")
-    open_session()
+    s.logger.log(f"Mot de passe modifié par {username}")
+    open_session(username)
     return jsonify({"success": True, "message": "Mot de passe modifié"})
