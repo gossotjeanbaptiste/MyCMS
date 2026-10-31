@@ -16,7 +16,7 @@
   <img alt="Waitress" src="https://img.shields.io/badge/Serveur-Waitress-2e2e2e">
   <img alt="Windows" src="https://img.shields.io/badge/Windows-.msi-0078d4?logo=windows&logoColor=white">
   <img alt="Licence" src="https://img.shields.io/badge/Licence-PolyForm%20Noncommercial-blue">
-  <img alt="Version" src="https://img.shields.io/badge/Version-2.2.4-orange">
+  <img alt="Version" src="https://img.shields.io/badge/Version-2.2.5-orange">
 </p>
 
 ---
