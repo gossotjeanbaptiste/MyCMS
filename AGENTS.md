@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est la personne qui gère les textes du site. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.2.1 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.2.2 (la 2.0.9 a été sautée).
 - **Aucun nom de client dans le dépôt** : MyCMS est une version personnelle. Pas de nom de client ni d'organisation dans le code, les tests, la doc ou les messages de commit ; utiliser des noms neutres (`MyCMS`, `exemple`, `MonSite`).
 - Site de référence pour les tests : un vrai site local, dont le chemin se passe aux tests par `MYCMS_SITE` (voir « Tests »). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
@@ -323,6 +323,20 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - **Aucune référence à un nom de client** dans le code, les tests et la doc : remplacée par `MyCMS` ou des noms neutres (`exemple`, `MonSite`). À vérifier avant chaque commit, avec un `git grep` insensible à la casse.
 - **Dossier du site par défaut (corrigé)** : `~/mycms` (`ConfigManager.default_config`). Pendant le renommage, il était devenu le dossier personnel lui-même : l'éditeur aurait cherché des pages HTML dans tout le profil Windows, et deux tests échouaient.
 - **Retiré** : la reprise automatique d'un ancien dossier de données au premier lancement (`data_dir.py`). Une installation qui aurait encore ses identifiants dans cet ancien dossier ne les retrouve plus.
+
+## Changements de la v2.2.2
+
+- **Ménage du code mort**, comme en v2.0.4 et v2.0.7. Le comportement ne change pas, sauf le correctif ci-dessous.
+  - Recherche outillée : `vulture` (code jamais utilisé) et `pyflakes` (imports inutilisés) pour Python, plus une vérification des exports, imports, fonctions internes et `id` côté JS, des classes CSS des composants, et des routes de l'API sans appel dans l'interface. Ces outils ne sont pas des dépendances du projet. Il faut écarter leurs faux positifs : routes Flask, méthodes appelées par `HTMLParser` ou `http.server`, `__getattr__` de `wsgi.py`.
+  - Résultat : pas d'import inutilisé, pas de route ni de classe CSS orpheline, pas de fonction JS jamais appelée. Le code mort était dans `config_manager.py`.
+- **`ConfigManager` simplifié** :
+  - retiré : le « cache » qui doublait `self.config` (il avait causé le bogue de la v2.0.7), l'attribut `_cache_dirty` jamais lu, les clés `required` du schéma jamais lues, la vérification `allowed` qui ne concernait aucune clé, et `get_show_guide()` et `get_default_port()`, jamais appelés (l'interface lit `get_all_config()`) ;
+  - les accesseurs lisent `self.config`.
+- **Réglage invalide sur une console non UTF-8 (corrigé)** : le message affiché contenait un emoji. Avec `run.bat`, son affichage plantait, et toute la configuration repartait des valeurs par défaut. Le message est maintenant sans emoji, et un test le vérifie.
+- **Divers** :
+  - un test sans intérêt retiré (`test_sitemap_info_reads_site`) ;
+  - trois lignes mortes du `.gitignore` retirées (deux doublons de `__pycache__/`, un `.docx` temporaire étranger au projet) ;
+  - le README ne dit plus que la sauvegarde passe par BeautifulSoup.
 
 ## Tests
 
