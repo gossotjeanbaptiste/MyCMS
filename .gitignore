@@ -18,3 +18,6 @@ venv/
 cms/installer/cache/
 cms/installer/bin/
 cms/installer/obj/
+
+# Tests
+.pytest_cache/
