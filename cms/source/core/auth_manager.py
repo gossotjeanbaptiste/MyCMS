@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Gestionnaire d'authentification - Comptes de l'interface web
-Le mot de passe n'est jamais stocké : seulement son empreinte (scrypt, via Werkzeug).
+Le mot de passe n'est jamais stocké : seulement son empreinte (méthode par défaut de Werkzeug : scrypt, ou pbkdf2 avant Werkzeug 3).
 Les administrateurs gèrent les comptes ; il en reste toujours au moins un.
 """
 
