@@ -83,3 +83,10 @@ def test_wide_logo_for_the_header():
     from PIL import Image
     width, height = Image.open(CMS_DIR / "web" / "static" / "logo-wide.png").size
     assert height == 128 and width > 2 * height
+
+
+def test_readme_version_badge():
+    """Le badge de version du README suit la version de l'application"""
+    from version import VERSION
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert f"badge/Version-{VERSION}-" in readme
