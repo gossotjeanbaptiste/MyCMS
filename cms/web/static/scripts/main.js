@@ -1,7 +1,7 @@
 // MyCMS - interface web : initialisation des modules, puis démarrage
 
 import { initBrowse } from "./git/browse.js";
-import { $, api, toast } from "./core/dom.js";
+import { toast } from "./core/dom.js";
 import { initEditorInput } from "./editor/input.js";
 import { initEditor, loadFiles } from "./editor/editor.js";
 import { initFormatBar } from "./editor/format-bar.js";
@@ -13,6 +13,7 @@ import { initPreview, refreshPreview } from "./preview/preview.js";
 import { initQuit, openQuitDialog } from "./quit/quit.js";
 import { initSearch } from "./editor/search.js";
 import { initSettings, loadConfig } from "./settings/settings.js";
+import { initUsers, loadUser } from "./settings/users.js";
 import { state } from "./core/state.js";
 import { initTabs } from "./core/tabs.js";
 
@@ -25,7 +26,7 @@ function savedPaneMode() {
 }
 
 async function start() {
-    $("user-name").textContent = (await api("GET", "/api/auth/state")).username || "";
+    await loadUser();
     await loadConfig();
     // Ouvert par « Quitter MyCMS… » de l'icône de notification : fenêtre Quitter plutôt que le guide
     const quitRequested = location.hash === "#quit";
@@ -40,7 +41,7 @@ async function start() {
     if (quitRequested) await openQuitDialog();
 }
 
-[initTabs, initSettings, initEditor, initEditorInput, initSearch, initPane, initFormatBar,
+[initTabs, initSettings, initUsers, initEditor, initEditorInput, initSearch, initPane, initFormatBar,
     initGit, initBrowse, initPreview, initLogs, initHeader, initQuit].forEach((init) => init());
 
 start().catch((e) => toast(e.message, true));

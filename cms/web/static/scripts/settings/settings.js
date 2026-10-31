@@ -1,4 +1,4 @@
-// MyCMS - onglet Paramètres : configuration, sitemap, mot de passe
+// MyCMS - onglet Paramètres : configuration, sitemap, mot de passe (les comptes sont dans users.js)
 
 import { $, api, toast, withButton } from "../core/dom.js";
 import { loadFiles } from "../editor/editor.js";

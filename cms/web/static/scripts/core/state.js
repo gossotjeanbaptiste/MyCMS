@@ -3,6 +3,8 @@
 export const state = {
     // Configuration renvoyée par /api/config
     config: {},
+    // Compte connecté (renvoyé par /api/auth/state)
+    user: { name: "", admin: false },
     editor: {
         file: null, // Page ouverte
         hash: null, // Empreinte du fichier au chargement : refus de sauvegarder s'il a changé depuis
