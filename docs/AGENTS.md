@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est la personne qui gère les textes du site. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.2.4 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.2.5 (la 2.0.9 a été sautée).
 - **Aucun nom de client dans le dépôt** : MyCMS est une version personnelle. Pas de nom de client ni d'organisation dans le code, les tests, la doc ou les messages de commit ; utiliser des noms neutres (`MyCMS`, `exemple`, `MonSite`).
   - La règle vaut pour les **fichiers actuels et les nouveaux commits**. L'historique existant (`main`, la branche `old`, les commits qui documentent la reprise et le renommage des dossiers) vient de la version d'origine, faite pour un client : il le nomme légitimement, et il ne faut pas le réécrire.
 - Site de référence pour les tests : un vrai site local, dont le chemin se passe aux tests par `MYCMS_SITE` (voir « Tests »). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
@@ -366,6 +366,12 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - **Release : le `.msi` seul** (`release.yml`). L'exe n'est plus joint à la release : le contrat de licence ne couvre que l'installeur. L'étape qui compilait l'exe à part est retirée, car `build_msi.py` le compile lui-même dans un dossier temporaire et ne laisse que le `.msi` dans `dist/`.
 - Publiée comme la 2.2.3 : PR de `web_v2` vers `main`, fusion, puis tag `v2.2.4`.
+
+## Changements de la v2.2.5
+
+- **Tests lancés une seule fois par commit** (`tests.yml`). Ils se déclenchaient sur `push` et sur `pull_request` : un commit de `web_v2` avec une PR ouverte était testé deux fois, et un tag une troisième fois, alors que `release.yml` lance déjà les tests.
+  - Maintenant : `push` sur les branches seulement (`branches: ["**"]`). Une PR affiche le résultat du push de sa branche, et les tags sont testés par `release.yml`.
+  - Une PR venant d'un fork n'est donc pas testée automatiquement.
 
 ## Tests
 
