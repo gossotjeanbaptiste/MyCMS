@@ -1,5 +1,5 @@
 <!--
-    Installeur Windows (.msi) de MyCMS, compilé par cms/source/build_msi.py :
+    Installeur Windows (.msi) de MyCMS, compilé par cms/installer/build_msi.py :
     dotnet build MyCMS.wixproj -p:ProductVersion=... -p:ExeFile=... -p:GitDir=...
 -->
 <Project Sdk="WixToolset.Sdk/5.0.2">
@@ -9,6 +9,9 @@
         <Cultures>fr-FR</Cultures>
         <!-- WIX1105 : validation ICE impossible sans droits administrateur (elle a lieu si le build est lancé en admin) -->
         <SuppressSpecificWarnings>1105</SuppressSpecificWarnings>
+        <!-- ICE61 : conséquence voulue de AllowSameVersionUpgrades (Package.wxs), qui permet de réinstaller
+             la même version par-dessus elle-même au lieu d'en ajouter une seconde copie -->
+        <SuppressIces>ICE61</SuppressIces>
         <DefineConstants>ProductVersion=$(ProductVersion);ExeFile=$(ExeFile);GitDir=$(GitDir)</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
