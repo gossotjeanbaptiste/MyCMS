@@ -2,6 +2,7 @@
 
 import { $, api, toast, withButton } from "../core/dom.js";
 import { loadFiles, refreshPublished } from "../editor/editor.js";
+import { refreshHistory } from "./history.js";
 import { bindPublishChecks, confirmPublication, showConflict, watchOnline } from "./publish-checks.js";
 import { loadConfig } from "../settings/settings.js";
 import { state } from "../core/state.js";
@@ -31,6 +32,7 @@ export async function refreshGitStatus() {
     }
     showGitOutput(status.output);
     showCloneCard(status.has_git !== false);
+    await refreshHistory();
 }
 
 // Le chemin saisi devient le repository courant

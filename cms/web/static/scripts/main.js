@@ -1,5 +1,6 @@
 // MyCMS - interface web : initialisation des modules, puis démarrage
 
+import { initAccount } from "./settings/account.js";
 import { initBrowse } from "./git/browse.js";
 import { initCategories } from "./editor/categories.js";
 import { toast } from "./core/dom.js";
@@ -43,7 +44,7 @@ async function start() {
     if (quitRequested) await openQuitDialog();
 }
 
-[initTabs, initSettings, initUsers, initEditor, initEditorInput, initSearch, initCategories, initStructure, initPane, initFormatBar,
+[initTabs, initSettings, initAccount, initUsers, initEditor, initEditorInput, initSearch, initCategories, initStructure, initPane, initFormatBar,
     initGit, initBrowse, initPreview, initLogs, initHeader, initQuit].forEach((init) => init());
 
 start().catch((e) => toast(e.message, true));
