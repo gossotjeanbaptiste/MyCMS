@@ -62,20 +62,22 @@ pip install -r cms/requirements.txt
 python cms/web/server.py
 ```
 
-Sous Windows, `run.bat` installe les dépendances si besoin puis lance l'interface sur le port 5050. L'application est servie par Waitress à travers `cms/web/wsgi.py`, que tout serveur WSGI peut utiliser (`waitress-serve wsgi:app`).
+Sous Windows, `scripts\run.bat` installe les dépendances si besoin puis lance l'interface sur le port 5050. L'application est servie par Waitress à travers `cms/web/wsgi.py`, que tout serveur WSGI peut utiliser (`waitress-serve wsgi:app`).
 
 Tests (pytest et `node --test`), à lancer avant chaque commit :
 
 ```
-run_tests.bat
+scripts\run_tests.bat
 ```
 
 Compiler l'exécutable, puis l'installeur (le second nécessite le [SDK .NET](https://dotnet.microsoft.com/download)) :
 
 ```
 python cms/installer/build_exe.py
-compile_msi.bat
+scripts\compile_msi.bat
 ```
+
+Les scripts `.bat` de `scripts/` trouvent seuls la racine du dépôt : ils marchent aussi copiés à la racine.
 
 Pousser un tag `v<version>` déclenche GitHub Actions, qui teste, compile et publie l'exe et le `.msi` dans une release.
 
