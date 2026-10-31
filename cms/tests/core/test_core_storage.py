@@ -53,7 +53,8 @@ def test_first_launch_config_is_complete(isolated_home):
     config = ConfigManager()
     config.set_repo_path(str(isolated_home / "site"))
     values = config.get_all_config()
-    assert set(values) == {"repo_path", "site_url", "auto_pull", "show_guide", "default_port"}
+    assert set(values) == {"repo_path", "site_url", "auto_pull", "auto_update", "update_tried", "show_guide",
+                           "default_port"}
     assert values["default_port"] == 8000 and values["repo_path"] == str(isolated_home / "site")
 
 

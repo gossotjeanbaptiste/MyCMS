@@ -4,6 +4,8 @@
 Paramètres et logs - Configuration, choix d'un dossier, journal de l'application
 """
 
+import sys
+
 from flask import Blueprint, jsonify, request
 
 from api.services import error, services
@@ -29,6 +31,8 @@ def save_config():
             config.set_site_url(data["site_url"])
         if "auto_pull" in data:
             config.set_auto_pull(data["auto_pull"])
+        if "auto_update" in data:
+            config.set_auto_update(data["auto_update"])
         if "show_guide" in data:
             config.set_show_guide(data["show_guide"])
         if "default_port" in data:
@@ -61,7 +65,8 @@ def update_check():
     s = services()
     if s.update is None:
         s.update = updates.update_info(VERSION, updates.fetch_latest())
-    return jsonify(s.update)
+    # auto : installable depuis MyCMS (application installée, .msi joint à la release)
+    return jsonify({**s.update, "auto": bool(getattr(sys, "frozen", False) and s.update["installer"])})
 
 
 @bp.get("/api/logs")

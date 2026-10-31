@@ -30,7 +30,7 @@ a = Analysis(
         'publishing.sitemap.robots', 'publishing.sitemap.site_url', 'publishing.sitemap.sitemap_files',
         'publishing.sitemap.sitemap_generator',
         'publishing.verification.checks', 'publishing.verification.online',
-        'desktop.folder_picker', 'desktop.server_manager', 'desktop.startup', 'desktop.tray',
+        'desktop.auto_update', 'desktop.folder_picker', 'desktop.installer', 'desktop.server_manager', 'desktop.startup', 'desktop.tray',
         'git',
         'bs4',
         'flask',

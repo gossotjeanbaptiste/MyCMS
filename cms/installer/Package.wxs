@@ -46,6 +46,10 @@
         <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
         <Property Id="WixShellExecTarget" Value="[#MyCMSExe]" />
         <CustomAction Id="LaunchApplication" BinaryRef="Wix4UtilCA_X64" DllEntry="WixShellExec" Impersonate="yes" />
+        <!-- Mise à jour depuis MyCMS (msiexec /passive LAUNCHAPP=1, sans assistant) : relancer MyCMS à la fin -->
+        <InstallExecuteSequence>
+            <Custom Action="LaunchApplication" After="InstallFinalize" Condition="LAUNCHAPP = 1 AND NOT REMOVE" />
+        </InstallExecuteSequence>
         <UI>
             <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
             <!-- Pas de page de licence -->

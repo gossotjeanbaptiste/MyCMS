@@ -19,6 +19,8 @@ class ConfigManager:
         "repo_path": {"type": str},
         "site_url": {"type": str},
         "auto_pull": {"type": bool},
+        "auto_update": {"type": bool},
+        "update_tried": {"type": str},
         "show_guide": {"type": bool},
         "default_port": {"type": int, "min": 1, "max": 65535},
     }
@@ -31,6 +33,9 @@ class ConfigManager:
             "repo_path": str(Path.home() / "mycms"),
             "site_url": "",
             "auto_pull": False,
+            # Mise à jour automatique au démarrage (application installée), et la version déjà tentée
+            "auto_update": True,
+            "update_tried": "",
             "show_guide": True,
             "default_port": 8000,
         }
@@ -110,6 +115,20 @@ class ConfigManager:
     def set_auto_pull(self, value: bool):
         """Définir le pull automatique"""
         self._set("auto_pull", bool(value))
+
+    def get_auto_update(self) -> bool:
+        """Installer seul une nouvelle version au démarrage ?"""
+        return self.config["auto_update"]
+
+    def set_auto_update(self, value: bool):
+        self._set("auto_update", bool(value))
+
+    def get_update_tried(self) -> str:
+        """Version dont l'installation automatique a déjà été lancée (une seule tentative par version)"""
+        return self.config["update_tried"]
+
+    def set_update_tried(self, version: str):
+        self._set("update_tried", str(version))
 
     def set_show_guide(self, value: bool):
         """Définir l'affichage du guide au démarrage"""

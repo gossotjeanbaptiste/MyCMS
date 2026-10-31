@@ -8,15 +8,16 @@ import pytest
 def test_get_config(client, isolated_home):
     assert client.get("/api/config").get_json() == {
         "repo_path": str(isolated_home / "mycms"), "site_url": "", "auto_pull": False,
-        "show_guide": True, "default_port": 8000}
+        "auto_update": True, "update_tried": "", "show_guide": True, "default_port": 8000}
 
 
 def test_save_config(client, tmp_path):
     response = client.post("/api/config", json={"repo_path": str(tmp_path), "site_url": " https://exemple.fr ",
-                                                "auto_pull": True, "show_guide": False, "default_port": "8123"})
+                                                "auto_pull": True, "auto_update": False, "show_guide": False,
+                                                "default_port": "8123"})
     config = response.get_json()["config"]
     assert config == {"repo_path": str(tmp_path), "site_url": "https://exemple.fr", "auto_pull": True,
-                      "show_guide": False, "default_port": 8123}
+                      "auto_update": False, "update_tried": "", "show_guide": False, "default_port": 8123}
     assert client.get("/api/config").get_json() == config
 
 

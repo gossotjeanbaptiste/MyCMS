@@ -25,7 +25,9 @@ def main(host="127.0.0.1", port=5050, open_browser=True, tray=True):
     app = wsgi.create_application()
     # Après create_application : les modules de cms/source sont alors importables
     from desktop import startup
+    from desktop.auto_update import install_at_startup
     from desktop.tray import start_tray
+    from version import VERSION
 
     services = app.extensions["mycms"]
     logger = services.logger
@@ -42,6 +44,10 @@ def main(host="127.0.0.1", port=5050, open_browser=True, tray=True):
                            "Fermez ce programme puis relancez MyCMS, ou lancez MyCMS avec un autre port (option --port).",
                            logger)
         sys.exit(1)
+
+    # Nouvelle version publiée : l'installeur la met en place puis relance MyCMS
+    if install_at_startup(services, VERSION, getattr(sys, "frozen", False)):
+        return
 
     if services.config.get_auto_pull():
         logger.log("Pull automatique au démarrage...")

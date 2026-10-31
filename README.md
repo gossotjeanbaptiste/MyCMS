@@ -16,7 +16,7 @@
   <img alt="Waitress" src="https://img.shields.io/badge/Serveur-Waitress-2e2e2e">
   <img alt="Windows" src="https://img.shields.io/badge/Windows-.msi-0078d4?logo=windows&logoColor=white">
   <img alt="Licence" src="https://img.shields.io/badge/Licence-PolyForm%20Noncommercial-blue">
-  <img alt="Version" src="https://img.shields.io/badge/Version-2.2.5-orange">
+  <img alt="Version" src="https://img.shields.io/badge/Version-2.3.0-orange">
 </p>
 
 ---
@@ -38,7 +38,7 @@ Le développeur du site garde la main sur ce qui est modifiable : seuls les él�
 - **Plusieurs utilisateurs** : un compte par personne, des rôles éditeur et administrateur, et des publications signées du nom de leur auteur.
 - **Un historique lisible** : « Marie a modifié page/tarifs.html », avec le détail texte par texte, mots ajoutés et supprimés surlignés.
 - **Le sitemap à jour** : régénéré à chaque sauvegarde, en respectant le `robots.txt` et les pages `noindex`.
-- **Une application de bureau** : un installeur `.msi` qui embarque Git, une icône dans la zone de notification, une seule instance à la fois, et un bouton Quitter qui propose de sauvegarder ou publier avant de fermer.
+- **Une application de bureau** : un installeur `.msi` qui embarque Git, une icône dans la zone de notification, une seule instance à la fois, un bouton Quitter qui propose de sauvegarder ou publier avant de fermer, et des **mises à jour automatiques** (désactivables dans les Paramètres).
 
 Toute la documentation technique (architecture, règles de sauvegarde, API, tests…) est dans [**docs/AGENTS.md**](docs/AGENTS.md).
 
