@@ -62,6 +62,8 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - `run.bat` : lancement depuis les sources, sur le port 5050.
 - `.github/workflows/` : `tests.yml` (tests à chaque push) et `release.yml` (exe et `.msi` joints à une release, sur un tag `v<version>`).
 - `cms/tests/` (pytest) et `cms/web/tests/` (`node:test`) : les tests, lancés par `run_tests.bat` (voir « Tests »).
+- `docs/` : `AGENTS.md` (ce fichier), `CLAUDE.md` (qui l'importe) et `contrat-licence-commerciale-MyCMS.md` (modèle de contrat de licence d'usage interne, aussi publié sur Notion et lié depuis le README).
+  - À la racine, `CLAUDE.md` tient en une ligne, `@docs/AGENTS.md` : Claude Code ne charge automatiquement que le `CLAUDE.md` de la racine. Ne pas le supprimer, sinon les règles de ce fichier ne sont plus chargées en début de session.
 
 ## Commandes
 
@@ -351,6 +353,8 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   1. pousser `web_v2` ;
   2. ouvrir une PR de `web_v2` vers `main` (la branche par défaut sur GitHub, qui contient encore la version d'origine) et la fusionner ;
   3. taguer `v2.2.3` sur le résultat.
+- **Documentation rangée dans `docs/`** : `AGENTS.md`, `CLAUDE.md` et le modèle de contrat de licence d'usage interne. Un `CLAUDE.md` d'une ligne reste à la racine, et les liens (README, `pytest.ini`, `test_project_rules.py`) pointent vers `docs/AGENTS.md`.
+  - Le contrat : usage interne seulement, à partir de l'installeur `.msi`, versions 2.2.3 et suivantes pendant la durée du contrat, commercialisation réservée à l'auteur, et clause d'interopérabilité (code source public sur GitHub). Le README renvoie à sa version Notion.
   - Pourquoi : ce contrat affirme que le code source de chaque version couverte (à partir de la 2.2.3) est publié sur https://github.com/gossotjeanbaptiste/MyCMS, ce qui écarte la décompilation au titre de l'interopérabilité (article L. 122-6-1, IV, du Code de la propriété intellectuelle). Le dépôt doit donc rester public, et chaque version doit être retrouvable par son tag.
 
 ## Tests
