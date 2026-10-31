@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.7 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.1.8 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -34,6 +34,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `settings/` : `settings.js`, `account.js` (« Mon compte »), `users.js` (compte connecté, carte Utilisateurs), `update.js` (nouvelle version), `header.js` (guide, déconnexion) et `logs.js`.
   - `style.css` : généré par Tailwind, ne pas l'éditer à la main.
   - `highlight.css` : surlignage de la recherche, hors Tailwind.
+  - `logo.png` : le logo de l'en-tête et de la page de connexion, l'image 256 px de `cms/icon/logo.ico`.
 - `cms/web/src/` : sources Tailwind v4. `input.css` importe `theme.css` (couleurs) et `components/*.css` (une couche `@layer components` par fichier).
 - `cms/source/` : le code métier, importé par paquet (`from content.html_tree import parse`).
   - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (comptes ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant), `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format), `updates.py` (nouvelle version sur GitHub), `log_buffer.py` (journal numéroté) et `logger.py`.
@@ -284,6 +285,13 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Journaux numérotés (`core/log_buffer.py`, `LogBuffer`) : `GET /api/logs?since=n` et `GET /api/preview?since=n` ne renvoient que les lignes reçues après les n premières, avec `total` et `reset`. `reset` vaut vrai si des lignes ont été effacées ou sont trop anciennes : il faut alors remplacer l'affichage. Sans `since`, tout le journal.
   - Vérifié dans Chrome : serveur arrêté, 1 requête en 6,5 s (avant : 4) ; fenêtre cachée, 0.
 - Tests JS : jsdom considère la page comme cachée par défaut. `setup-dom.mjs` lui passe `pretendToBeVisual: true`.
+
+## Changements de la v2.1.8
+
+- **Logo à la place du titre texte**, dans l'en-tête (40 px) et sur la page de connexion (96 px). `alt="MyCMS"` est gardé pour les lecteurs d'écran.
+  - `static/logo.png` est l'image 256 px extraite de `cms/icon/logo.ico`, avec Pillow : `im = Image.open(ico); im.size = (256, 256); im.save(png)`.
+  - **À régénérer quand l'icône change** : un test (`test_project_rules.py`) vérifie qu'ils sont identiques.
+  - `/static/logo.png` fait partie des adresses publiques (`PUBLIC_PATHS`), car la page de connexion l'affiche.
 
 ## Tests
 
