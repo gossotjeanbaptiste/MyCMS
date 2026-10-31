@@ -9,7 +9,7 @@
 
     // Contenu d'origine au format de l'éditeur : éléments éditables imbriqués remplacés par <mycms-lock>
     const originals = editables.map((el, i) => {
-        if (el.tagName === "IFRAME") return el.getAttribute("src") || "";
+        if (el.tagName === "IFRAME" || el.tagName === "IMG") return el.getAttribute("src") || "";
         const clone = el.cloneNode(true);
         const nested = editables.filter((other, k) => k > i && el.contains(other));
         [...clone.querySelectorAll(".editable")].forEach((node, k) => {
@@ -23,7 +23,7 @@
 
     function apply(index, value) {
         const el = editables[index];
-        if (el.tagName === "IFRAME") {
+        if (el.tagName === "IFRAME" || el.tagName === "IMG") {
             if (el.getAttribute("src") !== value) el.setAttribute("src", value);
             return;
         }

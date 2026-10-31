@@ -4,7 +4,9 @@ export const $ = (id) => document.getElementById(id);
 
 export async function api(method, url, body) {
     const options = { method, headers: {} };
-    if (body !== undefined) {
+    if (body instanceof FormData) {
+        options.body = body; // Envoi d'un fichier : le navigateur fixe lui-même l'en-tête
+    } else if (body !== undefined) {
         options.headers["Content-Type"] = "application/json";
         options.body = JSON.stringify(body);
     }

@@ -12,7 +12,7 @@ for await (const chunk of process.stdin) input += chunk;
 
 const values = {};
 for (const elem of JSON.parse(input)) {
-    if (elem.is_iframe) {
+    if (elem.is_iframe || elem.is_image) {
         values[elem.index] = elem.value;
     } else if (!VOID_TAGS.has(elem.tag)) {
         const built = buildRichEditor(elem);

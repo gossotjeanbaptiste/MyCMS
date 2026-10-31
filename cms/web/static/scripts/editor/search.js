@@ -26,9 +26,10 @@ function searchQuery() {
     return fold($("search").value.trim()).folded;
 }
 
-// Texte d'une carte : balise, id, index et contenu
+// Texte d'une carte : balise, id, index et contenu (sans les boutons d'action)
 function cardText(field, card) {
-    return card.textContent + (field?.kind === "src" ? " " + field.el.value : "");
+    const actions = card.querySelector(".card-actions")?.textContent || "";
+    return card.textContent.replace(actions, "") + (field?.kind === "src" ? " " + field.el.value : "");
 }
 
 // Occurrences dans les nœuds texte d'un éditeur, même à cheval sur plusieurs balises (<b>, <a>…)

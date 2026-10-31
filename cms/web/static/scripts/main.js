@@ -14,6 +14,7 @@ import { initPreview, refreshPreview } from "./preview/preview.js";
 import { initQuit, openQuitDialog } from "./quit/quit.js";
 import { initSearch } from "./editor/search.js";
 import { initSettings, loadConfig } from "./settings/settings.js";
+import { initStructure } from "./editor/structure.js";
 import { initUsers, loadUser } from "./settings/users.js";
 import { state } from "./core/state.js";
 import { initTabs } from "./core/tabs.js";
@@ -42,7 +43,7 @@ async function start() {
     if (quitRequested) await openQuitDialog();
 }
 
-[initTabs, initSettings, initUsers, initEditor, initEditorInput, initSearch, initCategories, initPane, initFormatBar,
+[initTabs, initSettings, initUsers, initEditor, initEditorInput, initSearch, initCategories, initStructure, initPane, initFormatBar,
     initGit, initBrowse, initPreview, initLogs, initHeader, initQuit].forEach((init) => init());
 
 start().catch((e) => toast(e.message, true));

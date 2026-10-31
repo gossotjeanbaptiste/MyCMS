@@ -31,8 +31,22 @@ export function setPublished(field, elem) {
     }
     const built = buildRichEditor({ ...elem, html: elem.published_html });
     field.published = built
-        ? { value: serializeRich(built.editor), length: textLength(built.editor.textContent) }
+        ? { value: serializeRich(built.editor), length: textLength(built.editor.textContent),
+            elem: { ...elem, html: elem.published_html } }
         : { value: null, length: textLength(elem.published_value || "") };
+}
+
+// Remettre le contenu publié dans l'éditeur (bouton « Version en ligne ») ; retourne vrai si c'est possible
+export function restorePublished(field) {
+    if (!field?.published) return false;
+    if (field.kind === "src") {
+        field.el.value = field.published.value;
+        return true;
+    }
+    const built = field.published.elem && buildRichEditor(field.published.elem);
+    if (!built) return false; // Éléments imbriqués différents : pas de retour automatique
+    field.el.replaceChildren(...built.editor.childNodes);
+    return true;
 }
 
 function publishMarker(field) {
@@ -56,6 +70,8 @@ export function updateMarker(field) {
         badge.title = MARKERS[marker].title;
     }
     badge.classList.toggle("hidden", !marker);
+    // « Version en ligne » : seulement s'il y a une version publiée à remettre
+    field.card.querySelector('[data-action="restore"]')?.classList.toggle("hidden", !marker || !field.published);
     $("pub-legend").classList.toggle("hidden", !document.querySelector("#editable-list .pub-badge:not(.hidden)"));
 }
 

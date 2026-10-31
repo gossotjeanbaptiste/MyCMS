@@ -1,9 +1,33 @@
 // MyCMS - cartes de l'éditeur : une carte par élément éditable de la page ouverte
 
-import { $ } from "../core/dom.js";
+import { $, element } from "../core/dom.js";
+import { buildImageField } from "./image-field.js";
 import { setPublished, updateAllMarkers } from "./markers.js";
 import { buildRichEditor, fieldValue, VOID_TAGS } from "./rich-editor.js";
 import { state } from "../core/state.js";
+
+// Actions de la carte (voir structure.js) : revenir à la version en ligne (affichée avec un marqueur),
+// dupliquer ou supprimer l'élément de liste ou la ligne de tableau
+function cardActions(elem) {
+    // Petits boutons sur une ligne : le libellé complet est dans l'infobulle (et lu par les lecteurs d'écran)
+    const actions = element("div", "card-actions mt-2 flex flex-wrap gap-1 font-sans");
+    const button = (action, icon, title, hidden = false) => {
+        const b = element("button", `fmt min-h-7 min-w-7 text-sm${hidden ? " hidden" : ""}`, icon);
+        b.type = "button";
+        b.dataset.action = action;
+        b.title = title;
+        b.setAttribute("aria-label", title);
+        actions.append(b);
+    };
+    button("restore", "↺", "Version en ligne : remettre le contenu publié sur GitHub (à sauvegarder ensuite)", true);
+    if (elem.repeat) {
+        const what = elem.repeat === "tr" ? "la ligne du tableau" : "l'élément de la liste";
+        actions.dataset.what = what;
+        button("duplicate", "＋", `Dupliquer : ajouter une copie de ${what} juste après`);
+        button("delete", "✕", `Supprimer ${what}`);
+    }
+    return actions;
+}
 
 export function renderElements(elements) {
     // Élément éditable le plus proche qui contient chaque élément imbriqué
@@ -32,7 +56,7 @@ export function renderElements(elements) {
         meta.className = "font-mono text-xs [overflow-wrap:anywhere]";
         const tag = document.createElement("div");
         tag.className = "font-bold text-tag";
-        tag.textContent = `<${elem.tag.toUpperCase()}>${elem.is_iframe ? " [SRC]" : ""}`;
+        tag.textContent = `<${elem.tag.toUpperCase()}>${elem.is_iframe || elem.is_image ? " [SRC]" : ""}`;
         const id = document.createElement("div");
         id.className = "text-muted";
         id.textContent = elem.id ? `#${elem.id} [${elem.index}]` : `[${elem.index}]`;
@@ -46,9 +70,14 @@ export function renderElements(elements) {
             inside.textContent = `dans [${parentOf[elem.index]}]`;
             meta.append(inside);
         }
+        meta.append(cardActions(elem));
 
         let control;
-        if (elem.is_iframe) {
+        if (elem.is_image) {
+            const image = buildImageField(elem);
+            control = image.control;
+            fields.set(elem.index, { el: image.input, kind: "src", card });
+        } else if (elem.is_iframe) {
             control = document.createElement("textarea");
             control.className = "input min-h-10 w-full resize-y";
             control.value = elem.value;
