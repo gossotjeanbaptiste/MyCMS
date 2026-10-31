@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.4 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.1.5 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -31,12 +31,13 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
     - `git/` : `git.js`, `publish-checks.js` (vérification, mise en ligne, conflit), `history.js` (historique) et `browse.js` (« Parcourir… »).
     - `quit/` : `quit.js` et `quit-content.js`.
-    - `settings/` : `settings.js`, `account.js` (« Mon compte »), `users.js` (compte connecté, carte Utilisateurs), `header.js` (guide, déconnexion) et `logs.js`.
+    - `settings/` : `settings.js`, `account.js` (« Mon compte »), `users.js` (compte connecté, carte Utilisateurs), `update.js` (nouvelle version), `header.js` (guide, déconnexion) et `logs.js`.
   - `style.css` : généré par Tailwind, ne pas l'éditer à la main.
   - `highlight.css` : surlignage de la recherche, hors Tailwind.
 - `cms/web/src/` : sources Tailwind v4. `input.css` importe `theme.css` (couleurs) et `components/*.css` (une couche `@layer components` par fichier).
 - `cms/source/` : le code métier, importé par paquet (`from content.html_tree import parse`).
-  - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (comptes ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant), `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format) et `logger.py`.
+  - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (comptes ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant), `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format), `updates.py` (nouvelle version sur GitHub) et `logger.py`.
+  - `version.py` : `VERSION`, la version de MyCMS.
   - `content/` :
     - `html_tree.py` : arbre HTML avec les positions exactes dans le fichier ;
     - `hybrid_saver.py` et `node_diff.py` : la sauvegarde hybride ;
@@ -56,6 +57,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Un nouveau module Python doit être ajouté aux `hiddenimports` de `mycms.spec`, et un nouveau dossier de l'interface à ses `datas`.
 - `cms/icon/logo.ico` : l'icône de l'exe, de l'installeur et de la zone de notification.
 - `run.bat` : lancement depuis les sources, sur le port 5050.
+- `.github/workflows/` : `tests.yml` (tests à chaque push) et `release.yml` (exe et `.msi` joints à une release, sur un tag `v<version>`).
 - `cms/tests/` (pytest) et `cms/web/tests/` (`node:test`) : les tests, lancés par `run_tests.bat` (voir « Tests »).
 
 ## Commandes
@@ -66,7 +68,8 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - CSS, après toute modification de `src/` ou ajout de classes Tailwind dans les modèles ou les scripts : `cd cms/web && npm run build:css`. `style.css` est versionné, pour que l'application tourne sans Node.
 - Exécutable : `python cms/installer/build_exe.py`, qui produit `dist/MyCMS.exe`.
 - Installeur : `compile_msi.bat`, qui produit `dist/MyCMS-<version>.msi`. Nécessite le SDK .NET.
-- Version : la changer **à la fois** dans `cms/web/package.json` (lue par le `.msi`) et dans `cms/source/__init__.py`.
+- Version : la changer **à la fois** dans `cms/web/package.json` (lue par le `.msi`) et dans `cms/source/version.py` (lue par l'application). Un test vérifie qu'elles sont identiques.
+- Publier une version : `git tag v<version>` puis `git push origin v<version>`. Le workflow `release.yml` vérifie que le tag correspond à la version, lance les tests, compile et crée la release.
 
 ## Règles à ne pas casser
 
@@ -245,9 +248,24 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Il est rafraîchi avec le statut, après chaque action Git.
 - Tests : GitPython lit l'identité du poste dans `~/.gitconfig` (pas dans `GIT_CONFIG_GLOBAL`). `conftest.py` y écrit donc la même identité de test.
 
+## Changements de la v2.1.5
+
+- **GitHub Actions** (`.github/workflows/`) :
+  - `tests.yml` : `pytest -v` et `npm test` à chaque push et pull request, sous `windows-latest` (verrou NTFS, CRLF).
+  - `release.yml` : sur un tag `v*`, vérifie que le tag correspond à `package.json`, lance les tests, compile `MyCMS.exe` puis `MyCMS-<version>.msi`, et les joint à une release GitHub. `build_msi.py` vide `dist/`, d'où l'exe mis de côté dans `release/`.
+  - Sur un dépôt privé, les minutes Windows comptent double dans le quota d'Actions.
+- **Nouvelle version disponible** (`core/updates.py`, `GET /api/update`, `settings/update.js`) : au démarrage, la dernière release de `gossotjeanbaptiste/MyCMS` est comparée à `VERSION`. Si elle est plus récente, un lien « Nouvelle version X » apparaît dans l'en-tête.
+  - La vérification est faite une fois par lancement (`Services.update`). Sans réseau, rien n'est signalé.
+  - **L'API des releases n'est accessible que si le dépôt est public** : il est privé aujourd'hui (404), donc rien n'est signalé.
+- **Version dans `cms/source/version.py`** (`VERSION`) au lieu de `cms/source/__init__.py`, que l'application ne pouvait pas importer (`cms/source` n'est pas un paquet) et que l'exe n'embarquait pas.
+- **Ménage** :
+  - Flask 3 et Werkzeug 3 (`flask>=3.0.0` dans `requirements.txt`). Les nouveaux mots de passe sont en scrypt, et les anciens en pbkdf2 se connectent toujours (testé).
+  - Favicon de l'interface (`/favicon.ico`, public : c'est `logo.ico`). Elle donnait un 404 à chaque page.
+  - `git_status.py` : l'ancien code de secours est retiré, et le rapport est identique (vérifié en comparant avec l'ancienne version).
+
 ## Tests
 
-**Lancer `run_tests.bat` avant chaque commit.** Il installe ce qui manque, puis lance les deux suites. Ses arguments sont passés à pytest (`run_tests.bat -q`, `run_tests.bat -k editor`).
+**Lancer `run_tests.bat` avant chaque commit.** Il installe ce qui manque, puis lance les deux suites. GitHub Actions (`tests.yml`) les relance à chaque push, sous Windows. Ses arguments sont passés à pytest (`run_tests.bat -q`, `run_tests.bat -k editor`).
 
 - **Python** : `python -m pytest`, depuis la racine (`pytest.ini`). Il dépend de `cms/requirements-dev.txt`.
   - `cms/tests/` contient un dossier par paquet : `core/`, `content/`, `publishing/` et `desktop/` (dont `server.py`).
