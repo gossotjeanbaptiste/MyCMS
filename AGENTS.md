@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est la personne qui gère les textes du site. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.2.2 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.2.3 (la 2.0.9 a été sautée).
 - **Aucun nom de client dans le dépôt** : MyCMS est une version personnelle. Pas de nom de client ni d'organisation dans le code, les tests, la doc ou les messages de commit ; utiliser des noms neutres (`MyCMS`, `exemple`, `MonSite`).
 - Site de référence pour les tests : un vrai site local, dont le chemin se passe aux tests par `MYCMS_SITE` (voir « Tests »). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
@@ -70,7 +70,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - CSS, après toute modification de `src/` ou ajout de classes Tailwind dans les modèles ou les scripts : `cd cms/web && npm run build:css`. `style.css` est versionné, pour que l'application tourne sans Node.
 - Exécutable : `python cms/installer/build_exe.py`, qui produit `dist/MyCMS.exe`.
 - Installeur : `compile_msi.bat`, qui produit `dist/MyCMS-<version>.msi`. Nécessite le SDK .NET.
-- Version : la changer **à la fois** dans `cms/web/package.json` (lue par le `.msi`) et dans `cms/source/version.py` (lue par l'application). Un test vérifie qu'elles sont identiques.
+- Version : la changer **à la fois** dans `cms/web/package.json` (lue par le `.msi`) et dans `cms/source/version.py` (lue par l'application), ainsi que dans le badge « Version » du `README.md`. Un test vérifie que les trois sont identiques.
 - Publier une version : `git tag v<version>` puis `git push origin v<version>`. Le workflow `release.yml` vérifie que le tag correspond à la version, lance les tests, compile et crée la release.
 
 ## Règles à ne pas casser
@@ -337,6 +337,13 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - un test sans intérêt retiré (`test_sitemap_info_reads_site`) ;
   - trois lignes mortes du `.gitignore` retirées (deux doublons de `__pycache__/`, un `.docx` temporaire étranger au projet) ;
   - le README ne dit plus que la sauvegarde passe par BeautifulSoup.
+
+## Changements de la v2.2.3
+
+- **Nouveau README**, sur le modèle de celui d'Echoing Void : logo centré (`cms/web/static/logo.png`), accroche, badges (Python, Flask, Waitress, Windows, version), puis « À propos », « Points forts », « Installation », « Pour les développeurs » et « Crédits & Licences ».
+  - La documentation technique reste dans AGENTS.md, vers lequel le README renvoie.
+  - Le dépôt n'a pas de fichier de licence. Le README le dit, sans inventer de licence pour le code, et crédite les dépendances, MinGit (GPLv2) et les logos Python et Git.
+  - Le badge de version est vérifié par un test (`test_readme_version_badge`).
 
 ## Tests
 
