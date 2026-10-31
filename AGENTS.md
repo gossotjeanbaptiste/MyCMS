@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.9 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.1.10 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -35,30 +35,27 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `style.css` : généré par Tailwind, ne pas l'éditer à la main.
   - `highlight.css` : surlignage de la recherche, hors Tailwind.
   - `logo.png` : le logo carré de la page de connexion, l'image 256 px de `cms/icon/logo.ico`.
-  - `logo-wide.png` : le logo horizontal de l'en-tête (logos à gauche, « MyCMS » à droite), généré par `cms/icon/make_wide_logo.py`.
+  - `logo-wide.png` : le logo horizontal de l'en-tête (logos à gauche, « MyCMS » à droite).
 - `cms/web/src/` : sources Tailwind v4. `input.css` importe `theme.css` (couleurs) et `components/*.css` (une couche `@layer components` par fichier).
-- `cms/source/` : le code métier, importé par paquet (`from content.html_tree import parse`).
-  - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (comptes ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant), `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format), `updates.py` (nouvelle version sur GitHub), `log_buffer.py` (journal numéroté) et `logger.py`.
+- `cms/source/` : le code métier, importé par paquet (`from content.html.html_tree import parse`). Un sous-dossier par fonctionnalité, chacun avec son `__init__.py`.
   - `version.py` : `VERSION`, la version de MyCMS.
+  - `core/` :
+    - `auth/` : `auth_manager.py` (comptes, rôles, profil ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant) et `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format) ;
+    - `storage/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement) et `config_manager.py` (`config.json`) ;
+    - `logs/` : `logger.py` et `log_buffer.py` (journal numéroté) ;
+    - `updates.py` : nouvelle version sur GitHub.
   - `content/` :
-    - `html_tree.py` : arbre HTML avec les positions exactes dans le fichier ;
-    - `hybrid_saver.py` et `node_diff.py` : la sauvegarde hybride ;
-    - `html_manager.py` : extraction des `.editable`, `apply_editable_html`, extraits de code ;
-    - `css_weights.py` : gras d'après le CSS du site (`<link>`, `@import`, variables, spécificité, héritage) ;
-    - `categories.py` : catégorie de chaque élément éditable, déduite de la structure de la page ;
-    - `structure.py` : dupliquer ou supprimer un élément de liste ou une ligne de tableau ;
-    - `published.py` : version publiée de chaque élément, associée par le contenu ;
-    - `changes.py` : changements d'une page entre deux versions, élément par élément (historique) ;
-    - `page_finder.py` : détection des pages.
+    - `html/` : `html_tree.py` (arbre HTML avec les positions exactes dans le fichier), `hybrid_saver.py` et `node_diff.py` (la sauvegarde hybride), `html_manager.py` (extraction des `.editable`, `apply_editable_html`, extraits de code) ;
+    - `pages/` : `page_finder.py` (détection des pages), `css_weights.py` (gras d'après le CSS du site : `<link>`, `@import`, variables, spécificité, héritage), `categories.py` (catégorie de chaque élément éditable) et `structure.py` (dupliquer ou supprimer un élément de liste ou une ligne de tableau) ;
+    - `versions/` : `published.py` (version publiée de chaque élément, associée par le contenu) et `changes.py` (changements d'une page entre deux versions, pour l'historique).
   - `publishing/` :
-    - `git_manager.py` : clone, `pending()`, `unpublished_pages()`, version publiée ; le pull et le push sont dans `git_sync.py` (conflits) ;
-    - `checks.py` : vérification avant publication ; `online.py` : suivi de la mise en ligne ; `history.py` et `commit_details.py` : historique lisible et détail d'une modification ;
-    - `git_status.py` : rapport de l'onglet Git ;
-    - `sitemap_generator.py`, `sitemap_files.py`, `robots.py` et `site_url.py` : sitemap, robots.txt, URL du site.
+    - `git/` : `git_manager.py` (clone, `pending()`, `unpublished_pages()`, version publiée), `git_sync.py` (pull et push, conflits), `git_status.py` (rapport de l'onglet Git), `history.py` et `commit_details.py` (historique lisible et détail d'une modification) ;
+    - `sitemap/` : `sitemap_generator.py`, `sitemap_files.py`, `robots.py` et `site_url.py` (sitemap, robots.txt, URL du site) ;
+    - `verification/` : `checks.py` (vérification avant publication) et `online.py` (suivi de la mise en ligne).
   - `desktop/` : `server_manager.py` (prévisualisation, `ThreadingHTTPServer` sur 127.0.0.1), `folder_picker.py` (classe `FolderPicker`), `tray.py` (icône de notification) et `startup.py` (instance unique, port libre, `show_error`).
 - `cms/installer/` : compilation. `build_exe.py` et `mycms.spec` (PyInstaller), `build_msi.py`, `MyCMS.wixproj` et `Package.wxs` (WiX, avec Git portable MinGit).
   - Un nouveau module Python doit être ajouté aux `hiddenimports` de `mycms.spec`, et un nouveau dossier de l'interface à ses `datas`.
-- `cms/icon/logo.ico` : l'icône de l'exe, de l'installeur et de la zone de notification. `make_wide_logo.py` en tire le logo horizontal de l'en-tête.
+- `cms/icon/logo.ico` : l'icône de l'exe, de l'installeur et de la zone de notification.
 - `run.bat` : lancement depuis les sources, sur le port 5050.
 - `.github/workflows/` : `tests.yml` (tests à chaque push) et `release.yml` (exe et `.msi` joints à une release, sur un tag `v<version>`).
 - `cms/tests/` (pytest) et `cms/web/tests/` (`node:test`) : les tests, lancés par `run_tests.bat` (voir « Tests »).
@@ -189,7 +186,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 ## Changements de la v2.1.0
 
 - **Filtrage par catégories dans l'éditeur** : une barre de filtres au-dessus de la liste (« Tout », puis une par catégorie, avec le nombre d'éléments) et un intertitre dans la liste à chaque changement de catégorie.
-  - Le serveur calcule les catégories (`content/categories.py`) et le chargement d'une page renvoie `category` pour chaque élément. Rien n'est écrit dans le site.
+  - Le serveur calcule les catégories (`content/pages/categories.py`) et le chargement d'une page renvoie `category` pour chaque élément. Rien n'est écrit dans le site.
   - Règles, dans l'ordre :
     1. attribut `data-category` sur l'élément ou un de ses parents : imposé par le développeur du site ;
     2. `<header>`, `<nav>`, `<footer>` : « En-tête », « Menu », « Pied de page » ;
@@ -212,7 +209,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - **Boutons des cartes**, sous le numéro de l'élément (`cards.js`, `structure.js`). Ce sont des icônes, et le libellé complet est dans l'infobulle.
   - **↺ Version en ligne** : visible quand la carte a un marqueur. Il remet le contenu publié dans l'éditeur, qu'il reste à sauvegarder.
-  - **＋ Dupliquer** et **✕ Supprimer** : pour un élément de liste ou une ligne de tableau (`content/structure.py`, `POST /api/structure/<page>` avec `hash`, `action` et `index`).
+  - **＋ Dupliquer** et **✕ Supprimer** : pour un élément de liste ou une ligne de tableau (`content/pages/structure.py`, `POST /api/structure/<page>` avec `hash`, `action` et `index`).
     - Élément de liste : depuis un `<li>` éditable, ou un élément éditable placé dans un `<li>`.
     - Ligne de tableau : seulement depuis une cellule éditable (`<td>`, `<th>`). Un paragraphe dans une cellule ne duplique pas la ligne.
     - Le fichier est modifié tout de suite. Ce qui n'est pas sauvegardé l'est d'abord (après confirmation), puis la page est rechargée.
@@ -224,17 +221,17 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `POST /api/images` (multipart : `page`, `file`) copie le fichier dans `images/` sous un nom libre (`photo-2.png`…) et renvoie son adresse relative à la page.
   - Formats acceptés : PNG, JPG, GIF, WebP, AVIF ; pas de SVG, qui peut contenir du script. 10 Mo au plus.
   - `api()` (`dom.js`) envoie un `FormData` tel quel.
-- **Version publiée associée par le contenu (corrigé)** (`content/published.py`) : elle était associée par la position. Après un ajout ou une suppression, tous les éléments suivants recevaient de faux marqueurs, et « Version en ligne » aurait remis le texte d'un autre élément.
+- **Version publiée associée par le contenu (corrigé)** (`content/versions/published.py`) : elle était associée par la position. Après un ajout ou une suppression, tous les éléments suivants recevaient de faux marqueurs, et « Version en ligne » aurait remis le texte d'un autre élément.
   - Maintenant : alignement `difflib` sur (balise, contenu). Dans un bloc modifié, les éléments les plus semblables sont associés, dans l'ordre (programmation dynamique, bornée à 2 500 comparaisons). Une copie fraîchement ajoutée est « nouvelle » (+).
 
 ## Changements de la v2.1.3
 
-- **Vérification avant publication** (`publishing/checks.py`, `GET /api/checks`). Avant chaque push (onglet Git et fenêtre Quitter), les pages pas encore publiées sont vérifiées. S'il y a des problèmes, ils s'affichent et l'utilisateur choisit de publier quand même ou non. Le bouton « Vérifier le site » (`?scope=all`) vérifie tout le site.
+- **Vérification avant publication** (`publishing/verification/checks.py`, `GET /api/checks`). Avant chaque push (onglet Git et fenêtre Quitter), les pages pas encore publiées sont vérifiées. S'il y a des problèmes, ils s'affichent et l'utilisateur choisit de publier quand même ou non. Le bouton « Vérifier le site » (`?scope=all`) vérifie tout le site.
   - Vérifié : liens et images vers des fichiers absents (adresses résolues comme le navigateur, sans remonter au-dessus de la racine), ancres `#…` introuvables, `mailto:` et `tel:` mal formés, éléments éditables vides, `src` vide.
   - Les adresses externes ne sont pas vérifiées : pas de réseau.
   - Le site de référence a 2 vrais liens cassés dans `page/financement.html` (lignes 352 et 358) : `../files/…pdf` au lieu de `../files/voiture/…pdf`.
-- **Suivi de la mise en ligne** (`publishing/online.py`, `GET /api/online?page=…`). Le push renvoie `pages`, les pages HTML envoyées. L'onglet Git interroge le site en ligne toutes les 10 s, pendant 10 min au plus, jusqu'à ce qu'il renvoie le même contenu que les fichiers locaux, fins de ligne mises à part.
-- **Conflits** (`publishing/git_sync.py`) : le repository n'est jamais laissé à moitié fusionné.
+- **Suivi de la mise en ligne** (`publishing/verification/online.py`, `GET /api/online?page=…`). Le push renvoie `pages`, les pages HTML envoyées. L'onglet Git interroge le site en ligne toutes les 10 s, pendant 10 min au plus, jusqu'à ce qu'il renvoie le même contenu que les fichiers locaux, fins de ligne mises à part.
+- **Conflits** (`publishing/git/git_sync.py`) : le repository n'est jamais laissé à moitié fusionné.
   - **Push refusé** parce que GitHub a reçu d'autres commits : MyCMS rejoue les commits locaux par-dessus (rebase), puis renvoie. En cas de vrai conflit, le rebase est annulé, le commit local est gardé, et la réponse contient `conflict: true` avec un message clair.
   - Le refus se détecte avec les drapeaux de `PushInfo` : Git écrit « rejected » dans la sortie, pas dans l'erreur (`_send`).
   - **Pull** : en cas de conflit, la fusion est annulée (`merge --abort`) et rien n'est récupéré. Si des modifications non commitées touchent les mêmes fichiers, un message demande de les publier ou de les annuler.
@@ -247,7 +244,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `AuthManager.author()` donne le profil (nom, e-mail), sinon l'identifiant et `identifiant@mycms.local`.
   - Carte **« Mon compte »** dans les Paramètres (`settings-account.html`, `account.js`, `GET`/`POST /api/auth/profile`) : nom affiché et e-mail facultatif, enregistrés dans `auth.json` (`name`, `email`).
   - Les commits déjà en attente gardent leur auteur.
-- **Historique lisible** dans l'onglet Git (`publishing/history.py`, `GET /api/git/history`, `git/history.js`). Il montre les 20 derniers commits : « Marie a modifié page/tarifs.html (et 1 autre fichier) », la date en français, la première ligne du message, et l'état « Publié » ou « Pas encore publié » (commit présent ou non sur la branche distante).
+- **Historique lisible** dans l'onglet Git (`publishing/git/history.py`, `GET /api/git/history`, `git/history.js`). Il montre les 20 derniers commits : « Marie a modifié page/tarifs.html (et 1 autre fichier) », la date en français, la première ligne du message, et l'état « Publié » ou « Pas encore publié » (commit présent ou non sur la branche distante).
   - Il est rafraîchi avec le statut, après chaque action Git.
 - Tests : GitPython lit l'identité du poste dans `~/.gitconfig` (pas dans `GIT_CONFIG_GLOBAL`). `conftest.py` y écrit donc la même identité de test.
 
@@ -268,7 +265,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 ## Changements de la v2.1.6
 
-- **Détail d'une modification de l'historique** : un clic sur une ligne de l'historique de l'onglet Git la déplie (`git/history-details.js`, `GET /api/git/commit/<hash>`, `publishing/commit_details.py`, `content/changes.py`). Le détail est chargé une seule fois.
+- **Détail d'une modification de l'historique** : un clic sur une ligne de l'historique de l'onglet Git la déplie (`git/history-details.js`, `GET /api/git/commit/<hash>`, `publishing/git/commit_details.py`, `content/versions/changes.py`). Le détail est chargé une seule fois.
   - Pour chaque page modifiée, les éléments éditables sont associés entre les deux versions comme pour les marqueurs (`published.align`). Chaque changement est classé « Modifié », « Mise en forme » (même texte : gras, lien…), « Ajouté » ou « Supprimé », avec sa catégorie.
   - Les mots supprimés sont barrés en rouge, les mots ajoutés surlignés en vert (`word_diff` : `difflib` sur les mots, chacun suivi de ses espaces, pour faire des blocs).
   - Une page dont aucun texte modifiable n'a changé l'indique (modification du code). Le diff Git reste dans un volet repliable « Voir le code modifié » (300 lignes au plus), puis viennent les autres fichiers.
@@ -283,7 +280,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - **Moins de requêtes inutiles** dans les onglets Prévisualisation et Logs, qui interrogeaient le serveur toutes les 2 s et toutes les secondes.
   - `core/poller.js` (`createPoller(intervalle, tick, active)`) n'interroge que si `active()` est vrai, se met en pause quand la fenêtre est cachée (`document.hidden`) et rattrape dès le retour (`visibilitychange`). Une erreur arrête l'interrogation.
   - Prévisualisation : seulement si l'onglet est ouvert **et** le serveur lancé. Serveur arrêté : une requête à l'ouverture, puis plus rien.
-  - Journaux numérotés (`core/log_buffer.py`, `LogBuffer`) : `GET /api/logs?since=n` et `GET /api/preview?since=n` ne renvoient que les lignes reçues après les n premières, avec `total` et `reset`. `reset` vaut vrai si des lignes ont été effacées ou sont trop anciennes : il faut alors remplacer l'affichage. Sans `since`, tout le journal.
+  - Journaux numérotés (`core/logs/log_buffer.py`, `LogBuffer`) : `GET /api/logs?since=n` et `GET /api/preview?since=n` ne renvoient que les lignes reçues après les n premières, avec `total` et `reset`. `reset` vaut vrai si des lignes ont été effacées ou sont trop anciennes : il faut alors remplacer l'affichage. Sans `since`, tout le journal.
   - Vérifié dans Chrome : serveur arrêté, 1 requête en 6,5 s (avant : 4) ; fenêtre cachée, 0.
 - Tests JS : jsdom considère la page comme cachée par défaut. `setup-dom.mjs` lui passe `pretendToBeVisual: true`.
 
@@ -298,8 +295,16 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - **Logo horizontal dans l'en-tête** (`static/logo-wide.png`, 393 × 128, affiché en 40 px de haut). Les logos Python et Git de l'icône 256 px sont à gauche, sans son texte. À droite, « My » est en jaune Python (`#FFD43B`) et « CMS » en orange Git (`#F05133`), en Segoe UI Black, sur la tuile bleu nuit (`#1E293B`) aux coins arrondis.
   - La tuile garde le texte lisible dans les deux thèmes : le jaune serait illisible sur l'en-tête blanc du thème clair.
-  - Généré par `python cms/icon/make_wide_logo.py`, à relancer après un changement de `logo.ico`. Il faut Windows, pour la police `seguibl.ttf`.
+  - Composé avec Pillow à partir de `logo.ico`. Le script n'est pas versionné, comme les autres sources d'images : seule l'image l'est.
   - La page de connexion garde le logo carré (`logo.png`).
+
+## Changements de la v2.1.10
+
+- **`cms/source` rangé en sous-dossiers par fonctionnalité** (voir « Arborescence ») : `core/auth`, `core/logs`, `core/storage`, `content/html`, `content/pages`, `content/versions`, `publishing/git`, `publishing/sitemap` et `publishing/verification`. `desktop/` (4 fichiers) et `core/updates.py` restent à plat.
+  - Les noms de fichiers sont gardés, et les déplacements faits avec `git mv` (historique conservé). Les imports deviennent `from content.html.html_tree import parse`, `from publishing.git.git_manager import GitManager`, etc.
+  - Les `hiddenimports` de `mycms.spec` sont mis à jour et regroupés par dossier. L'exe recompilé a été vérifié.
+- **Supprimés** : `cms/icon/make_wide_logo.py`, car les sources d'images ne sont pas versionnées (seul `logo-wide.png` l'est), et le dossier `assets/` vide à la racine.
+- **Lancement** : le `.msi` installe `MyCMS.exe`, compilé par PyInstaller depuis `cms/web/server.py`. Il n'y a ni `app.py` (supprimé en v2.0.4) ni `wsgi.py`. Le serveur est celui de Flask (`app.run`, multi-thread, sur 127.0.0.1).
 
 ## Tests
 
