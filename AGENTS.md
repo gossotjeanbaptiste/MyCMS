@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.3 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.1.4 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -29,9 +29,9 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `core/` : `dom.js` (`$`, `api`, `toast`…), `state.js` (état partagé) et `tabs.js`.
     - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js`, `categories.js` (filtres par catégorie), `structure.js` (actions des cartes), `image-field.js` (carte d'une image) et `format-bar.js`.
     - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
-    - `git/` : `git.js`, `publish-checks.js` (vérification, mise en ligne, conflit) et `browse.js` (« Parcourir… »).
+    - `git/` : `git.js`, `publish-checks.js` (vérification, mise en ligne, conflit), `history.js` (historique) et `browse.js` (« Parcourir… »).
     - `quit/` : `quit.js` et `quit-content.js`.
-    - `settings/` : `settings.js`, `users.js` (compte connecté, carte Utilisateurs), `header.js` (guide, déconnexion) et `logs.js`.
+    - `settings/` : `settings.js`, `account.js` (« Mon compte »), `users.js` (compte connecté, carte Utilisateurs), `header.js` (guide, déconnexion) et `logs.js`.
   - `style.css` : généré par Tailwind, ne pas l'éditer à la main.
   - `highlight.css` : surlignage de la recherche, hors Tailwind.
 - `cms/web/src/` : sources Tailwind v4. `input.css` importe `theme.css` (couleurs) et `components/*.css` (une couche `@layer components` par fichier).
@@ -48,7 +48,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `page_finder.py` : détection des pages.
   - `publishing/` :
     - `git_manager.py` : clone, `pending()`, `unpublished_pages()`, version publiée ; le pull et le push sont dans `git_sync.py` (conflits) ;
-    - `checks.py` : vérification avant publication ; `online.py` : suivi de la mise en ligne ;
+    - `checks.py` : vérification avant publication ; `online.py` : suivi de la mise en ligne ; `history.py` : historique lisible ;
     - `git_status.py` : rapport de l'onglet Git ;
     - `sitemap_generator.py`, `sitemap_files.py`, `robots.py` et `site_url.py` : sitemap, robots.txt, URL du site.
   - `desktop/` : `server_manager.py` (prévisualisation, `ThreadingHTTPServer` sur 127.0.0.1), `folder_picker.py` (classe `FolderPicker`), `tray.py` (icône de notification) et `startup.py` (instance unique, port libre, `show_error`).
@@ -234,6 +234,16 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - **Pull** : en cas de conflit, la fusion est annulée (`merge --abort`) et rien n'est récupéré. Si des modifications non commitées touchent les mêmes fichiers, un message demande de les publier ou de les annuler.
   - Après un conflit, le bouton rouge « Reprendre la version en ligne » (`POST /api/git/reset-to-remote`, `reset --hard` sur la branche distante) abandonne les modifications et commits locaux, après confirmation.
 - **Pull avec des commits des deux côtés (corrigé)** : Git refusait avec « Need to specify how to reconcile divergent branches », sa configuration par défaut n'indiquant pas comment fusionner. Le pull passe maintenant `--no-rebase --no-edit`.
+
+## Changements de la v2.1.4
+
+- **Commits signés de la personne connectée** : l'auteur du commit créé par un push est le compte connecté. L'identité Git du poste reste le committer : GitHub affiche donc qui a écrit, et depuis quel poste.
+  - `AuthManager.author()` donne le profil (nom, e-mail), sinon l'identifiant et `identifiant@mycms.local`.
+  - Carte **« Mon compte »** dans les Paramètres (`settings-account.html`, `account.js`, `GET`/`POST /api/auth/profile`) : nom affiché et e-mail facultatif, enregistrés dans `auth.json` (`name`, `email`).
+  - Les commits déjà en attente gardent leur auteur.
+- **Historique lisible** dans l'onglet Git (`publishing/history.py`, `GET /api/git/history`, `git/history.js`). Il montre les 20 derniers commits : « Marie a modifié page/tarifs.html (et 1 autre fichier) », la date en français, la première ligne du message, et l'état « Publié » ou « Pas encore publié » (commit présent ou non sur la branche distante).
+  - Il est rafraîchi avec le statut, après chaque action Git.
+- Tests : GitPython lit l'identité du poste dans `~/.gitconfig` (pas dans `GIT_CONFIG_GLOBAL`). `conftest.py` y écrit donc la même identité de test.
 
 ## Tests
 
