@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est la personne qui gère les textes du site. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.2.3 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.2.4 (la 2.0.9 a été sautée).
 - **Aucun nom de client dans le dépôt** : MyCMS est une version personnelle. Pas de nom de client ni d'organisation dans le code, les tests, la doc ou les messages de commit ; utiliser des noms neutres (`MyCMS`, `exemple`, `MonSite`).
   - La règle vaut pour les **fichiers actuels et les nouveaux commits**. L'historique existant (`main`, la branche `old`, les commits qui documentent la reprise et le renommage des dossiers) vient de la version d'origine, faite pour un client : il le nomme légitimement, et il ne faut pas le réécrire.
 - Site de référence pour les tests : un vrai site local, dont le chemin se passe aux tests par `MYCMS_SITE` (voir « Tests »). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
@@ -60,7 +60,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Un nouveau module Python doit être ajouté aux `hiddenimports` de `mycms.spec`, et un nouveau dossier de l'interface à ses `datas`.
 - `cms/icon/logo.ico` : l'icône de l'exe, de l'installeur et de la zone de notification.
 - `scripts/` : `run.bat` (lancement depuis les sources, sur le port 5050), `run_tests.bat` (les tests) et `compile_msi.bat` (l'installeur). Chacun cherche seul la racine du dépôt (son dossier, ou le dossier parent) : ils marchent dans `scripts/` comme copiés à la racine. Dans la suite de ce fichier, `run.bat`, `run_tests.bat` et `compile_msi.bat` désignent ces scripts.
-- `.github/workflows/` : `tests.yml` (tests à chaque push) et `release.yml` (exe et `.msi` joints à une release, sur un tag `v<version>`).
+- `.github/workflows/` : `tests.yml` (tests à chaque push) et `release.yml` (`.msi` joint à une release, sur un tag `v<version>` ; l'exe seul n'est pas publié).
 - `cms/tests/` (pytest) et `cms/web/tests/` (`node:test`) : les tests, lancés par `scripts/run_tests.bat` (voir « Tests »).
 - `docs/` : `AGENTS.md` (ce fichier), `CLAUDE.md` (qui l'importe) et `contrat-licence-commerciale-MyCMS.md` (modèle de contrat de licence d'usage interne, aussi publié sur Notion et lié depuis le README).
   - À la racine, `CLAUDE.md` tient en une ligne, `@docs/AGENTS.md` : Claude Code ne charge automatiquement que le `CLAUDE.md` de la racine. Ne pas le supprimer, sinon les règles de ce fichier ne sont plus chargées en début de session.
@@ -257,7 +257,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - **GitHub Actions** (`.github/workflows/`) :
   - `tests.yml` : `pytest -v` et `npm test` à chaque push et pull request, sous `windows-latest` (verrou NTFS, CRLF).
-  - `release.yml` : sur un tag `v*`, vérifie que le tag correspond à `package.json`, lance les tests, compile `MyCMS.exe` puis `MyCMS-<version>.msi`, et les joint à une release GitHub. `build_msi.py` vide `dist/`, d'où l'exe mis de côté dans `release/`.
+  - `release.yml` : sur un tag `v*`, vérifie que le tag correspond à `package.json`, lance les tests, compile `MyCMS-<version>.msi` (`build_msi.py` compile l'exe dans un dossier temporaire) et le joint à une release GitHub. L'exe seul n'est pas publié : le contrat de licence ne couvre que l'installeur.
   - Sur un dépôt privé, les minutes Windows comptent double dans le quota d'Actions.
 - **Nouvelle version disponible** (`core/updates.py`, `GET /api/update`, `settings/update.js`) : au démarrage, la dernière release de `gossotjeanbaptiste/MyCMS` est comparée à `VERSION`. Si elle est plus récente, un lien « Nouvelle version X » apparaît dans l'en-tête.
   - La vérification est faite une fois par lancement (`Services.update`). Sans réseau, rien n'est signalé.
@@ -361,6 +361,11 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - **Documentation rangée dans `docs/`** : `AGENTS.md`, `CLAUDE.md` et le modèle de contrat de licence d'usage interne. Un `CLAUDE.md` d'une ligne reste à la racine, et les liens (README, `pytest.ini`, `test_project_rules.py`) pointent vers `docs/AGENTS.md`.
   - Le contrat : usage interne seulement, à partir de l'installeur `.msi`, versions 2.2.3 et suivantes pendant la durée du contrat, commercialisation réservée à l'auteur, et clause d'interopérabilité (code source public sur GitHub). Le README renvoie à sa version Notion.
   - Pourquoi : ce contrat affirme que le code source de chaque version couverte (à partir de la 2.2.3) est publié sur https://github.com/gossotjeanbaptiste/MyCMS, ce qui écarte la décompilation au titre de l'interopérabilité (article L. 122-6-1, IV, du Code de la propriété intellectuelle). Le dépôt doit donc rester public, et chaque version doit être retrouvable par son tag.
+
+## Changements de la v2.2.4
+
+- **Release : le `.msi` seul** (`release.yml`). L'exe n'est plus joint à la release : le contrat de licence ne couvre que l'installeur. L'étape qui compilait l'exe à part est retirée, car `build_msi.py` le compile lui-même dans un dossier temporaire et ne laisse que le `.msi` dans `dist/`.
+- Publiée comme la 2.2.3 : PR de `web_v2` vers `main`, fusion, puis tag `v2.2.4`.
 
 ## Tests
 
