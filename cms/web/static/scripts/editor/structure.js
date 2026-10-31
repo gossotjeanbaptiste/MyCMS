@@ -15,7 +15,10 @@ function restore(index) {
         return;
     }
     markDirty(index);
-    toast("Version en ligne remise : sauvegardez pour l'enregistrer.");
+    // Le fichier enregistré peut déjà être la version en ligne (seule la saisie l'avait changée)
+    toast(field.card.classList.contains("dirty")
+        ? "Version en ligne remise : sauvegardez pour l'enregistrer."
+        : "Texte revenu à la version en ligne : rien à sauvegarder.");
 }
 
 // Dupliquer ou supprimer change la place des éléments : on enregistre d'abord ce qui ne l'est pas
