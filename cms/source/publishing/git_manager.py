@@ -4,12 +4,12 @@
 Gestionnaire Git - Opérations de synchronisation avec GitHub
 """
 
-import datetime
 import subprocess
 from pathlib import Path
 
 from git import GitCommandError, Repo
 
+from publishing import git_sync
 from publishing.git_status import status_report
 
 
@@ -64,27 +64,28 @@ class GitManager:
         except Exception as e:
             return self._failure(e)
 
-    def pull(self, repo_path):
-        """Pull les dernières modifications"""
+    def _sync(self, repo_path, operation, *args):
+        """Pull, push ou reprise de la version en ligne (publishing/git_sync), avec le journal"""
         try:
             self._ensure_git_config(repo_path)
-            repo = Repo(repo_path)
-            origin = repo.remotes.origin  # Fetch
-            origin.fetch()
-            current_branch = repo.active_branch  # Pull
-            origin.pull(current_branch.name)
-            message = f"✓ Pull réussi\nBranche: {current_branch.name}\nTimestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            self.logger.log(f"Git pull réussi depuis {current_branch.name}")
-            return {"success": True, "message": message}
+            result = operation(Repo(repo_path), *args)
+            self.logger.log(result["message"].splitlines()[0])
+            return result
         except Exception as e:
             return self._failure(e)
 
-    def _ahead(self, repo):
-        """Commits locaux pas encore envoyés (None si la branche n'a pas de branche distante)"""
-        tracking = repo.active_branch.tracking_branch()
-        if tracking is None:
-            return None
-        return int(repo.git.rev_list("--count", f"{tracking.name}..HEAD"))
+    def pull(self, repo_path):
+        """Récupérer les modifications de GitHub (conflit : rien n'est changé, et c'est expliqué)"""
+        return self._sync(repo_path, git_sync.pull)
+
+    def push(self, repo_path, commit_message):
+        """Commit des modifications (s'il y en a) puis push de tout ce qui n'est pas encore envoyé.
+        GitHub a reçu d'autres commits entre-temps : ils sont récupérés, puis l'envoi est refait."""
+        return self._sync(repo_path, git_sync.push, commit_message)
+
+    def reset_to_remote(self, repo_path):
+        """Abandonner les modifications et commits locaux : reprendre la version en ligne"""
+        return self._sync(repo_path, git_sync.reset_to_remote)
 
     def pending(self, repo_path):
         """Ce qui n'est pas encore publié : fichiers modifiés et commits pas encore envoyés.
@@ -95,7 +96,7 @@ class GitManager:
             for line in repo.git.status(porcelain=True).splitlines():
                 if line.strip():
                     files.append({"state": line[:2].strip(), "path": line[3:].strip('"')})
-            ahead = self._ahead(repo) if repo.head.is_valid() else 0
+            ahead = git_sync.ahead(repo) if repo.head.is_valid() else 0
             return {
                 "success": True,
                 "branch": repo.active_branch.name,
@@ -106,6 +107,19 @@ class GitManager:
             }
         except Exception as e:
             return {"success": False, "message": f"✗ Erreur: {str(e)}"}
+
+    def unpublished_pages(self, repo_path):
+        """Pages HTML pas encore publiées : modifiées, nouvelles, ou dans des commits pas encore envoyés"""
+        try:
+            repo = Repo(repo_path)
+            pages = git_sync.pages_to_publish(repo)
+            for line in repo.git.status("--porcelain", "--untracked-files=all").splitlines():
+                path = line[3:].strip('"')
+                if path.lower().endswith((".html", ".htm")) and not line.startswith(" D") and path not in pages:
+                    pages.append(path)
+            return [page for page in pages if (Path(repo_path) / page).is_file()]
+        except Exception:
+            return []
 
     def published_file(self, repo_path, relative_path):
         """Contenu d'un fichier dans la version envoyée sur GitHub (dernier état connu de la branche distante).
@@ -137,41 +151,6 @@ class GitManager:
                 message += f" ({len(removed)} nouveau(x) fichier(s) supprimé(s))"
             self.logger.log(message)
             return {"success": True, "message": message, "removed": removed}
-        except Exception as e:
-            return self._failure(e)
-
-    def push(self, repo_path, commit_message):
-        """Commit des modifications (s'il y en a) puis push de tout ce qui n'est pas encore envoyé"""
-        try:
-            self._ensure_git_config(repo_path)
-            repo = Repo(repo_path)
-            current_branch = repo.active_branch
-            committed = repo.is_dirty(untracked_files=True)
-            if committed:
-                repo.git.add(A=True)
-                repo.index.commit(commit_message)  # Commit
-
-            # Commits restés en attente (ex : push précédent échoué) : ils partent aussi
-            ahead = self._ahead(repo)
-            if not committed and ahead == 0:
-                message = "ℹ️  Aucune modification à pousser"
-                self.logger.log(message)
-                return {"success": True, "message": message}
-
-            origin = repo.remotes.origin  # Push
-            if ahead is None:
-                # Première publication de la branche : créer la branche distante et la suivre
-                origin.push(refspec=f"{current_branch.name}:{current_branch.name}", set_upstream=True)
-            else:
-                origin.push(current_branch.name)
-            # Récupérer le hash du dernier commit
-            latest_commit = repo.head.commit
-            commit_hash = latest_commit.hexsha[:7]
-            sent = f"\nCommits envoyés: {ahead}" if ahead and ahead > (1 if committed else 0) else ""
-            message = f"✓ Push réussi\nMessage: {latest_commit.message.strip()}\nHash: {commit_hash}\nBranche: {current_branch.name}{sent}\nTimestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            self.logger.log(
-                f"Git push réussi: {latest_commit.message.strip()} ({commit_hash})")
-            return {"success": True, "message": message}
         except Exception as e:
             return self._failure(e)
 
