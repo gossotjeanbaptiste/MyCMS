@@ -19,6 +19,7 @@ import { initStructure } from "./editor/structure.js";
 import { initUsers, loadUser } from "./settings/users.js";
 import { state } from "./core/state.js";
 import { initTabs } from "./core/tabs.js";
+import { checkForUpdate } from "./settings/update.js";
 
 function savedPaneMode() {
     try {
@@ -42,6 +43,8 @@ async function start() {
     const pane = savedPaneMode();
     if (pane === "page" || pane === "code") setPaneMode(pane);
     if (quitRequested) await openQuitDialog();
+    // En dernier : interroge GitHub, l'interface ne l'attend pas
+    checkForUpdate();
 }
 
 [initTabs, initSettings, initAccount, initUsers, initEditor, initEditorInput, initSearch, initCategories, initStructure, initPane, initFormatBar,

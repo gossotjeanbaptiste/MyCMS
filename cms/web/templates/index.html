@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MyCMS</title>
+    <link rel="icon" href="/favicon.ico">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/highlight.css">
 </head>
@@ -18,6 +19,8 @@
             <button class="tab" data-tab="logs">Logs</button>
         </nav>
         <div class="ml-auto flex flex-wrap items-center gap-2 max-sm:ml-0 max-sm:pb-2">
+            <!-- Nouvelle version publiée sur GitHub (voir settings/update.js) -->
+            <a id="update-link" class="badge-on hidden" target="_blank" rel="noopener"></a>
             <button id="open-guide" class="btn px-2.5 py-1 text-xs" title="Comment utiliser MyCMS">Guide</button>
             <span id="user-name" class="ml-1 text-muted"></span>
             <button id="logout" class="btn px-2.5 py-1 text-xs">Se déconnecter</button>
