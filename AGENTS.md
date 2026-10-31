@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.1.6 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.1.7 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -26,7 +26,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `login.html` : la connexion.
 - `cms/web/static/` :
   - `scripts/` : modules ES, sans framework. `main.js` (l'interface) et `login.js` (la connexion) sont les points d'entrée.
-    - `core/` : `dom.js` (`$`, `api`, `toast`…), `state.js` (état partagé) et `tabs.js`.
+    - `core/` : `dom.js` (`$`, `api`, `toast`…), `state.js` (état partagé), `tabs.js` et `poller.js` (interrogation régulière du serveur).
     - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js`, `categories.js` (filtres par catégorie), `structure.js` (actions des cartes), `image-field.js` (carte d'une image) et `format-bar.js`.
     - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
     - `git/` : `git.js`, `publish-checks.js` (vérification, mise en ligne, conflit), `history.js` et `history-details.js` (historique et détail d'une modification) et `browse.js` (« Parcourir… »).
@@ -36,7 +36,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `highlight.css` : surlignage de la recherche, hors Tailwind.
 - `cms/web/src/` : sources Tailwind v4. `input.css` importe `theme.css` (couleurs) et `components/*.css` (une couche `@layer components` par fichier).
 - `cms/source/` : le code métier, importé par paquet (`from content.html_tree import parse`).
-  - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (comptes ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant), `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format), `updates.py` (nouvelle version sur GitHub) et `logger.py`.
+  - `core/` : `data_dir.py` (dossier `~/.mycms`, caché, et verrouillage de fichiers ; l'ancien `~/.rout_art_cms` est renommé au premier lancement), `config_manager.py` (`config.json`), `auth_manager.py` (comptes ; empreinte par défaut de Werkzeug : scrypt depuis la 3.0, pbkdf2 avant), `auth_file.py` (`auth.json` verrouillé, reprise de l'ancien format), `updates.py` (nouvelle version sur GitHub), `log_buffer.py` (journal numéroté) et `logger.py`.
   - `version.py` : `VERSION`, la version de MyCMS.
   - `content/` :
     - `html_tree.py` : arbre HTML avec les positions exactes dans le fichier ;
@@ -275,6 +275,15 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - **Statut du repository** : la carte passe avant l'historique, et sa section « Historique récent » est retirée.
 - **« Vérifier le site »** : les problèmes s'affichent dans un encadré rouge sous les boutons (`#check-results`, `.check-results.error`), avec la page, la ligne et une phrase sur quoi faire. Le message en bas de l'écran est rouge. Sans problème, l'encadré est vert. Avant, la liste allait dans le statut, plus bas, et le message était vert.
 - **« ↺ Version en ligne »** : le message dit « sauvegardez » seulement s'il reste quelque chose à sauvegarder. Si le fichier enregistré était déjà la version en ligne, il dit « Texte revenu à la version en ligne : rien à sauvegarder ».
+
+## Changements de la v2.1.7
+
+- **Moins de requêtes inutiles** dans les onglets Prévisualisation et Logs, qui interrogeaient le serveur toutes les 2 s et toutes les secondes.
+  - `core/poller.js` (`createPoller(intervalle, tick, active)`) n'interroge que si `active()` est vrai, se met en pause quand la fenêtre est cachée (`document.hidden`) et rattrape dès le retour (`visibilitychange`). Une erreur arrête l'interrogation.
+  - Prévisualisation : seulement si l'onglet est ouvert **et** le serveur lancé. Serveur arrêté : une requête à l'ouverture, puis plus rien.
+  - Journaux numérotés (`core/log_buffer.py`, `LogBuffer`) : `GET /api/logs?since=n` et `GET /api/preview?since=n` ne renvoient que les lignes reçues après les n premières, avec `total` et `reset`. `reset` vaut vrai si des lignes ont été effacées ou sont trop anciennes : il faut alors remplacer l'affichage. Sans `since`, tout le journal.
+  - Vérifié dans Chrome : serveur arrêté, 1 requête en 6,5 s (avant : 4) ; fenêtre cachée, 0.
+- Tests JS : jsdom considère la page comme cachée par défaut. `setup-dom.mjs` lui passe `pretendToBeVisual: true`.
 
 ## Tests
 
