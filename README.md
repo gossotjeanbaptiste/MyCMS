@@ -79,9 +79,17 @@ compile_msi.bat
 
 Pousser un tag `v<version>` déclenche GitHub Actions, qui teste, compile et publie l'exe et le `.msi` dans une release.
 
+## Contact
+
+Pour une question, un retour ou une **licence commerciale** (payante ou gratuite), contactez l'auteur, **Jean-Baptiste GOSSOT** :
+
+- E-mail : [gossotjeanbaptiste@gmail.com](mailto:gossotjeanbaptiste@gmail.com) ou [jean-baptiste.gossot@epitech.eu](mailto:jean-baptiste.gossot@epitech.eu)
+- Téléphone : [06 38 40 44 06](tel:+33638404406)
+- Portfolio : [gossotjeanbaptiste.github.io](https://gossotjeanbaptiste.github.io)
+
 ## Crédits & Licences
 
-- MyCMS est publié sous licence **[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)** (voir [LICENSE](LICENSE)). Vous pouvez l'utiliser, le modifier et le partager **sans but commercial**, en gardant la mention de copyright. **Toute vente ou tout usage commercial est réservé à son auteur**, Jean-Baptiste GOSSOT : pour une licence commerciale, contactez-le.
+- MyCMS est publié sous licence **[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)** (voir [LICENSE](LICENSE)). Vous pouvez l'utiliser, le modifier et le partager **sans but commercial**, en gardant la mention de copyright. **Toute vente ou tout usage commercial est réservé à son auteur**, Jean-Baptiste GOSSOT : pour une licence commerciale, voir [Contact](#contact).
 - MyCMS s'appuie sur [Flask](https://flask.palletsprojects.com/), [Waitress](https://docs.pylonsproject.org/projects/waitress/), [GitPython](https://github.com/gitpython-developers/GitPython), [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), [pystray](https://github.com/moses-palmer/pystray), [Pillow](https://python-pillow.org/) et [Tailwind CSS](https://tailwindcss.com/), chacun sous sa propre licence.
 - L'installeur embarque **MinGit** ([Git for Windows](https://gitforwindows.org/)), distribué sous licence GPLv2.
 - Le logo associe le logo **Python**, marque de la Python Software Foundation, et le [logo **Git**](https://git-scm.com/downloads/logos) de Jason Long, sous licence CC BY 3.0. MyCMS n'est affilié ni à la Python Software Foundation, ni au projet Git, ni à GitHub.
