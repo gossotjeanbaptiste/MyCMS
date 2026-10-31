@@ -10,6 +10,7 @@ from pathlib import Path
 from git import GitCommandError, Repo
 
 from publishing import git_sync, history
+from publishing.commit_details import commit_details
 from publishing.git_status import status_report
 
 
@@ -83,6 +84,15 @@ class GitManager:
         GitHub a reçu d'autres commits entre-temps : ils sont récupérés, puis l'envoi est refait.
         author : (nom, e-mail) de l'auteur du commit, la personne connectée"""
         return self._sync(repo_path, git_sync.push, commit_message, author)
+
+    def commit_details(self, repo_path, ref):
+        """Détail d'une modification : textes changés page par page (publishing/commit_details)"""
+        try:
+            return {"success": True, **commit_details(Repo(repo_path), ref)}
+        except Exception as e:
+            # Hash au bon format mais inconnu : gitdb lève BadName (ni ValueError ni GitCommandError)
+            message = str(e) if isinstance(e, ValueError) else "Modification introuvable"
+            return {"success": False, "message": message}
 
     def history(self, repo_path, limit=20):
         """Dernières modifications, lisibles (publishing/history)"""

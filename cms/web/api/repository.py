@@ -64,6 +64,16 @@ def git_push():
     return jsonify(s.git.push(str(s.repo_path()), message, s.auth.author(current_user())))
 
 
+@bp.get("/api/git/commit/<ref>")
+def git_commit(ref):
+    """Détail d'une modification de l'historique"""
+    s = services()
+    result = s.git.commit_details(str(s.repo_path()), ref)
+    if not result["success"]:
+        return error(result["message"], 404)
+    return jsonify(result)
+
+
 @bp.get("/api/git/history")
 def git_history():
     """Dernières modifications : auteur, date, pages, déjà publiées ou non"""
