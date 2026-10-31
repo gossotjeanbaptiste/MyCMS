@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est le personnel du site de l'auto-école Rout'Art. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.0.8.
+- Branche de travail : `web_v2`. Version courante : 2.1.0 (la 2.0.9 a été sautée).
 - Site de référence pour les tests : `C:\Users\jbgos\Documents\Tek\Rout'Art` (dépôt `autoecoleroutart/autoecoleroutart.github.io`). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
   - **Ne jamais modifier ce dossier pendant les tests.** Travailler sur un clone, dans un dossier temporaire.
   - **Tests de publication** : seulement sur la branche `test_for_cms`, prévue pour ça. Cloner cette branche seule (`git clone --single-branch -b test_for_cms …`) et fixer la cible du push (`git config remote.origin.push refs/heads/test_for_cms:refs/heads/test_for_cms`). Jamais de push sur `main`, qui est le site en ligne.
@@ -27,7 +27,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - `cms/web/static/` :
   - `scripts/` : modules ES, sans framework. `main.js` (l'interface) et `login.js` (la connexion) sont les points d'entrée.
     - `core/` : `dom.js` (`$`, `api`, `toast`…), `state.js` (état partagé) et `tabs.js`.
-    - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js` et `format-bar.js`.
+    - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js`, `categories.js` (filtres par catégorie) et `format-bar.js`.
     - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
     - `git/` : `git.js` et `browse.js` (« Parcourir… »).
     - `quit/` : `quit.js` et `quit-content.js`.
@@ -42,6 +42,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
     - `hybrid_saver.py` et `node_diff.py` : la sauvegarde hybride ;
     - `html_manager.py` : extraction des `.editable`, `apply_editable_html`, extraits de code ;
     - `css_weights.py` : gras d'après le CSS du site (`<link>`, `@import`, variables, spécificité, héritage) ;
+    - `categories.py` : catégorie de chaque élément éditable, déduite de la structure de la page ;
     - `page_finder.py` : détection des pages.
   - `publishing/` :
     - `git_manager.py` : pull, push, clone, `pending()` ;
@@ -173,6 +174,22 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - Il reste toujours au moins un administrateur : on ne peut ni supprimer ni rétrograder le dernier. On ne peut pas supprimer son propre compte, et son propre mot de passe se change avec « Changer le mot de passe ».
   - Onglet Paramètres, carte **Utilisateurs** (administrateurs seulement) : liste, ajout, nouveau mot de passe, rôle, suppression.
   - Les connexions, déconnexions et changements de comptes sont écrits dans les logs avec le nom de l'utilisateur.
+
+## Changements de la v2.1.0
+
+- **Filtrage par catégories dans l'éditeur** : une barre de filtres au-dessus de la liste (« Tout », puis une par catégorie, avec le nombre d'éléments) et un intertitre dans la liste à chaque changement de catégorie.
+  - Le serveur calcule les catégories (`content/categories.py`) et le chargement d'une page renvoie `category` pour chaque élément. Rien n'est écrit dans le site.
+  - Règles, dans l'ordre :
+    1. attribut `data-category` sur l'élément ou un de ses parents : imposé par le développeur du site ;
+    2. `<header>`, `<nav>`, `<footer>` : « En-tête », « Menu », « Pied de page » ;
+    3. bloc nommé par la page : visé par un lien interne (`<a href="#cfa">CFA</a>` d'un sommaire), ou dont l'`id` correspond à une `<option value>` (`id="table-b-traditionnel"` pour `value="b-traditionnel"`). On prend le texte du lien ou de l'option, celui que voit le visiteur. Un lien placé dans le bloc qu'il vise (« haut de page ») et les liens vers `html`, `body`, `main` ou `header` sont ignorés ;
+    4. tableau avec une `<caption>`, ou une seule cellule `<th>` sur sa première ligne : ce titre (plusieurs `<th>` sont des en-têtes de colonnes) ;
+    5. sinon, le dernier titre `<h1>` à `<h3>` qui précède l'élément (lui compris), hors en-tête, menu et pied de page, ou « Autres ». Un sous-titre, c'est-à-dire un titre qui suit un titre plus important dans le même parent (le `<h3>` sous le `<h2>` d'un bloc), ne crée pas de catégorie.
+  - Les catégories sont comparées sur leur texte complet : deux titres qui commencent pareil ne sont pas fusionnés. Seule l'interface raccourcit l'affichage.
+  - Sur le site de référence : 11 catégories pour `formations.html` et `tarifs.html` (les mêmes noms), 8 pour les mentions légales, 3 pour `financement.html` (les liens de son sommaire).
+  - La barre est masquée s'il n'y a qu'une catégorie. Le filtre se combine avec la recherche. Il est gardé au rechargement de la même page (après une sauvegarde) et remis à « Tout » à l'ouverture d'une autre page.
+  - Un point bleu sur un filtre signale des modifications non sauvegardées dans cette catégorie.
+  - Une carte masquée par le filtre ou la recherche est réaffichée quand on y va depuis l'aperçu ou un bloc verrouillé (`revealCard`).
 
 ## Tests
 
