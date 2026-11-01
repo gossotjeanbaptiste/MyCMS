@@ -26,7 +26,8 @@ export function showCheckResults(title, problems, okText) {
         `${p.page}, ligne ${p.line} : ${p.message}`)));
     box.replaceChildren(element("p", "font-semibold", `${title} : ${found(problems.length)}`), list,
         element("p", "text-xs", "Ces erreurs sont dans le code des pages (liens vers des fichiers absents, adresses "
-            + "mal écrites…). Si vous ne savez pas les corriger, transmettez cette liste à un développeur."));
+            + "mal écrites, sites qui ont changé d'adresse…). Si vous ne savez pas les corriger, transmettez cette "
+            + "liste à un développeur."));
 }
 
 // Avant un push : problèmes des pages pas encore publiées. Retourne faux si l'utilisateur préfère corriger
@@ -85,7 +86,9 @@ export function showConflict(isConflict) {
 // Appelée par initGit : boutons « Vérifier le site » et « Reprendre la version en ligne »
 export function bindPublishChecks({ afterReset }) {
     $("git-check").addEventListener("click", (e) => withButton(e.currentTarget, async () => {
-        const { pages, problems } = await api("GET", "/api/checks?scope=all");
+        const external = $("git-check-external")?.checked;
+        if (external) toast("Vérification des liens externes : quelques secondes…");
+        const { pages, problems } = await api("GET", `/api/checks?scope=all${external ? "&external=1" : ""}`);
         showCheckResults("Vérification du site", problems,
             `✓ Aucun problème trouvé (${plural(pages.length, "page vérifiée", "pages vérifiées")}).`);
         if (problems.length) toast(`${found(problems.length)} : la liste est sous les boutons de l'onglet Git.`, true);

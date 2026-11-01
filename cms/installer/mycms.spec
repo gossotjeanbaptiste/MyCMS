@@ -22,6 +22,7 @@ a = Analysis(
         'version', 'core.updates',
         'core.auth.auth_file', 'core.auth.auth_manager', 'core.logs.log_buffer', 'core.logs.logger',
         'core.storage.config_manager', 'core.storage.data_dir',
+        'content.media.image_optimizer',
         'content.html.html_manager', 'content.html.html_tree', 'content.html.hybrid_saver', 'content.html.node_diff',
         'content.pages.categories', 'content.pages.css_weights', 'content.pages.page_finder', 'content.pages.structure',
         'content.versions.changes', 'content.versions.published',
@@ -29,7 +30,7 @@ a = Analysis(
         'publishing.git.git_sync', 'publishing.git.history',
         'publishing.sitemap.robots', 'publishing.sitemap.site_url', 'publishing.sitemap.sitemap_files',
         'publishing.sitemap.sitemap_generator',
-        'publishing.verification.checks', 'publishing.verification.online',
+        'publishing.verification.checks', 'publishing.verification.external', 'publishing.verification.online',
         'desktop.auto_update', 'desktop.folder_picker', 'desktop.installer', 'desktop.server_manager', 'desktop.startup', 'desktop.tray',
         'git',
         'bs4',
@@ -38,7 +39,8 @@ a = Analysis(
         'waitress',
         'pystray',
         'pystray._win32',
-        'PIL.Image',
+        # Pillow : icône de notification, et images allégées à l'import (JPEG, PNG)
+        'PIL.Image', 'PIL.ImageOps', 'PIL.JpegImagePlugin', 'PIL.PngImagePlugin',
         'xml.dom.minidom',
         'xml.etree.ElementTree',
     ],
@@ -46,7 +48,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     # Modules inutiles à MyCMS, embarqués sinon parce qu'ils sont installés sur le poste de compilation
-    # (Pillow importe numpy s'il est présent ; seule l'icône de notification utilise Pillow)
+    # (Pillow importe numpy s'il est présent ; MyCMS n'utilise que .ico, JPEG et PNG)
     excludes=[
         'tkinter', 'customtkinter',
         'numpy', 'psutil', 'yaml', 'setuptools', 'pkg_resources',

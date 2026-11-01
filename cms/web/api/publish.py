@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify, request
 
 from api.services import error, services
 from publishing.verification.checks import check_pages
+from publishing.verification.external import check_external
 from publishing.verification.online import online_status
 
 bp = Blueprint("publish", __name__)
@@ -15,10 +16,13 @@ bp = Blueprint("publish", __name__)
 
 @bp.get("/api/checks")
 def checks():
-    """scope=pending : pages pas encore publiées (avant un push) ; scope=all : tout le site"""
+    """scope=pending : pages pas encore publiées (avant un push) ; scope=all : tout le site.
+    external=1 : liens externes aussi (réseau, plus long)"""
     s = services()
     pages = s.page_files() if request.args.get("scope") == "all" else s.git.unpublished_pages(str(s.repo_path()))
     problems = check_pages(s.repo_path(), pages)
+    if request.args.get("external"):
+        problems = sorted(problems + check_external(s.repo_path(), pages), key=lambda p: (p["page"], p["line"]))
     return jsonify({"success": True, "pages": pages, "problems": problems})
 
 

@@ -3,6 +3,7 @@
 import { $, api, toast, withButton } from "../core/dom.js";
 import { renderElements } from "./cards.js";
 import { renderCategories, updateCategoryDirty } from "./categories.js";
+import { clearDraft, offerDraft, scheduleDraft } from "./draft.js";
 import { updateMarker } from "./markers.js";
 import { forgetPaneElement, refreshPane, schedulePaneUpdate } from "../preview/pane.js";
 import { applySiteBoldRules, fieldValue } from "./rich-editor.js";
@@ -43,9 +44,12 @@ export async function refreshPublished() {
 
 export async function openFile(name, { keepScroll = false } = {}) {
     if (!name) return;
-    if (dirtyCount() && !confirm("Des modifications non sauvegardées seront perdues. Continuer ?")) {
-        $("file-select").value = editor.file || "";
-        return;
+    if (dirtyCount()) {
+        if (!confirm("Des modifications non sauvegardées seront perdues. Continuer ?")) {
+            $("file-select").value = editor.file || "";
+            return;
+        }
+        clearDraft(); // Abandonnées volontairement : ne pas les proposer à la prochaine ouverture
     }
     const scroll = keepScroll ? $("editable-list").scrollTop : 0;
     const start = performance.now();
@@ -82,6 +86,7 @@ export async function openFile(name, { keepScroll = false } = {}) {
     $("editor-info").textContent = `${data.elements.length} éléments · ${total} ms`;
     updateEditorState();
     refreshPane();
+    offerDraft();
 }
 
 export function markDirty(index) {
@@ -91,6 +96,7 @@ export function markDirty(index) {
     updateCategoryDirty();
     updateEditorState();
     schedulePaneUpdate();
+    scheduleDraft();
 }
 
 // Valeurs des éléments modifiés, par index
@@ -106,6 +112,7 @@ export function dirtyValues() {
 export async function saveCurrentFile() {
     const result = await api("POST", fileUrl(editor.file), { hash: editor.hash, values: dirtyValues() });
     document.querySelectorAll("#editable-list .field.dirty").forEach((f) => f.classList.remove("dirty"));
+    clearDraft();
     // Empreinte du fichier tel qu'écrit : une nouvelle sauvegarde sans rechargement reste acceptée
     editor.hash = result.hash;
     return result;

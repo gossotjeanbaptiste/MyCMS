@@ -20,7 +20,8 @@ const dom = new JSDOM(`<!DOCTYPE html><html><head></head><body>
 </body></html>`, { url: "http://127.0.0.1:5050/", pretendToBeVisual: true });
 
 const { window } = dom;
-for (const name of ["window", "document", "Node", "NodeFilter", "Range", "Event", "HTMLElement", "Element"]) {
+for (const name of ["window", "document", "Node", "NodeFilter", "Range", "Event", "HTMLElement", "Element",
+    "localStorage"]) {
     globalThis[name] = name === "window" ? window : window[name];
 }
 // Absent de jsdom

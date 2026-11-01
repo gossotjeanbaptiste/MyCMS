@@ -5,6 +5,7 @@ import { initBrowse } from "./git/browse.js";
 import { initCategories } from "./editor/categories.js";
 import { toast } from "./core/dom.js";
 import { initEditorInput } from "./editor/input.js";
+import { initDraft } from "./editor/draft.js";
 import { initEditor, loadFiles } from "./editor/editor.js";
 import { initFormatBar } from "./editor/format-bar.js";
 import { initBranches } from "./git/branches.js";
@@ -48,7 +49,7 @@ async function start() {
     checkForUpdate();
 }
 
-[initTabs, initSettings, initAccount, initUsers, initEditor, initEditorInput, initSearch, initCategories, initStructure, initPane, initFormatBar,
+[initTabs, initSettings, initAccount, initUsers, initEditor, initDraft, initEditorInput, initSearch, initCategories, initStructure, initPane, initFormatBar,
     initGit, initBranches, initBrowse, initPreview, initLogs, initHeader, initQuit].forEach((init) => init());
 
 start().catch((e) => toast(e.message, true));

@@ -2,6 +2,7 @@
 
 import { $, api, element, toast } from "../core/dom.js";
 import { confirmPublication } from "../git/publish-checks.js";
+import { clearDraft } from "../editor/draft.js";
 import { dirtyCount, saveCurrentFile, warnUnsaved } from "../editor/editor.js";
 import { stopLogsPolling } from "../settings/logs.js";
 import { stopPreviewPolling } from "../preview/preview.js";
@@ -81,6 +82,7 @@ async function runChoice(choice) {
         }
         // Les modifications de l'éditeur sont abandonnées
         document.querySelectorAll("#editable-list .field.dirty").forEach((f) => f.classList.remove("dirty"));
+        clearDraft();
         summary = git.available ? "Modifications annulées : retour au dernier commit." : "Modifications non sauvegardées abandonnées.";
     }
 
