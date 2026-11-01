@@ -4,4 +4,4 @@
 Version de MyCMS : la changer aussi dans cms/web/package.json (lue par le .msi)
 """
 
-VERSION = "2.3.2"
+VERSION = "2.4.0"
