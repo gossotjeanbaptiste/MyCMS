@@ -12,6 +12,7 @@ from flask import Blueprint, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
 from api.services import error, services
+from content.media.image_optimizer import optimize, size_label
 
 bp = Blueprint("media", __name__)
 
@@ -59,10 +60,14 @@ def upload_image():
     folder = s.repo_path() / IMAGES_DIR
     folder.mkdir(exist_ok=True)
     filename = _free_name(folder, filename)
-    file.save(folder / filename)
+    original = file.read()
+    data, lighter = optimize(original, suffix)
+    (folder / filename).write_bytes(data)
     src = posixpath.relpath(f"{IMAGES_DIR}/{filename}", posixpath.dirname(page) or ".")
-    s.logger.log(f"Image ajoutée au site: {IMAGES_DIR}/{filename}")
-    return jsonify({"success": True, "src": src, "path": f"{IMAGES_DIR}/{filename}"})
+    # « allégée : 6,2 Mo → 410 Ko », ou vide si l'image est gardée telle quelle
+    saving = f"{size_label(len(original))} → {size_label(len(data))}" if lighter else ""
+    s.logger.log(f"Image ajoutée au site: {IMAGES_DIR}/{filename}" + (f" (allégée : {saving})" if saving else ""))
+    return jsonify({"success": True, "src": src, "path": f"{IMAGES_DIR}/{filename}", "lighter": saving})
 
 
 @bp.get("/api/site-image")

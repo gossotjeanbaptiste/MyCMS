@@ -76,7 +76,8 @@ def upload(client, filename, data=PNG, page="page/tarifs.html"):
 
 def test_upload_image(site_client, tarifs, git_site):
     result = upload(site_client, "Photo équipe.PNG").get_json()
-    assert result == {"success": True, "src": "../images/Photo_equipe.PNG", "path": "images/Photo_equipe.PNG"}
+    assert result == {"success": True, "src": "../images/Photo_equipe.PNG", "path": "images/Photo_equipe.PNG",
+                      "lighter": ""}
     assert (git_site / "images" / "Photo_equipe.PNG").read_bytes() == PNG
     assert upload(site_client, "Photo équipe.PNG").get_json()["src"] == "../images/Photo_equipe-2.PNG"
     assert upload(site_client, "logo.png", page="index.html").get_json()["src"] == "images/logo.png"

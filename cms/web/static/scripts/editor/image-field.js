@@ -25,7 +25,8 @@ async function upload(file, input) {
     input.value = result.src;
     // Même chemin qu'une saisie : la carte devient modifiée (voir input.js)
     input.dispatchEvent(new Event("input", { bubbles: true }));
-    toast(`Image ajoutée au site : ${result.path}. Sauvegardez pour l'utiliser dans la page.`);
+    const lighter = result.lighter ? ` (allégée : ${result.lighter})` : "";
+    toast(`Image ajoutée au site : ${result.path}${lighter}. Sauvegardez pour l'utiliser dans la page.`);
 }
 
 // Retourne { control, input } : input porte l'adresse (src), comme le champ d'une iframe
