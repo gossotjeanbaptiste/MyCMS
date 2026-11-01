@@ -91,7 +91,7 @@ Pour une question, un retour ou une **licence commerciale** (payante ou gratuite
 - Téléphone : [06 38 40 44 06](tel:+33638404406)
 - Portfolio : [gossotjeanbaptiste.github.io](https://gossotjeanbaptiste.github.io)
 
-Un [**exemple de contrat de licence commerciale**](https://app.notion.com/p/Contrat-de-licence-commerciale-pour-l-application-MyCMS-40a70d189d2e8004a11df69f58701cf3) montre ce qu'une licence d'usage interne permet et interdit.
+Un [**exemple de contrat de licence commerciale**](https://app.notion.com/p/Contrat-de-licence-commerciale-pour-l-application-MyCMS-40a70d189d2e8004a11df69f58701cf3) montre ce qu'une licence d'usage interne permet et interdit. Elle peut aussi être accordée gratuitement : voir le [modèle de licence gratuite](docs/contrat-licence-gratuite-MyCMS.md).
 
 ## Crédits & Licences
 
