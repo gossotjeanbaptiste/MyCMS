@@ -7,7 +7,7 @@
 CMS local qui permet de modifier les textes d'un site statique (HTML hébergé sur GitHub / GitHub Pages) sans toucher au code. L'utilisateur final n'est pas technique : c'est la personne qui gère les textes du site. L'interface est web (Flask + Tailwind), servie en local, et distribuée sous Windows en `.exe` et en `.msi`.
 
 - Langue : interface, messages, commentaires et docstrings en **français**. Noms de variables et de fonctions en anglais.
-- Branche de travail : `web_v2`. Version courante : 2.3.2 (la 2.0.9 a été sautée).
+- Branche de travail : `web_v2`. Version courante : 2.4.0 (la 2.0.9 a été sautée).
 - **Aucun nom de client dans le dépôt** : MyCMS est une version personnelle. Pas de nom de client ni d'organisation dans le code, les tests, la doc ou les messages de commit ; utiliser des noms neutres (`MyCMS`, `exemple`, `MonSite`).
   - La règle vaut pour les **fichiers actuels et les nouveaux commits**. L'historique existant (`main`, la branche `old`, les commits qui documentent la reprise et le renommage des dossiers) vient de la version d'origine, faite pour un client : il le nomme légitimement, et il ne faut pas le réécrire.
 - Site de référence pour les tests : un vrai site local, dont le chemin se passe aux tests par `MYCMS_SITE` (voir « Tests »). Il est en CRLF, compte 17 pages, et `page/formations.html` contient 229 éléments éditables.
@@ -30,7 +30,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - `cms/web/static/` :
   - `scripts/` : modules ES, sans framework. `main.js` (l'interface) et `login.js` (la connexion) sont les points d'entrée.
     - `core/` : `dom.js` (`$`, `api`, `toast`…), `state.js` (état partagé), `tabs.js` et `poller.js` (interrogation régulière du serveur).
-    - `editor/` : `editor.js` (ouverture, sauvegarde), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js`, `categories.js` (filtres par catégorie), `structure.js` (actions des cartes), `image-field.js` (carte d'une image) et `format-bar.js`.
+    - `editor/` : `editor.js` (ouverture, sauvegarde), `draft.js` (brouillon gardé dans le navigateur), `cards.js`, `input.js`, `rich-editor.js` (`buildRichEditor`, `serializeRich`), `markers.js`, `search.js`, `categories.js` (filtres par catégorie), `structure.js` (actions des cartes), `image-field.js` (carte d'une image) et `format-bar.js`.
     - `preview/` : `pane.js` et `pane-code.js` (aperçu de l'éditeur), `preview.js` (onglet), `preview-helper.js` (injecté dans les pages du site servies par la prévisualisation).
     - `git/` : `git.js`, `branches.js` (carte Branches), `publish-checks.js` (vérification, mise en ligne, conflit), `history.js` et `history-details.js` (historique et détail d'une modification) et `browse.js` (« Parcourir… »).
     - `quit/` : `quit.js` et `quit-content.js`.
@@ -50,11 +50,12 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
   - `content/` :
     - `html/` : `html_tree.py` (arbre HTML avec les positions exactes dans le fichier), `hybrid_saver.py` et `node_diff.py` (la sauvegarde hybride), `html_manager.py` (extraction des `.editable`, `apply_editable_html`, extraits de code) ;
     - `pages/` : `page_finder.py` (détection des pages), `css_weights.py` (gras d'après le CSS du site : `<link>`, `@import`, variables, spécificité, héritage), `categories.py` (catégorie de chaque élément éditable) et `structure.py` (dupliquer ou supprimer un élément de liste ou une ligne de tableau) ;
+    - `media/` : `image_optimizer.py` (images allégées à l'import) ;
     - `versions/` : `published.py` (version publiée de chaque élément, associée par le contenu) et `changes.py` (changements d'une page entre deux versions, pour l'historique).
   - `publishing/` :
     - `git/` : `git_manager.py` (clone, `pending()`, `unpublished_pages()`, version publiée), `git_sync.py` (pull et push, conflits), `branches.py` (branches du site), `git_status.py` (rapport de l'onglet Git), `history.py` et `commit_details.py` (historique lisible et détail d'une modification) ;
     - `sitemap/` : `sitemap_generator.py`, `sitemap_files.py`, `robots.py` et `site_url.py` (sitemap, robots.txt, URL du site) ;
-    - `verification/` : `checks.py` (vérification avant publication) et `online.py` (suivi de la mise en ligne).
+    - `verification/` : `checks.py` (vérification avant publication), `external.py` (liens externes, sur demande) et `online.py` (suivi de la mise en ligne).
   - `desktop/` : `server_manager.py` (prévisualisation, `ThreadingHTTPServer` sur 127.0.0.1), `folder_picker.py` (classe `FolderPicker`), `tray.py` (icône de notification), `startup.py` (instance unique, port libre, `show_error`), `installer.py` (lance `msiexec`) et `auto_update.py` (mise à jour au démarrage).
 - `cms/installer/` : compilation. `build_exe.py` et `mycms.spec` (PyInstaller), `build_msi.py`, `MyCMS.wixproj` et `Package.wxs` (WiX, avec Git portable MinGit).
   - Un nouveau module Python doit être ajouté aux `hiddenimports` de `mycms.spec`, et un nouveau dossier de l'interface à ses `datas`.
@@ -405,6 +406,22 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 ## Changements de la v2.3.2
 
 - **Numéro de version dans les Paramètres** : carte « À propos » en bas de l'onglet, avec un lien vers la release de cette version. `pages.index` passe `VERSION` au modèle (`{{ version }}`).
+
+## Changements de la v2.4.0
+
+- **Brouillon de l'éditeur** (`editor/draft.js`) : les modifications non sauvegardées sont gardées dans le navigateur (`localStorage`, clé `mycms-draft:<page>`), 500 ms après la dernière saisie et à la fermeture de l'onglet (`pagehide`).
+  - À la réouverture de la page, l'éditeur propose de les remettre. Elles repassent par l'événement `input`, comme une saisie : carte modifiée, marqueurs, aperçu. Il reste à sauvegarder.
+  - On garde le HTML de l'éditeur enrichi (`innerHTML`, verrous compris) ou la valeur du champ, avec l'empreinte du fichier. Si le fichier a changé depuis, le brouillon n'est pas remis (les index pourraient viser d'autres éléments) et un message le dit.
+  - Effacé : à la sauvegarde, au refus, quand on abandonne volontairement les modifications (autre page, rechargement, « Revenir à l'état de base » de Quitter).
+  - Stockage bloqué (navigation privée) : rien n'est gardé, sans erreur.
+- **Liens externes, sur demande** (`publishing/verification/external.py`) : case « avec les liens externes » à côté de « Vérifier le site » (`GET /api/checks?scope=all&external=1`). Jamais avant un push : c'est du réseau, et plus long.
+  - Chaque adresse `http(s)://` ou `//` est demandée une fois (`HEAD`, puis `GET` si `HEAD` est refusé), 8 en parallèle, 10 s au plus.
+  - Signalé : 404, 410, site introuvable (DNS), site qui ne répond pas ou injoignable. Considéré comme bon : 401, 403, 429, 5xx (sites qui bloquent les robots ou erreur passagère).
+- **Images allégées à l'import** (`content/media/image_optimizer.py`, `POST /api/images`) : JPEG et PNG réduits à 1920 px au plus, remis droits (orientation EXIF), recompressés (JPEG qualité 85, PNG optimisé avec sa transparence) et sans métadonnées (dont le GPS). Le profil de couleur est gardé.
+  - GIF, WebP et AVIF sont copiés tels quels. Un résultat qui n'est pas plus léger, ou une image illisible : l'original est gardé.
+  - La réponse donne `lighter` (« 6,2 Mo → 410 Ko », vide sinon), repris dans le message de l'éditeur et dans les logs.
+  - `mycms.spec` déclare `PIL.ImageOps`, `PIL.JpegImagePlugin` et `PIL.PngImagePlugin`. Exe vérifié : 13,4 Mo, il démarre.
+- **GitHub Actions à jour** : `actions/checkout@v7`, `actions/setup-python@v7`, `actions/setup-node@v7`, `softprops/action-gh-release@v3` (les précédentes visaient Node 20, déprécié).
 
 ## Tests
 
