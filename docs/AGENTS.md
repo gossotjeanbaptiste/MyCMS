@@ -63,7 +63,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 - `scripts/` : `run.bat` (lancement depuis les sources, sur le port 5050), `run_tests.bat` (les tests) et `compile_msi.bat` (l'installeur). Chacun cherche seul la racine du dépôt (son dossier, ou le dossier parent) : ils marchent dans `scripts/` comme copiés à la racine. Dans la suite de ce fichier, `run.bat`, `run_tests.bat` et `compile_msi.bat` désignent ces scripts.
 - `.github/workflows/` : `tests.yml` (tests à chaque push) et `release.yml` (`.msi` joint à une release, sur un tag `v<version>` ; l'exe seul n'est pas publié).
 - `cms/tests/` (pytest) et `cms/web/tests/` (`node:test`) : les tests, lancés par `scripts/run_tests.bat` (voir « Tests »).
-- `docs/` : `AGENTS.md` (ce fichier), `CLAUDE.md` (qui l'importe) et `contrat-licence-commerciale-MyCMS.md` (modèle de contrat de licence d'usage interne, aussi publié sur Notion et lié depuis le README).
+- `docs/` : `AGENTS.md` (ce fichier), `CLAUDE.md` (qui l'importe) `contrat-licence-commerciale-MyCMS.md` (modèle de contrat de licence d'usage interne, aussi publié sur Notion et lié depuis le README) et `contrat-licence-gratuite-MyCMS.md` (la même licence accordée gratuitement, par l'auteur à titre personnel, sans entreprise).
   - À la racine, `CLAUDE.md` tient en une ligne, `@docs/AGENTS.md` : Claude Code ne charge automatiquement que le `CLAUDE.md` de la racine. Ne pas le supprimer, sinon les règles de ce fichier ne sont plus chargées en début de session.
 
 ## Commandes
