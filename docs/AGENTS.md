@@ -161,7 +161,8 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - **Icône de notification absente avec `run.bat`** : `run.bat` ne testait que `import flask`. Un poste qui avait déjà Flask ne recevait donc jamais `pystray` ni Pillow, ajoutés en v2.0.2, et le serveur démarrait sans icône, avec seulement une ligne dans les logs.
   - `run.bat` vérifie désormais toutes les dépendances d'exécution avec `importlib.util.find_spec`, sans les importer. `import git` échoue sur un poste sans Git, et relancerait l'installation à chaque démarrage.
-  - **Une dépendance ajoutée à `cms/requirements.txt` doit aussi être ajoutée à la liste de `run.bat`**, en utilisant le nom du module (`bs4`, `git`, `PIL`) et non celui du paquet.
+  - **Une dépendance ajoutée à `cms/requirements.txt` doit aussi être ajoutée à la liste de `run.bat` et de `run_tests.bat`** (et une dépendance de `requirements-dev.txt` à celle de `run_tests.bat`), en utilisant le nom du module (`bs4`, `git`, `PIL`) et non celui du paquet. Un test le vérifie pour les deux scripts.
+  - `run_tests.bat` ne testait que `import pytest` : sur un poste qui avait déjà pytest, Waitress (ajouté en v2.2.0) n'était jamais installé, et les tests échouaient au chargement (`No module named 'waitress'`). Il vérifie maintenant toutes les dépendances, comme `run.bat`.
 - **Guide, section « Bon à savoir »** (`index.html`) : l'ordre des points est changé.
   - En premier : seuls les éléments `class="editable"` sont modifiables. C'est volontaire, et rendre un nouveau texte modifiable demande un développeur.
   - En dernier : « Sauvegarder n'est pas publier ».
@@ -346,7 +347,7 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - **Nouveau README**, sur le modèle de celui d'Echoing Void : logo centré (`cms/web/static/logo.png`), accroche, badges (Python, Flask, Waitress, Windows, version), puis « À propos », « Points forts », « Installation », « Pour les développeurs » et « Crédits & Licences ».
   - La documentation technique reste dans AGENTS.md, vers lequel le README renvoie.
-  - **Licence PolyForm Noncommercial 1.0.0** (`LICENSE` : la ligne `Required Notice` avec le copyright de Jean-Baptiste GOSSOT, puis le texte officiel, inchangé). Les autres peuvent utiliser, modifier et partager MyCMS sans but commercial ; **seul l'auteur peut le vendre** ou accorder une licence commerciale. Ce n'est pas une licence open source au sens de l'OSI, et c'est voulu.
+  - **Licence PolyForm Noncommercial 1.0.0** (`LICENSE.md` : la ligne `Required Notice` avec le copyright de Jean-Baptiste GOSSOT, puis le texte officiel, inchangé). Les autres peuvent utiliser, modifier et partager MyCMS sans but commercial ; **seul l'auteur peut le vendre** ou accorder une licence commerciale. Ce n'est pas une licence open source au sens de l'OSI, et c'est voulu.
   - Le README annonce la licence par un badge et dans « Crédits & Licences », qui crédite aussi les dépendances, MinGit (GPLv2 : en cas de vente du `.msi`, indiquer où trouver le code source de Git) et les logos Python et Git.
   - Ne pas changer de licence sans l'accord de l'auteur, et ne jamais remettre une licence permissive (MIT…) dans l'historique : elle autoriserait la revente.
   - Le badge de version est vérifié par un test (`test_readme_version_badge`).

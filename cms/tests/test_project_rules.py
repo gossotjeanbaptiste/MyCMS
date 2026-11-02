@@ -20,7 +20,7 @@ PYTHON_MODULES = sorted(path for path in SOURCES if path.suffix == ".py" and pat
                         and path.parent.name != "web")
 # Nom du paquet (requirements.txt) -> nom du module importé
 MODULE_OF = {"flask": "flask", "waitress": "waitress", "beautifulsoup4": "bs4", "gitpython": "git", "pystray": "pystray",
-             "pillow": "PIL"}
+             "pillow": "PIL", "pytest": "pytest"}
 
 
 def name(path):
@@ -52,13 +52,19 @@ def test_module_declared_for_the_executable(path):
     assert f"'{module}'" in (CMS_DIR / "installer" / "mycms.spec").read_text(encoding="utf-8")
 
 
-def test_run_bat_checks_every_dependency():
-    """Une dépendance de requirements.txt doit aussi être vérifiée par run.bat (nom du module)"""
-    run_bat = (ROOT / "scripts" / "run.bat").read_text(encoding="utf-8", errors="replace")
-    for line in (CMS_DIR / "requirements.txt").read_text(encoding="utf-8").splitlines():
-        package = re.match(r"[A-Za-z0-9_-]+", line.strip())
-        if package and not line.startswith("#"):
-            assert f"'{MODULE_OF[package.group(0).lower()]}'" in run_bat, package.group(0)
+@pytest.mark.parametrize("script, requirements", [
+    ("run.bat", ["requirements.txt"]),
+    ("run_tests.bat", ["requirements.txt", "requirements-dev.txt"]),
+])
+def test_script_checks_every_dependency(script, requirements):
+    """Une dépendance doit aussi être vérifiée par le script qui l'installe (nom du module), sinon un poste
+    qui a déjà les autres ne la reçoit jamais"""
+    text = (ROOT / "scripts" / script).read_text(encoding="utf-8", errors="replace")
+    for file in requirements:
+        for line in (CMS_DIR / file).read_text(encoding="utf-8").splitlines():
+            package = re.match(r"[A-Za-z0-9_-]+", line.strip())
+            if package and not line.startswith(("#", "-")):
+                assert f"'{MODULE_OF[package.group(0).lower()]}'" in text, f"{script} : {package.group(0)}"
 
 
 def test_compiled_css_contains_the_classes_of_new_features():
@@ -93,9 +99,11 @@ def test_readme_version_badge():
 
 
 def test_noncommercial_license():
-    """Licence PolyForm Noncommercial : seul l'auteur peut vendre MyCMS. Le fichier LICENSE porte la mention
-    de copyright exigée (Required Notice), et le README annonce la licence"""
-    license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
+    """Licence PolyForm Noncommercial : seul l'auteur peut vendre MyCMS. Le fichier LICENSE.md porte la mention
+    de copyright exigée (Required Notice), et le README annonce la licence et renvoie vers ce fichier"""
+    license_text = (ROOT / "LICENSE.md").read_text(encoding="utf-8")
     assert license_text.startswith("Required Notice: Copyright")
     assert "# PolyForm Noncommercial License 1.0.0" in license_text
-    assert "badge/Licence-PolyForm%20Noncommercial-" in (ROOT / "README.md").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "badge/Licence-PolyForm%20Noncommercial-" in readme
+    assert "](LICENSE.md)" in readme

@@ -60,8 +60,7 @@ En cas de mot de passe oublié : fermer MyCMS, supprimer `%USERPROFILE%\.mycms\a
 Lancer MyCMS depuis les sources (Python 3.13) :
 
 ```
-pip install -r cms/requirements.txt
-python cms/web/server.py
+scripts\run.bat
 ```
 
 Sous Windows, `scripts\run.bat` installe les dépendances si besoin puis lance l'interface sur le port 5050. L'application est servie par Waitress à travers `cms/web/wsgi.py`, que tout serveur WSGI peut utiliser (`waitress-serve wsgi:app`).
@@ -72,10 +71,9 @@ Tests (pytest et `node --test`), à lancer avant chaque commit :
 scripts\run_tests.bat
 ```
 
-Compiler l'exécutable, puis l'installeur (le second nécessite le [SDK .NET](https://dotnet.microsoft.com/download)) :
+Compiler l'installeur (nécessite le [SDK .NET](https://dotnet.microsoft.com/download)) :
 
 ```
-python cms/installer/build_exe.py
 scripts\compile_msi.bat
 ```
 
@@ -95,7 +93,7 @@ Un [**exemple de contrat de licence commerciale**](https://app.notion.com/p/Cont
 
 ## Crédits & Licences
 
-- MyCMS est publié sous licence **[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)** (voir [LICENSE](LICENSE)). Vous pouvez l'utiliser, le modifier et le partager **sans but commercial**, en gardant la mention de copyright. **Toute vente ou tout usage commercial est réservé à son auteur**, Jean-Baptiste GOSSOT : pour une licence commerciale, voir [Contact](#contact).
+- MyCMS est publié sous licence **[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)** (voir [LICENSE.md](LICENSE.md)). Vous pouvez l'utiliser, le modifier et le partager **sans but commercial**, en gardant la mention de copyright. **Toute vente ou tout usage commercial est réservé à son auteur**, Jean-Baptiste GOSSOT : pour une licence commerciale, voir [Contact](#contact).
 - MyCMS s'appuie sur [Flask](https://flask.palletsprojects.com/), [Waitress](https://docs.pylonsproject.org/projects/waitress/), [GitPython](https://github.com/gitpython-developers/GitPython), [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), [pystray](https://github.com/moses-palmer/pystray), [Pillow](https://python-pillow.org/) et [Tailwind CSS](https://tailwindcss.com/), chacun sous sa propre licence.
 - L'installeur embarque **MinGit** ([Git for Windows](https://gitforwindows.org/)), distribué sous licence GPLv2.
 - Le logo associe le logo **Python**, marque de la Python Software Foundation, et le [logo **Git**](https://git-scm.com/downloads/logos) de Jason Long, sous licence CC BY 3.0. MyCMS n'est affilié ni à la Python Software Foundation, ni au projet Git, ni à GitHub.
