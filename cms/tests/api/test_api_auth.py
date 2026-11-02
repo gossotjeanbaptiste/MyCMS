@@ -23,7 +23,9 @@ def test_login_required(app):
 @pytest.mark.parametrize("path", ["/login", "/static/scripts/login.js", "/static/style.css", "/static/logo.png",
                                   "/api/auth/state"])
 def test_public_paths(app, path):
-    assert app.test_client().get(path).status_code == 200
+    response = app.test_client().get(path)
+    response.close()  # Fichier statique : sinon il reste ouvert (ResourceWarning)
+    assert response.status_code == 200
 
 
 def test_static_files_need_login(app):
@@ -91,5 +93,7 @@ def test_index_contains_every_tab_and_dialog(client):
 
 def test_static_files_are_served(client):
     response = client.get("/static/scripts/main.js")
-    assert response.status_code == 200 and b"initCategories" in response.data
+    data = response.data
+    response.close()
+    assert response.status_code == 200 and b"initCategories" in data
     assert client.get("/static/absent.js").status_code == 404

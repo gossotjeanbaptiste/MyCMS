@@ -103,8 +103,9 @@ def test_settings_show_the_version(client):
 
 def test_favicon_is_public(app):
     response = app.test_client().get("/favicon.ico")
-    assert response.status_code == 200 and response.mimetype == "image/x-icon" and response.data[
-        :4] == b"\x00\x00\x01\x00"
+    data = response.data
+    response.close()
+    assert response.status_code == 200 and response.mimetype == "image/x-icon" and data[:4] == b"\x00\x00\x01\x00"
 
 
 def test_logs_since(client, services):
