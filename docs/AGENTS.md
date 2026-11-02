@@ -161,7 +161,8 @@ Un dossier par fonctionnalité, des fichiers de **200 lignes au plus**, et **pas
 
 - **Icône de notification absente avec `run.bat`** : `run.bat` ne testait que `import flask`. Un poste qui avait déjà Flask ne recevait donc jamais `pystray` ni Pillow, ajoutés en v2.0.2, et le serveur démarrait sans icône, avec seulement une ligne dans les logs.
   - `run.bat` vérifie désormais toutes les dépendances d'exécution avec `importlib.util.find_spec`, sans les importer. `import git` échoue sur un poste sans Git, et relancerait l'installation à chaque démarrage.
-  - **Une dépendance ajoutée à `cms/requirements.txt` doit aussi être ajoutée à la liste de `run.bat`**, en utilisant le nom du module (`bs4`, `git`, `PIL`) et non celui du paquet.
+  - **Une dépendance ajoutée à `cms/requirements.txt` doit aussi être ajoutée à la liste de `run.bat` et de `run_tests.bat`** (et une dépendance de `requirements-dev.txt` à celle de `run_tests.bat`), en utilisant le nom du module (`bs4`, `git`, `PIL`) et non celui du paquet. Un test le vérifie pour les deux scripts.
+  - `run_tests.bat` ne testait que `import pytest` : sur un poste qui avait déjà pytest, Waitress (ajouté en v2.2.0) n'était jamais installé, et les tests échouaient au chargement (`No module named 'waitress'`). Il vérifie maintenant toutes les dépendances, comme `run.bat`.
 - **Guide, section « Bon à savoir »** (`index.html`) : l'ordre des points est changé.
   - En premier : seuls les éléments `class="editable"` sont modifiables. C'est volontaire, et rendre un nouveau texte modifiable demande un développeur.
   - En dernier : « Sauvegarder n'est pas publier ».

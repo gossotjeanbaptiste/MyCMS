@@ -16,7 +16,9 @@ REM Lancé par un double-clic : la fenêtre reste ouverte à la fin pour lire le ré
 set "DOUBLE_CLICK="
 echo %cmdcmdline% | find /i "%~0" >nul && set "DOUBLE_CLICK=1"
 
-python -c "import pytest" >nul 2>&1 || python -m pip install -r cms\requirements-dev.txt || goto :error
+REM Toutes les dependances (execution et tests), pas seulement pytest : une dependance ajoutee plus tard
+REM (comme waitress) serait sinon oubliee sur un poste qui a deja pytest
+python -c "import importlib.util as u, sys; sys.exit(any(u.find_spec(m) is None for m in ('pytest', 'flask', 'waitress', 'bs4', 'git', 'pystray', 'PIL')))" >nul 2>&1 || python -m pip install -r cms\requirements-dev.txt || goto :error
 if not exist cms\web\node_modules\jsdom (
     pushd cms\web
     call npm install || (popd & goto :error)
