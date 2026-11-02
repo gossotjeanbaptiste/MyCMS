@@ -60,8 +60,7 @@ En cas de mot de passe oublié : fermer MyCMS, supprimer `%USERPROFILE%\.mycms\a
 Lancer MyCMS depuis les sources (Python 3.13) :
 
 ```
-pip install -r cms/requirements.txt
-python cms/web/server.py
+scripts\run.bat
 ```
 
 Sous Windows, `scripts\run.bat` installe les dépendances si besoin puis lance l'interface sur le port 5050. L'application est servie par Waitress à travers `cms/web/wsgi.py`, que tout serveur WSGI peut utiliser (`waitress-serve wsgi:app`).
@@ -72,10 +71,9 @@ Tests (pytest et `node --test`), à lancer avant chaque commit :
 scripts\run_tests.bat
 ```
 
-Compiler l'exécutable, puis l'installeur (le second nécessite le [SDK .NET](https://dotnet.microsoft.com/download)) :
+Compiler l'installeur (nécessite le [SDK .NET](https://dotnet.microsoft.com/download)) :
 
 ```
-python cms/installer/build_exe.py
 scripts\compile_msi.bat
 ```
 
