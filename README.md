@@ -95,7 +95,7 @@ Un [**exemple de contrat de licence commerciale**](https://app.notion.com/p/Cont
 
 ## Crédits & Licences
 
-- MyCMS est publié sous licence **[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)** (voir [LICENSE](LICENSE)). Vous pouvez l'utiliser, le modifier et le partager **sans but commercial**, en gardant la mention de copyright. **Toute vente ou tout usage commercial est réservé à son auteur**, Jean-Baptiste GOSSOT : pour une licence commerciale, voir [Contact](#contact).
+- MyCMS est publié sous licence **[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)** (voir [LICENSE.md](LICENSE.md)). Vous pouvez l'utiliser, le modifier et le partager **sans but commercial**, en gardant la mention de copyright. **Toute vente ou tout usage commercial est réservé à son auteur**, Jean-Baptiste GOSSOT : pour une licence commerciale, voir [Contact](#contact).
 - MyCMS s'appuie sur [Flask](https://flask.palletsprojects.com/), [Waitress](https://docs.pylonsproject.org/projects/waitress/), [GitPython](https://github.com/gitpython-developers/GitPython), [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), [pystray](https://github.com/moses-palmer/pystray), [Pillow](https://python-pillow.org/) et [Tailwind CSS](https://tailwindcss.com/), chacun sous sa propre licence.
 - L'installeur embarque **MinGit** ([Git for Windows](https://gitforwindows.org/)), distribué sous licence GPLv2.
 - Le logo associe le logo **Python**, marque de la Python Software Foundation, et le [logo **Git**](https://git-scm.com/downloads/logos) de Jason Long, sous licence CC BY 3.0. MyCMS n'est affilié ni à la Python Software Foundation, ni au projet Git, ni à GitHub.
